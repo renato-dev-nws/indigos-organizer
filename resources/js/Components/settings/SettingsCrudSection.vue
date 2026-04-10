@@ -21,7 +21,6 @@ const toast = useToast();
 const dialogVisible = ref(false);
 const editing = ref(null);
 const orderDraft = ref([]);
-const search = ref('');
 const first = ref(0);
 const rows = ref(8);
 
@@ -50,10 +49,6 @@ watch(
     },
     { immediate: true },
 );
-
-watch(search, () => {
-    first.value = 0;
-});
 
 const openCreate = () => {
     editing.value = null;
@@ -144,19 +139,7 @@ const saveOrder = () => {
 const hasReorder = computed(() => !!props.reorderRoute);
 
 const filteredItems = computed(() => {
-    const term = search.value.trim().toLowerCase();
-    if (!term) {
-        return props.items;
-    }
-
-    return props.items.filter((item) => {
-        const haystack = [item.name, item.color, String(item.order ?? '')]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-
-        return haystack.includes(term);
-    });
+    return props.items;
 });
 
 const paginatedItems = computed(() => {
@@ -182,17 +165,10 @@ const onPage = (event) => {
             </div>
         </template>
         <template #content>
-            <p v-if="description" class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ description }}</p>
+            <p v-if="description" class="mb-4 text-sm text-muted-color">{{ description }}</p>
 
-            <div class="mb-4">
-                <IconField class="w-full md:w-80">
-                    <InputIcon class="pi pi-search" />
-                    <InputText v-model="search" class="w-full" placeholder="Buscar por nome/cor" />
-                </IconField>
-            </div>
-
-            <DataTable :value="paginatedItems" data-key="id" striped-rows>
-                <Column field="name" header="Nome" />
+            <DataTable :value="paginatedItems" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+                <Column field="name" header="Nome" sortable />
                 <Column v-if="withColor" field="color" header="Cor" class="w-40">
                     <template #body="{ data }">
                         <div class="flex items-center gap-2">
@@ -202,16 +178,16 @@ const onPage = (event) => {
                     </template>
                 </Column>
                 <Column v-if="withOrder" field="order" header="Ordem" class="w-24" />
-                <Column header="Ações" class="w-64">
+                <Column header="Ações" class="bo-action-col w-20">
                     <template #body="{ data }">
-                        <div class="flex flex-wrap gap-2">
-                            <Button icon="pi pi-pencil" label="Editar" size="small" outlined severity="secondary" @click="openEdit(data)" />
+                        <div class="flex gap-1">
+                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
                             <BoConfirmButton
-                                label="Excluir"
                                 icon="pi pi-trash"
                                 severity="danger"
                                 :disabled="!canDelete(data)"
                                 message="Deseja remover este registro?"
+                                :rounded="true"
                                 @confirm="remove(data)"
                             />
                         </div>

@@ -26,6 +26,10 @@ const isHrefActive = (href) => {
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const normalized = href.replace(origin, '');
+    // Exact match for root to avoid dashboard activating on all pages
+    if (normalized === '/') {
+        return page.url === '/';
+    }
     return page.url === normalized || page.url.startsWith(`${normalized}/`);
 };
 

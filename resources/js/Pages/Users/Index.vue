@@ -1,5 +1,5 @@
 <script setup>
-import { reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -19,12 +19,23 @@ const localFilters = reactive({
     search: props.filters?.search ?? '',
 });
 
+const filterChips = computed(() => {
+    const chips = [];
+    if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
+    return chips;
+});
+
 const submitFilters = () => {
     router.get(route('users.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
 };
 
 const resetFilters = () => {
     localFilters.search = '';
+    submitFilters();
+};
+
+const removeChip = (key) => {
+    localFilters[key] = '';
     submitFilters();
 };
 
@@ -38,8 +49,8 @@ const removeUser = (id) => {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <BoPageHeader title="Usuários" subtitle="Administração de acesso e autoria" >
+    <div class="space-y-4">
+        <BoPageHeader title="Usuários" subtitle="Administração de acesso e autoria">
             <template #actions>
                 <Link :href="route('users.create')">
                     <Button icon="pi pi-plus" label="Novo usuário" />
@@ -47,42 +58,47 @@ const removeUser = (id) => {
             </template>
         </BoPageHeader>
 
-        <BoFilterBar @submit="submitFilters" @reset="resetFilters">
-            <IconField>
-                <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por nome ou e-mail" />
-            </IconField>
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Busca</label>
+                <IconField>
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="localFilters.search" placeholder="Buscar por nome ou e-mail" />
+                </IconField>
+            </div>
         </BoFilterBar>
 
         <Card>
             <template #content>
-                <DataTable :value="users.data" data-key="id" striped-rows responsive-layout="scroll">
-                    <Column field="name" header="Nome" />
-                    <Column field="email" header="E-mail" />
+                <DataTable :value="users.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+                    <Column field="name" header="Nome" sortable />
+                    <Column field="email" header="E-mail" sortable />
                     <Column field="theme" header="Tema" />
-                    <Column header="Autoria">
+                    <Column header="Autoria" class="w-56">
                         <template #body="{ data }">
-                            <div class="text-xs text-slate-500 dark:text-slate-400">
-                                Ideias: {{ data.ideas_count }} | Conteúdos: {{ data.contents_count }} | Tarefas: {{ data.tasks_count }}
+                            <div class="flex gap-3 text-xs text-muted-color">
+                                <span><i class="pi pi-lightbulb mr-1" />{{ data.ideas_count }}</span>
+                                <span><i class="pi pi-video mr-1" />{{ data.contents_count }}</span>
+                                <span><i class="pi pi-check-square mr-1" />{{ data.tasks_count }}</span>
                             </div>
                         </template>
                     </Column>
-                    <Column header="Criado em">
+                    <Column header="Criado em" sort-field="created_at" sortable>
                         <template #body="{ data }">
-                            <BoDateText :value="data.created_at" mode="datetime" />
+                            <BoDateText :value="data.created_at" mode="date" />
                         </template>
                     </Column>
-                    <Column header="Ações" class="min-w-52">
+                    <Column header="Ações" class="bo-action-col w-20">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex gap-1">
                                 <Link :href="route('users.edit', data.id)">
-                                    <Button icon="pi pi-pencil" label="Editar" outlined severity="secondary" size="small" />
+                                    <Button icon="pi pi-pencil" outlined rounded severity="secondary" size="small" v-tooltip.top="'Editar'" />
                                 </Link>
                                 <BoConfirmButton
-                                    label="Excluir"
                                     icon="pi pi-trash"
                                     severity="danger"
                                     message="Deseja remover este usuário?"
+                                    :rounded="true"
                                     :disabled="$page.props.auth.user?.id === data.id"
                                     @confirm="removeUser(data.id)"
                                 />

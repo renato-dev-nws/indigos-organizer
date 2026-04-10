@@ -26,6 +26,14 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    rounded: {
+        type: Boolean,
+        default: false,
+    },
+    size: {
+        type: String,
+        default: 'small',
+    },
 });
 
 const emit = defineEmits(['confirm']);
@@ -55,5 +63,15 @@ const onClick = () => {
 </script>
 
 <template>
-    <Button :label="label" :icon="icon" :severity="severity" :disabled="disabled" outlined @click="onClick" />
+    <Button
+        :label="rounded ? undefined : label"
+        :icon="icon"
+        :severity="severity"
+        :disabled="disabled"
+        :rounded="rounded"
+        :size="size"
+        outlined
+        v-tooltip.top="rounded ? label : undefined"
+        @click="onClick"
+    />
 </template>

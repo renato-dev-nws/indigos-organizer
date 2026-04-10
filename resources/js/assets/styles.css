@@ -7,19 +7,6 @@
     --bo-text: #0f172a;
     --bo-muted: #64748b;
     --bo-primary: #4f46e5;
-
-    --p-primary-50: #eef2ff;
-    --p-primary-100: #e0e7ff;
-    --p-primary-200: #c7d2fe;
-    --p-primary-300: #a5b4fc;
-    --p-primary-400: #818cf8;
-    --p-primary-500: #6366f1;
-    --p-primary-600: #4f46e5;
-    --p-primary-700: #4338ca;
-    --p-primary-800: #3730a3;
-    --p-primary-900: #312e81;
-    --p-primary-color: #4f46e5;
-    --p-primary-contrast-color: #ffffff;
 }
 
 .app-dark {
@@ -32,13 +19,13 @@
 }
 
 body {
-    background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.1), transparent 42%), var(--bo-surface-0);
+    background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.07), transparent 42%), var(--bo-surface-0);
     color: var(--bo-text);
     min-height: 100vh;
 }
 
 .bo-shell-content {
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 220px);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), transparent 200px);
 }
 
 .bo-status-dot {
@@ -66,18 +53,14 @@ body {
     background-color: color-mix(in srgb, var(--bo-primary), transparent 96%);
 }
 
-.app-dark .p-card,
-.app-dark .p-datatable,
-.app-dark .p-dialog,
-.app-dark .p-drawer,
-.app-dark .p-menubar,
-.app-dark .p-menu,
-.app-dark .p-overlaypanel {
-    background: #111827;
-}
-
-.p-button {
-    border-radius: 0.7rem;
+/* Mobile: hide button label in action columns */
+@media (max-width: 639px) {
+    .bo-action-col .p-button-label {
+        display: none;
+    }
+    .bo-action-col .p-button {
+        padding-inline: 0.5rem;
+    }
 }
 
 .p-inputtext,

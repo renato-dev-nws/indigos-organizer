@@ -14,6 +14,14 @@ const props = defineProps({ contents: Object, filters: Object, platforms: Array,
 
 const viewMode = ref('list');
 
+const statusLabels = {
+    queued: 'Na fila',
+    in_production: 'Em produção',
+    cancelled: 'Cancelado',
+    paused: 'Pausado',
+    published: 'Publicado',
+};
+
 const localFilters = reactive({
     status: props.filters?.status ?? null,
     content_platform_id: props.filters?.content_platform_id ?? null,
@@ -21,6 +29,26 @@ const localFilters = reactive({
     content_category_id: props.filters?.content_category_id ?? null,
     planned_week: props.filters?.planned_week ?? '',
     search: props.filters?.search ?? '',
+});
+
+const filterChips = computed(() => {
+    const chips = [];
+    if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
+    if (localFilters.status) chips.push({ key: 'status', label: statusLabels[localFilters.status] || localFilters.status });
+    if (localFilters.content_platform_id) {
+        const p = props.platforms?.find((x) => x.id === localFilters.content_platform_id);
+        if (p) chips.push({ key: 'content_platform_id', label: p.name });
+    }
+    if (localFilters.content_type_id) {
+        const t = props.types?.find((x) => x.id === localFilters.content_type_id);
+        if (t) chips.push({ key: 'content_type_id', label: t.name });
+    }
+    if (localFilters.content_category_id) {
+        const c = props.categories?.find((x) => x.id === localFilters.content_category_id);
+        if (c) chips.push({ key: 'content_category_id', label: c.name });
+    }
+    if (localFilters.planned_week) chips.push({ key: 'planned_week', label: `Semana: ${localFilters.planned_week}` });
+    return chips;
 });
 
 const submitFilters = () => {
@@ -34,6 +62,11 @@ const resetFilters = () => {
     localFilters.content_category_id = null;
     localFilters.planned_week = '';
     localFilters.search = '';
+    submitFilters();
+};
+
+const removeChip = (key) => {
+    localFilters[key] = ['search', 'planned_week'].includes(key) ? '' : null;
     submitFilters();
 };
 
@@ -63,7 +96,7 @@ const calendarColumns = computed(() => {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-4">
         <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial">
             <template #actions>
                 <SelectButton
@@ -82,51 +115,76 @@ const calendarColumns = computed(() => {
             </template>
         </BoPageHeader>
 
-        <BoFilterBar @submit="submitFilters" @reset="resetFilters">
-            <IconField>
-                <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
-            </IconField>
-            <Select v-model="localFilters.status" :options="['queued', 'in_production', 'cancelled', 'paused', 'published']" placeholder="Status" show-clear />
-            <Select v-model="localFilters.content_platform_id" :options="platforms" option-label="name" option-value="id" placeholder="Plataforma" show-clear />
-            <Select v-model="localFilters.content_type_id" :options="types" option-label="name" option-value="id" placeholder="Tipo" show-clear />
-            <Select v-model="localFilters.content_category_id" :options="categories" option-label="name" option-value="id" placeholder="Categoria" show-clear />
-            <InputText v-model="localFilters.planned_week" placeholder="Semana (YYYY-Www)" />
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Busca</label>
+                <IconField>
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="localFilters.search" placeholder="Buscar por título" />
+                </IconField>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Status</label>
+                <Select
+                    v-model="localFilters.status"
+                    :options="[
+                        { value: 'queued', label: 'Na fila' },
+                        { value: 'in_production', label: 'Em produção' },
+                        { value: 'cancelled', label: 'Cancelado' },
+                        { value: 'paused', label: 'Pausado' },
+                        { value: 'published', label: 'Publicado' },
+                    ]"
+                    option-label="label"
+                    option-value="value"
+                    placeholder="Todos os status"
+                    show-clear
+                />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Plataforma</label>
+                <Select v-model="localFilters.content_platform_id" :options="platforms" option-label="name" option-value="id" placeholder="Todas as plataformas" show-clear />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Tipo</label>
+                <Select v-model="localFilters.content_type_id" :options="types" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Categoria</label>
+                <Select v-model="localFilters.content_category_id" :options="categories" option-label="name" option-value="id" placeholder="Todas as categorias" show-clear />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Semana</label>
+                <InputText v-model="localFilters.planned_week" placeholder="Ex: 2026-W15" />
+            </div>
         </BoFilterBar>
 
         <Card v-if="viewMode === 'list'">
             <template #content>
-                <DataTable :value="contents.data" data-key="id" responsive-layout="scroll" striped-rows>
-                    <Column field="title" header="Título" />
-                    <Column header="Plataforma">
-                        <template #body="{ data }">{{ data.platform?.name || '-' }}</template>
-                    </Column>
-                    <Column header="Tipo">
-                        <template #body="{ data }">{{ data.type?.name || '-' }}</template>
-                    </Column>
-                    <Column header="Status">
+                <DataTable :value="contents.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+                    <Column field="title" header="Título" sortable />
+                    <Column field="platform.name" header="Plataforma" sortable />
+                    <Column field="type.name" header="Tipo" sortable />
+                    <Column header="Status" sort-field="status" sortable>
                         <template #body="{ data }">
                             <BoStatusTag :value="data.status" />
                         </template>
                     </Column>
-                    <Column header="Autor">
-                        <template #body="{ data }">{{ data.user?.name || '-' }}</template>
-                    </Column>
-                    <Column header="Publicação">
+                    <Column field="user.name" header="Autor" sortable />
+                    <Column header="Publicação" sort-field="planned_publish_at" sortable>
                         <template #body="{ data }">
                             <BoDateText :value="data.planned_publish_at" mode="datetime" />
                         </template>
                     </Column>
-                    <Column header="Ações" class="min-w-56">
+                    <Column header="Ações" class="bo-action-col w-28">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex gap-1">
                                 <Link :href="route('contents.show', data.id)">
-                                    <Button icon="pi pi-eye" label="Abrir" size="small" outlined severity="secondary" />
+                                    <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" v-tooltip.top="'Abrir'" />
                                 </Link>
                                 <Link :href="route('contents.edit', data.id)">
-                                    <Button icon="pi pi-pencil" label="Editar" size="small" outlined severity="secondary" />
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" />
                                 </Link>
-                                <BoConfirmButton label="Excluir" icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" @confirm="removeContent(data.id)" />
+                                <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(data.id)" />
                             </div>
                         </template>
                     </Column>
@@ -153,7 +211,7 @@ const calendarColumns = computed(() => {
                         <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                             Sem publicações.
                         </div>
-                        <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                        <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                             <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
                             <BoStatusTag :value="content.status" />
                         </div>

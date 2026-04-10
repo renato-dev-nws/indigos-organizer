@@ -16,12 +16,28 @@ const props = defineProps({ tasks: Object, statuses: Array, contents: Array, fil
 
 const viewMode = ref('list');
 
+const priorityLabels = { low: 'Baixa', medium: 'Média', high: 'Alta', urgent: 'Urgente' };
+const typeLabels = { content: 'Conteúdo', administrative: 'Administrativa' };
+
 const localFilters = reactive({
     assignee: props.filters?.assignee ?? '',
     priority: props.filters?.priority ?? null,
     type: props.filters?.type ?? null,
     content_id: props.filters?.content_id ?? null,
     search: props.filters?.search ?? '',
+});
+
+const filterChips = computed(() => {
+    const chips = [];
+    if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
+    if (localFilters.assignee) chips.push({ key: 'assignee', label: localFilters.assignee });
+    if (localFilters.priority) chips.push({ key: 'priority', label: priorityLabels[localFilters.priority] || localFilters.priority });
+    if (localFilters.type) chips.push({ key: 'type', label: typeLabels[localFilters.type] || localFilters.type });
+    if (localFilters.content_id) {
+        const content = props.contents?.find((c) => c.id === localFilters.content_id);
+        if (content) chips.push({ key: 'content_id', label: content.title });
+    }
+    return chips;
 });
 
 const submitFilters = () => {
@@ -34,6 +50,11 @@ const resetFilters = () => {
     localFilters.type = null;
     localFilters.content_id = null;
     localFilters.search = '';
+    submitFilters();
+};
+
+const removeChip = (key) => {
+    localFilters[key] = ['search', 'assignee'].includes(key) ? '' : null;
     submitFilters();
 };
 
@@ -155,48 +176,83 @@ const swimlaneRows = computed(() =>
             </template>
         </BoPageHeader>
 
-        <BoFilterBar @submit="submitFilters" @reset="resetFilters">
-            <IconField>
-                <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
-            </IconField>
-            <InputText v-model="localFilters.assignee" placeholder="Responsável" />
-            <Select v-model="localFilters.priority" :options="['low', 'medium', 'high', 'urgent']" placeholder="Prioridade" show-clear />
-            <Select v-model="localFilters.type" :options="['content', 'administrative']" placeholder="Tipo" show-clear />
-            <Select v-model="localFilters.content_id" :options="contents" option-label="title" option-value="id" placeholder="Conteúdo" show-clear />
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Busca</label>
+                <IconField>
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="localFilters.search" placeholder="Buscar por título" />
+                </IconField>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Responsável</label>
+                <InputText v-model="localFilters.assignee" placeholder="Nome do responsável" />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Prioridade</label>
+                <Select
+                    v-model="localFilters.priority"
+                    :options="[
+                        { value: 'low', label: 'Baixa' },
+                        { value: 'medium', label: 'Média' },
+                        { value: 'high', label: 'Alta' },
+                        { value: 'urgent', label: 'Urgente' },
+                    ]"
+                    option-label="label"
+                    option-value="value"
+                    placeholder="Todas as prioridades"
+                    show-clear
+                />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Tipo</label>
+                <Select
+                    v-model="localFilters.type"
+                    :options="[
+                        { value: 'content', label: 'Conteúdo' },
+                        { value: 'administrative', label: 'Administrativa' },
+                    ]"
+                    option-label="label"
+                    option-value="value"
+                    placeholder="Todos os tipos"
+                    show-clear
+                />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Conteúdo vinculado</label>
+                <Select v-model="localFilters.content_id" :options="contents" option-label="title" option-value="id" placeholder="Todos os conteúdos" show-clear />
+            </div>
         </BoFilterBar>
 
         <Card v-if="viewMode === 'list'">
             <template #content>
-                <DataTable :value="tasks.data" data-key="id" striped-rows responsive-layout="scroll">
-                    <Column field="title" header="Título" />
-                    <Column header="Tipo">
+                <DataTable :value="tasks.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+                    <Column field="title" header="Título" sortable />
+                    <Column header="Tipo" sort-field="type" sortable>
                         <template #body="{ data }">{{ data.type === 'content' ? 'Conteúdo' : 'Administrativa' }}</template>
                     </Column>
-                    <Column header="Prioridade">
+                    <Column header="Prioridade" sort-field="priority" sortable>
                         <template #body="{ data }">
                             <BoPriorityTag :value="data.priority" />
                         </template>
                     </Column>
-                    <Column header="Status">
+                    <Column header="Status" sort-field="status.name" sortable>
                         <template #body="{ data }">{{ data.status?.name || '-' }}</template>
                     </Column>
-                    <Column header="Autor">
-                        <template #body="{ data }">{{ data.user?.name || '-' }}</template>
-                    </Column>
-                    <Column field="assignee" header="Responsável" />
-                    <Column header="Prazo">
+                    <Column field="user.name" header="Autor" sortable />
+                    <Column field="assignee" header="Responsável" sortable />
+                    <Column header="Prazo" sort-field="due_date" sortable>
                         <template #body="{ data }">
                             <BoDateText :value="data.due_date" mode="date" />
                         </template>
                     </Column>
-                    <Column header="Ações" class="min-w-56">
+                    <Column header="Ações" class="bo-action-col w-24">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex gap-1">
                                 <Link :href="route('tasks.edit', data.id)">
-                                    <Button icon="pi pi-pencil" label="Editar" size="small" outlined severity="secondary" />
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" />
                                 </Link>
-                                <BoConfirmButton label="Excluir" icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" @confirm="removeTask(data.id)" />
+                                <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(data.id)" />
                             </div>
                         </template>
                     </Column>
