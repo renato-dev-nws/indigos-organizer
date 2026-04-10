@@ -1,0 +1,79 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Content extends Model
+{
+    use HasUuids, SoftDeletes;
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'user_id',
+        'idea_id',
+        'title',
+        'script',
+        'content_platform_id',
+        'content_type_id',
+        'status',
+        'planned_publish_at',
+        'published_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'planned_publish_at' => 'datetime',
+            'published_at' => 'datetime',
+        ];
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function idea(): BelongsTo
+    {
+        return $this->belongsTo(Idea::class);
+    }
+
+    public function platform(): BelongsTo
+    {
+        return $this->belongsTo(ContentPlatform::class, 'content_platform_id');
+    }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(ContentType::class, 'content_type_id');
+    }
+
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(ContentCategory::class, 'content_content_category');
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(ContentFile::class);
+    }
+
+    public function links(): HasMany
+    {
+        return $this->hasMany(ContentLink::class);
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+}
