@@ -1,0 +1,37 @@
+@import 'primeicons/primeicons.css';
+
+:root {
+    --bo-surface-0: #f8fafc;
+    --bo-surface-1: #ffffff;
+    --bo-surface-2: #e2e8f0;
+    --bo-text: #0f172a;
+    --bo-muted: #64748b;
+    --bo-primary: #0284c7;
+}
+
+.app-dark {
+    --bo-surface-0: #0b1220;
+    --bo-surface-1: #111827;
+    --bo-surface-2: #334155;
+    --bo-text: #e2e8f0;
+    --bo-muted: #94a3b8;
+    --bo-primary: #38bdf8;
+}
+
+body {
+    background: radial-gradient(circle at top left, rgba(2, 132, 199, 0.08), transparent 40%), var(--bo-surface-0);
+    color: var(--bo-text);
+    min-height: 100vh;
+}
+
+.bo-shell-content {
+    background: linear-gradient(180deg, rgba(148, 163, 184, 0.06), transparent 180px);
+}
+
+.bo-status-dot {
+    display: inline-flex;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    margin-right: 0.4rem;
+}

@@ -1,12 +1,24 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import BoFormSection from '@/Components/ui/BoFormSection.vue';
+import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
 defineOptions({ layout: AppLayout });
 
+defineProps({
+    platforms: Array,
+    types: Array,
+    categories: Array,
+    ideas: Array,
+});
+
 const form = useForm({
+    idea_id: null,
     title: '',
     script: '',
+    content_platform_id: null,
+    content_type_id: null,
     status: 'queued',
     content_category_ids: [],
     links: [],
@@ -15,15 +27,98 @@ const form = useForm({
 });
 
 const submit = () => form.post(route('contents.store'));
+
+const addLink = () => {
+    form.links.push({ title: '', url: '' });
+};
+
+const removeLink = (index) => {
+    form.links.splice(index, 1);
+};
 </script>
 
 <template>
-    <div class="space-y-4">
-        <h1 class="text-2xl font-bold">Novo conteudo</h1>
-        <form class="space-y-3" @submit.prevent="submit">
-            <input v-model="form.title" class="w-full rounded border p-2" placeholder="Titulo" />
-            <textarea v-model="form.script" class="w-full rounded border p-2" placeholder="Roteiro" />
-            <button class="rounded bg-slate-900 px-3 py-2 text-white" type="submit">Salvar</button>
+    <div class="space-y-6">
+        <BoPageHeader title="Novo conteudo" subtitle="Crie e planeje o conteudo com metadados completos">
+            <template #actions>
+                <Link :href="route('contents.index')">
+                    <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                </Link>
+            </template>
+        </BoPageHeader>
+
+        <form class="space-y-4" @submit.prevent="submit">
+            <BoFormSection title="Dados principais" description="Informacoes de planejamento e classificacao">
+                <div class="md:col-span-2 space-y-2">
+                    <label for="content-title">Titulo</label>
+                    <InputText id="content-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
+                    <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-idea">Ideia de origem</label>
+                    <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-status">Status</label>
+                    <Select id="content-status" v-model="form.status" :options="['queued', 'in_production', 'cancelled', 'paused', 'published']" />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-platform">Plataforma</label>
+                    <Select id="content-platform" v-model="form.content_platform_id" :options="platforms" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-type">Tipo</label>
+                    <Select id="content-type" v-model="form.content_type_id" :options="types" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label for="content-categories">Categorias</label>
+                    <MultiSelect id="content-categories" v-model="form.content_category_ids" :options="categories" option-label="name" option-value="id" display="chip" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="planned-publish">Publicacao planejada</label>
+                    <DatePicker id="planned-publish" v-model="form.planned_publish_at" show-time hour-format="24" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="published-at">Publicado em</label>
+                    <DatePicker id="published-at" v-model="form.published_at" show-time hour-format="24" fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label for="content-script">Roteiro</label>
+                    <Editor id="content-script" v-model="form.script" editor-style="height: 220px" />
+                </div>
+            </BoFormSection>
+
+            <Card>
+                <template #title>Links externos</template>
+                <template #content>
+                    <div class="space-y-3">
+                        <div v-for="(link, index) in form.links" :key="index" class="grid gap-3 rounded-xl border border-slate-200/80 p-3 md:grid-cols-2 dark:border-slate-800">
+                            <InputText v-model="link.title" placeholder="Titulo" />
+                            <div class="flex gap-2">
+                                <InputText v-model="link.url" class="w-full" placeholder="https://..." />
+                                <Button type="button" icon="pi pi-trash" text severity="danger" aria-label="Remover link" @click="removeLink(index)" />
+                            </div>
+                        </div>
+
+                        <Button type="button" icon="pi pi-plus" label="Adicionar link" outlined @click="addLink" />
+                    </div>
+                </template>
+            </Card>
+
+            <div class="flex justify-end gap-2">
+                <Link :href="route('contents.index')">
+                    <Button type="button" label="Cancelar" outlined severity="secondary" />
+                </Link>
+                <Button type="submit" :loading="form.processing" label="Salvar conteudo" icon="pi pi-save" />
+            </div>
         </form>
     </div>
 </template>

@@ -4,12 +4,12 @@ import { router, usePage } from '@inertiajs/vue3';
 export function useTheme() {
     const applyTheme = (theme) => {
         const html = document.documentElement;
-        html.classList.remove('dark');
+        html.classList.remove('app-dark');
 
         if (theme === 'dark') {
-            html.classList.add('dark');
+            html.classList.add('app-dark');
         } else if (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            html.classList.add('dark');
+            html.classList.add('app-dark');
         }
     };
 
