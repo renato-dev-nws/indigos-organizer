@@ -22,12 +22,20 @@ const props = defineProps({
         type: String,
         default: 'Confirmacao',
     },
+    disabled: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emit = defineEmits(['confirm']);
 const confirm = useConfirm();
 
 const onClick = () => {
+    if (props.disabled) {
+        return;
+    }
+
     confirm.require({
         message: props.message,
         header: props.header,
@@ -47,5 +55,5 @@ const onClick = () => {
 </script>
 
 <template>
-    <Button :label="label" :icon="icon" :severity="severity" outlined @click="onClick" />
+    <Button :label="label" :icon="icon" :severity="severity" :disabled="disabled" outlined @click="onClick" />
 </template>

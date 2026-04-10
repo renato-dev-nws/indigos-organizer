@@ -44,8 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');
     Route::resource('/settings/content-types', ContentTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.content-types');
     Route::resource('/settings/content-categories', ContentCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.content-categories');
-    Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
     Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');
+    Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

@@ -35,3 +35,20 @@ body {
     border-radius: 9999px;
     margin-right: 0.4rem;
 }
+
+.bo-kanban-ghost {
+    opacity: 0.4;
+}
+
+.bo-kanban-chosen {
+    transform: scale(0.99);
+}
+
+.bo-kanban-drag {
+    cursor: grabbing;
+}
+
+.bo-kanban-drag-active {
+    border-color: color-mix(in srgb, var(--bo-primary), transparent 55%);
+    background-color: color-mix(in srgb, var(--bo-primary), transparent 96%);
+}

@@ -21,12 +21,27 @@ const toast = useToast();
 const dialogVisible = ref(false);
 const editing = ref(null);
 const orderDraft = ref([]);
+const search = ref('');
+const first = ref(0);
+const rows = ref(8);
 
 const form = reactive({
     name: '',
     color: '#3b82f6',
     order: 1,
 });
+
+const errors = reactive({
+    name: '',
+    color: '',
+    order: '',
+});
+
+const clearErrors = () => {
+    errors.name = '';
+    errors.color = '';
+    errors.order = '';
+};
 
 watch(
     () => props.items,
@@ -36,8 +51,13 @@ watch(
     { immediate: true },
 );
 
+watch(search, () => {
+    first.value = 0;
+});
+
 const openCreate = () => {
     editing.value = null;
+    clearErrors();
     form.name = '';
     form.color = '#3b82f6';
     form.order = (props.items.at(-1)?.order || 0) + 1;
@@ -46,15 +66,40 @@ const openCreate = () => {
 
 const openEdit = (item) => {
     editing.value = item;
+    clearErrors();
     form.name = item.name;
     form.color = item.color || '#3b82f6';
     form.order = item.order || 1;
     dialogVisible.value = true;
 };
 
+const validate = () => {
+    clearErrors();
+
+    if (!form.name?.trim()) {
+        errors.name = 'Nome e obrigatorio.';
+    } else if (form.name.trim().length > 255) {
+        errors.name = 'Nome deve ter no maximo 255 caracteres.';
+    }
+
+    if (props.withColor && !/^#[0-9a-fA-F]{6}$/.test(form.color || '')) {
+        errors.color = 'Cor deve estar no formato #RRGGBB.';
+    }
+
+    if (props.withOrder && (!Number.isInteger(form.order) || form.order < 1)) {
+        errors.order = 'Ordem deve ser um inteiro maior ou igual a 1.';
+    }
+
+    return !errors.name && !errors.color && !errors.order;
+};
+
 const save = () => {
+    if (!validate()) {
+        return;
+    }
+
     const payload = {
-        name: form.name,
+        name: form.name.trim(),
         ...(props.withColor ? { color: form.color } : {}),
         ...(props.withOrder ? { order: form.order } : {}),
     };
@@ -78,7 +123,7 @@ const save = () => {
 };
 
 const remove = (item) => {
-    if (props.disableDeleteWhen && Number(item[props.disableDeleteWhen] || 0) > 0) {
+    if (!canDelete(item)) {
         toast.add({ severity: 'warn', summary: 'Acao bloqueada', detail: props.disableDeleteMessage, life: 3500 });
         return;
     }
@@ -97,6 +142,35 @@ const saveOrder = () => {
 };
 
 const hasReorder = computed(() => !!props.reorderRoute);
+
+const filteredItems = computed(() => {
+    const term = search.value.trim().toLowerCase();
+    if (!term) {
+        return props.items;
+    }
+
+    return props.items.filter((item) => {
+        const haystack = [item.name, item.color, String(item.order ?? '')]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+        return haystack.includes(term);
+    });
+});
+
+const paginatedItems = computed(() => {
+    return filteredItems.value.slice(first.value, first.value + rows.value);
+});
+
+const canDelete = (item) => {
+    return !(props.disableDeleteWhen && Number(item[props.disableDeleteWhen] || 0) > 0);
+};
+
+const onPage = (event) => {
+    first.value = event.first;
+    rows.value = event.rows;
+};
 </script>
 
 <template>
@@ -110,7 +184,14 @@ const hasReorder = computed(() => !!props.reorderRoute);
         <template #content>
             <p v-if="description" class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ description }}</p>
 
-            <DataTable :value="items" data-key="id" striped-rows>
+            <div class="mb-4">
+                <IconField class="w-full md:w-80">
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="search" class="w-full" placeholder="Buscar por nome/cor" />
+                </IconField>
+            </div>
+
+            <DataTable :value="paginatedItems" data-key="id" striped-rows>
                 <Column field="name" header="Nome" />
                 <Column v-if="withColor" field="color" header="Cor" class="w-40">
                     <template #body="{ data }">
@@ -129,6 +210,7 @@ const hasReorder = computed(() => !!props.reorderRoute);
                                 label="Excluir"
                                 icon="pi pi-trash"
                                 severity="danger"
+                                :disabled="!canDelete(data)"
                                 message="Deseja remover este registro?"
                                 @confirm="remove(data)"
                             />
@@ -136,6 +218,15 @@ const hasReorder = computed(() => !!props.reorderRoute);
                     </template>
                 </Column>
             </DataTable>
+
+            <Paginator
+                class="mt-3"
+                :rows="rows"
+                :first="first"
+                :total-records="filteredItems.length"
+                :rows-per-page-options="[5, 8, 12, 20]"
+                @page="onPage"
+            />
 
             <div v-if="hasReorder" class="mt-6 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
                 <p class="mb-2 text-sm font-semibold">Reordenar status (arraste e solte)</p>
@@ -159,15 +250,18 @@ const hasReorder = computed(() => !!props.reorderRoute);
         <div class="space-y-4">
             <div class="space-y-2">
                 <label for="settings-name">Nome</label>
-                <InputText id="settings-name" v-model="form.name" fluid />
+                <InputText id="settings-name" v-model="form.name" fluid :invalid="!!errors.name" />
+                <Message v-if="errors.name" severity="error" size="small" variant="simple">{{ errors.name }}</Message>
             </div>
             <div v-if="withColor" class="space-y-2">
                 <label for="settings-color">Cor (hex)</label>
-                <InputText id="settings-color" v-model="form.color" fluid placeholder="#3b82f6" />
+                <InputText id="settings-color" v-model="form.color" fluid placeholder="#3b82f6" :invalid="!!errors.color" />
+                <Message v-if="errors.color" severity="error" size="small" variant="simple">{{ errors.color }}</Message>
             </div>
             <div v-if="withOrder" class="space-y-2">
                 <label for="settings-order">Ordem</label>
-                <InputNumber id="settings-order" v-model="form.order" :min="1" fluid />
+                <InputNumber id="settings-order" v-model="form.order" :min="1" fluid :invalid="!!errors.order" />
+                <Message v-if="errors.order" severity="error" size="small" variant="simple">{{ errors.order }}</Message>
             </div>
         </div>
 
