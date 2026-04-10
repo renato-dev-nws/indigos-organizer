@@ -27,7 +27,7 @@ const rows = ref(8);
 
 const form = reactive({
     name: '',
-    color: '#3b82f6',
+    color: '#4f46e5',
     order: 1,
 });
 
@@ -59,7 +59,7 @@ const openCreate = () => {
     editing.value = null;
     clearErrors();
     form.name = '';
-    form.color = '#3b82f6';
+    form.color = '#4f46e5';
     form.order = (props.items.at(-1)?.order || 0) + 1;
     dialogVisible.value = true;
 };
@@ -68,7 +68,7 @@ const openEdit = (item) => {
     editing.value = item;
     clearErrors();
     form.name = item.name;
-    form.color = item.color || '#3b82f6';
+    form.color = item.color || '#4f46e5';
     form.order = item.order || 1;
     dialogVisible.value = true;
 };
@@ -202,7 +202,7 @@ const onPage = (event) => {
                     </template>
                 </Column>
                 <Column v-if="withOrder" field="order" header="Ordem" class="w-24" />
-                <Column header="Acoes" class="w-64">
+                <Column header="Ações" class="w-64">
                     <template #body="{ data }">
                         <div class="flex flex-wrap gap-2">
                             <Button icon="pi pi-pencil" label="Editar" size="small" outlined severity="secondary" @click="openEdit(data)" />
@@ -255,7 +255,7 @@ const onPage = (event) => {
             </div>
             <div v-if="withColor" class="space-y-2">
                 <label for="settings-color">Cor (hex)</label>
-                <InputText id="settings-color" v-model="form.color" fluid placeholder="#3b82f6" :invalid="!!errors.color" />
+                <InputText id="settings-color" v-model="form.color" fluid placeholder="#4f46e5" :invalid="!!errors.color" />
                 <Message v-if="errors.color" severity="error" size="small" variant="simple">{{ errors.color }}</Message>
             </div>
             <div v-if="withOrder" class="space-y-2">

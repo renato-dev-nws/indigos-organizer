@@ -9,6 +9,7 @@ import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import AppKanbanCard from '@/Components/AppKanbanCard.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({ tasks: Object, statuses: Array, contents: Array, filters: Object });
@@ -157,20 +158,20 @@ const swimlaneRows = computed(() =>
         <BoFilterBar @submit="submitFilters" @reset="resetFilters">
             <IconField>
                 <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por titulo" />
+                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
             </IconField>
-            <InputText v-model="localFilters.assignee" placeholder="Responsavel" />
+            <InputText v-model="localFilters.assignee" placeholder="Responsável" />
             <Select v-model="localFilters.priority" :options="['low', 'medium', 'high', 'urgent']" placeholder="Prioridade" show-clear />
             <Select v-model="localFilters.type" :options="['content', 'administrative']" placeholder="Tipo" show-clear />
-            <Select v-model="localFilters.content_id" :options="contents" option-label="title" option-value="id" placeholder="Conteudo" show-clear />
+            <Select v-model="localFilters.content_id" :options="contents" option-label="title" option-value="id" placeholder="Conteúdo" show-clear />
         </BoFilterBar>
 
         <Card v-if="viewMode === 'list'">
             <template #content>
                 <DataTable :value="tasks.data" data-key="id" striped-rows responsive-layout="scroll">
-                    <Column field="title" header="Titulo" />
+                    <Column field="title" header="Título" />
                     <Column header="Tipo">
-                        <template #body="{ data }">{{ data.type === 'content' ? 'Conteudo' : 'Administrativa' }}</template>
+                        <template #body="{ data }">{{ data.type === 'content' ? 'Conteúdo' : 'Administrativa' }}</template>
                     </Column>
                     <Column header="Prioridade">
                         <template #body="{ data }">
@@ -180,9 +181,16 @@ const swimlaneRows = computed(() =>
                     <Column header="Status">
                         <template #body="{ data }">{{ data.status?.name || '-' }}</template>
                     </Column>
-                    <Column field="assignee" header="Responsavel" />
-                    <Column field="due_date" header="Prazo" />
-                    <Column header="Acoes" class="min-w-56">
+                    <Column header="Autor">
+                        <template #body="{ data }">{{ data.user?.name || '-' }}</template>
+                    </Column>
+                    <Column field="assignee" header="Responsável" />
+                    <Column header="Prazo">
+                        <template #body="{ data }">
+                            <BoDateText :value="data.due_date" mode="date" />
+                        </template>
+                    </Column>
+                    <Column header="Ações" class="min-w-56">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-2">
                                 <Link :href="route('tasks.edit', data.id)">

@@ -27,7 +27,7 @@ class ContentCategoryController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $item = ContentCategory::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentCategory::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -41,7 +41,7 @@ class ContentCategoryController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = ContentCategory::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentCategory::findOrFail($id);
         $item->delete();
 
         return back()->with('success', 'Categoria de conteudo removida com sucesso.');

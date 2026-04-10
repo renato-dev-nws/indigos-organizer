@@ -6,26 +6,39 @@
     --bo-surface-2: #e2e8f0;
     --bo-text: #0f172a;
     --bo-muted: #64748b;
-    --bo-primary: #0284c7;
+    --bo-primary: #4f46e5;
+
+    --p-primary-50: #eef2ff;
+    --p-primary-100: #e0e7ff;
+    --p-primary-200: #c7d2fe;
+    --p-primary-300: #a5b4fc;
+    --p-primary-400: #818cf8;
+    --p-primary-500: #6366f1;
+    --p-primary-600: #4f46e5;
+    --p-primary-700: #4338ca;
+    --p-primary-800: #3730a3;
+    --p-primary-900: #312e81;
+    --p-primary-color: #4f46e5;
+    --p-primary-contrast-color: #ffffff;
 }
 
 .app-dark {
-    --bo-surface-0: #0b1220;
-    --bo-surface-1: #111827;
-    --bo-surface-2: #334155;
+    --bo-surface-0: #020617;
+    --bo-surface-1: #0f172a;
+    --bo-surface-2: #1e293b;
     --bo-text: #e2e8f0;
     --bo-muted: #94a3b8;
-    --bo-primary: #38bdf8;
+    --bo-primary: #818cf8;
 }
 
 body {
-    background: radial-gradient(circle at top left, rgba(2, 132, 199, 0.08), transparent 40%), var(--bo-surface-0);
+    background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.1), transparent 42%), var(--bo-surface-0);
     color: var(--bo-text);
     min-height: 100vh;
 }
 
 .bo-shell-content {
-    background: linear-gradient(180deg, rgba(148, 163, 184, 0.06), transparent 180px);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 220px);
 }
 
 .bo-status-dot {
@@ -51,4 +64,27 @@ body {
 .bo-kanban-drag-active {
     border-color: color-mix(in srgb, var(--bo-primary), transparent 55%);
     background-color: color-mix(in srgb, var(--bo-primary), transparent 96%);
+}
+
+.app-dark .p-card,
+.app-dark .p-datatable,
+.app-dark .p-dialog,
+.app-dark .p-drawer,
+.app-dark .p-menubar,
+.app-dark .p-menu,
+.app-dark .p-overlaypanel {
+    background: #111827;
+}
+
+.p-button {
+    border-radius: 0.7rem;
+}
+
+.p-inputtext,
+.p-select,
+.p-datepicker-input,
+.p-textarea,
+.p-inputnumber-input,
+.p-multiselect {
+    width: 100%;
 }

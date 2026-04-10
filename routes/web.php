@@ -15,6 +15,7 @@ use App\Http\Controllers\Settings\TaskStatusController;
 use App\Http\Controllers\Settings\ThemeController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VenueController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,8 +37,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy');
 
     Route::resource('venues', VenueController::class);
+    Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/settings/idea-types', [SettingsController::class, 'ideaTypes'])->name('settings.pages.idea-types');
+    Route::get('/settings/idea-categories', [SettingsController::class, 'ideaCategories'])->name('settings.pages.idea-categories');
+    Route::get('/settings/content-platforms', [SettingsController::class, 'contentPlatforms'])->name('settings.pages.content-platforms');
+    Route::get('/settings/content-types', [SettingsController::class, 'contentTypes'])->name('settings.pages.content-types');
+    Route::get('/settings/content-categories', [SettingsController::class, 'contentCategories'])->name('settings.pages.content-categories');
+    Route::get('/settings/task-statuses', [SettingsController::class, 'taskStatuses'])->name('settings.pages.task-statuses');
     Route::put('/settings/theme', [ThemeController::class, 'update'])->name('settings.theme');
     Route::resource('/settings/idea-types', IdeaTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-types');
     Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');

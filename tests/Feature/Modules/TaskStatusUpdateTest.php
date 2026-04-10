@@ -12,7 +12,7 @@ class TaskStatusUpdateTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_task_status_update_requires_status_from_same_user(): void
+    public function test_task_status_update_accepts_status_from_any_user_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -32,11 +32,11 @@ class TaskStatusUpdateTest extends TestCase
             'priority' => 'medium',
         ]);
 
-        $invalidResponse = $this->actingAs($owner)->patch(route('tasks.status', $task), [
+        $sharedResponse = $this->actingAs($owner)->patch(route('tasks.status', $task), [
             'task_status_id' => $otherStatus->id,
         ]);
 
-        $invalidResponse->assertStatus(422);
+        $sharedResponse->assertStatus(302);
 
         $validResponse = $this->actingAs($owner)->patch(route('tasks.status', $task), [
             'task_status_id' => $ownerStatusB->id,
@@ -50,7 +50,7 @@ class TaskStatusUpdateTest extends TestCase
         ]);
     }
 
-    public function test_user_cannot_update_status_of_task_from_another_user(): void
+    public function test_user_can_update_status_of_task_from_another_user_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -73,6 +73,11 @@ class TaskStatusUpdateTest extends TestCase
             'task_status_id' => $otherStatus->id,
         ]);
 
-        $response->assertForbidden();
+        $response->assertStatus(302);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'task_status_id' => $otherStatus->id,
+        ]);
     }
 }

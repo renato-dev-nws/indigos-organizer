@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import BoKpiCard from '@/Components/ui/BoKpiCard.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -17,30 +18,37 @@ defineProps({
     <div class="space-y-6">
         <BoPageHeader
             title="Dashboard"
-            subtitle="Visao geral de ideias, conteudos, tarefas e venues"
+            subtitle="Visão geral de ideias, conteúdos, tarefas e casas"
         />
 
         <div class="grid gap-4 lg:grid-cols-4">
             <BoKpiCard label="Ideias pendentes" :value="summary.pendingIdeas" icon="pi pi-lightbulb" />
-            <BoKpiCard label="Conteudos da semana" :value="summary.contentsThisWeek" icon="pi pi-video" />
+            <BoKpiCard label="Conteúdos da semana" :value="summary.contentsThisWeek" icon="pi pi-video" />
             <BoKpiCard label="Tarefas urgentes" :value="summary.urgentOpenTasks" icon="pi pi-bolt" />
             <BoKpiCard label="Casas de show" :value="summary.venuesCount" icon="pi pi-building" />
         </div>
 
         <div class="grid gap-4 xl:grid-cols-2">
             <Card>
-                <template #title>Proximos conteudos</template>
+                <template #title>Próximos conteúdos</template>
                 <template #content>
                     <DataTable :value="nextContents" data-key="id" striped-rows size="small">
-                        <Column field="title" header="Titulo" />
+                        <Column field="title" header="Título" />
+                        <Column header="Autor">
+                            <template #body="{ data }">{{ data.user?.name || '-' }}</template>
+                        </Column>
                         <Column header="Status">
                             <template #body="{ data }">
                                 <BoStatusTag :value="data.status" />
                             </template>
                         </Column>
-                        <Column field="planned_publish_at" header="Publicacao" />
+                        <Column header="Publicação">
+                            <template #body="{ data }">
+                                <BoDateText :value="data.planned_publish_at" mode="datetime" />
+                            </template>
+                        </Column>
                         <template #empty>
-                            <p class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Nenhum conteudo agendado.</p>
+                            <p class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Nenhum conteúdo agendado.</p>
                         </template>
                     </DataTable>
                 </template>
@@ -50,9 +58,16 @@ defineProps({
                 <template #title>Tarefas urgentes</template>
                 <template #content>
                     <DataTable :value="urgentTasks" data-key="id" striped-rows size="small">
-                        <Column field="title" header="Titulo" />
-                        <Column field="due_date" header="Prazo" />
-                        <Column field="assignee" header="Responsavel" />
+                        <Column field="title" header="Título" />
+                        <Column header="Autor">
+                            <template #body="{ data }">{{ data.user?.name || '-' }}</template>
+                        </Column>
+                        <Column header="Prazo">
+                            <template #body="{ data }">
+                                <BoDateText :value="data.due_date" mode="date" />
+                            </template>
+                        </Column>
+                        <Column field="assignee" header="Responsável" />
                         <template #empty>
                             <p class="py-6 text-center text-sm text-slate-500 dark:text-slate-400">Nenhuma tarefa urgente no momento.</p>
                         </template>

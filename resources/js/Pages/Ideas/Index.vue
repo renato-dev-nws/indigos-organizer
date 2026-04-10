@@ -7,6 +7,7 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -46,7 +47,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e execucao de ideias">
+        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e execução de ideias">
             <template #actions>
                 <Link :href="route('ideas.create')">
                     <Button icon="pi pi-plus" label="Nova ideia" />
@@ -57,7 +58,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
         <BoFilterBar @submit="submitFilters" @reset="resetFilters">
             <IconField>
                 <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por titulo" />
+                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
             </IconField>
             <Select v-model="localFilters.status" :options="['pending', 'maturing', 'cancelled', 'in_production', 'executed']" placeholder="Status" show-clear />
             <Select v-model="localFilters.idea_type_id" :options="ideaTypes" option-label="name" option-value="id" placeholder="Tipo" show-clear />
@@ -67,7 +68,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
         <Card>
             <template #content>
                 <DataTable :value="ideas.data" data-key="id" responsive-layout="scroll" striped-rows>
-                    <Column field="title" header="Titulo" />
+                    <Column field="title" header="Título" />
                     <Column header="Tipo">
                         <template #body="{ data }">{{ data.type?.name || '-' }}</template>
                     </Column>
@@ -79,8 +80,15 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
                             <BoStatusTag :value="data.status" />
                         </template>
                     </Column>
-                    <Column field="updated_at" header="Atualizado" />
-                    <Column header="Acoes" class="min-w-48">
+                    <Column header="Autor">
+                        <template #body="{ data }">{{ data.user?.name || '-' }}</template>
+                    </Column>
+                    <Column header="Atualizado em">
+                        <template #body="{ data }">
+                            <BoDateText :value="data.updated_at" mode="datetime" />
+                        </template>
+                    </Column>
+                    <Column header="Ações" class="min-w-56">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-2">
                                 <Button icon="pi pi-play" label="Executar" size="small" outlined @click="executeIdea(data.id)" />

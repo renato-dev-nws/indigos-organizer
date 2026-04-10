@@ -26,7 +26,7 @@ class IdeaCategoryController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $item = IdeaCategory::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = IdeaCategory::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -39,7 +39,7 @@ class IdeaCategoryController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = IdeaCategory::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = IdeaCategory::findOrFail($id);
         $item->delete();
 
         return back()->with('success', 'Categoria de ideia removida com sucesso.');

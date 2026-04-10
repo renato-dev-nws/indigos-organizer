@@ -30,7 +30,7 @@ const removeReference = (index) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar ideia" subtitle="Atualize classificacao e referencias da ideia">
+        <BoPageHeader title="Editar ideia" subtitle="Atualize classificação e referências da ideia">
             <template #actions>
                 <Link :href="route('ideas.index')">
                     <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
@@ -41,19 +41,32 @@ const removeReference = (index) => {
         <form class="space-y-4" @submit.prevent="submit">
             <BoFormSection title="Detalhes da ideia" description="Dados principais">
                 <div class="md:col-span-2 space-y-2">
-                    <label for="idea-title">Titulo</label>
+                    <label for="idea-title">Título</label>
                     <InputText id="idea-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                     <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label for="idea-description">Descricao</label>
+                    <label for="idea-description">Descrição</label>
                     <Textarea id="idea-description" v-model="form.description" rows="4" fluid :invalid="!!form.errors.description" />
                 </div>
 
                 <div class="space-y-2">
                     <label for="idea-status">Status</label>
-                    <Select id="idea-status" v-model="form.status" :options="['pending', 'maturing', 'cancelled', 'in_production', 'executed']" />
+                    <Select
+                        id="idea-status"
+                        v-model="form.status"
+                        :options="[
+                            { label: 'Pendente', value: 'pending' },
+                            { label: 'Maturando', value: 'maturing' },
+                            { label: 'Cancelada', value: 'cancelled' },
+                            { label: 'Em produção', value: 'in_production' },
+                            { label: 'Executada', value: 'executed' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
@@ -68,19 +81,19 @@ const removeReference = (index) => {
             </BoFormSection>
 
             <Card>
-                <template #title>Referencias externas</template>
+                <template #title>Referências externas</template>
                 <template #content>
                     <div class="space-y-3">
                         <div v-for="(reference, index) in form.references" :key="index" class="grid gap-3 rounded-xl border border-slate-200/80 p-3 md:grid-cols-3 dark:border-slate-800">
-                            <InputText v-model="reference.title" placeholder="Titulo" />
+                            <InputText v-model="reference.title" placeholder="Título" />
                             <InputText v-model="reference.url" placeholder="https://..." />
                             <div class="flex gap-2">
-                                <InputText v-model="reference.description" class="w-full" placeholder="Descricao" />
-                                <Button type="button" icon="pi pi-trash" severity="danger" text aria-label="Remover referencia" @click="removeReference(index)" />
+                                <InputText v-model="reference.description" class="w-full" placeholder="Descrição" />
+                                <Button type="button" icon="pi pi-trash" severity="danger" text aria-label="Remover referência" @click="removeReference(index)" />
                             </div>
                         </div>
 
-                        <Button type="button" icon="pi pi-plus" label="Adicionar referencia" outlined @click="addReference" />
+                        <Button type="button" icon="pi pi-plus" label="Adicionar referência" outlined @click="addReference" />
                     </div>
                 </template>
             </Card>

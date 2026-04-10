@@ -11,7 +11,7 @@ class IdeaFiltersAndPolicyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_idea_index_applies_search_and_scopes_by_user(): void
+    public function test_idea_index_applies_search_without_user_scope(): void
     {
         /** @var User $userA */
         $userA = User::factory()->createOne();
@@ -35,7 +35,7 @@ class IdeaFiltersAndPolicyTest extends TestCase
         $response = $this->actingAs($userA)->get(route('ideas.index', ['search' => 'Beta']));
 
         $response->assertOk();
-        $response->assertDontSee('Ideia Beta');
+        $response->assertSee('Ideia Beta');
         $response->assertDontSee('Ideia Alpha');
 
         $response2 = $this->actingAs($userA)->get(route('ideas.index', ['search' => 'Alpha']));
@@ -44,7 +44,7 @@ class IdeaFiltersAndPolicyTest extends TestCase
         $response2->assertDontSee('Ideia Beta');
     }
 
-    public function test_user_cannot_view_idea_from_another_user(): void
+    public function test_user_can_view_idea_from_another_user_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -60,6 +60,6 @@ class IdeaFiltersAndPolicyTest extends TestCase
 
         $this->actingAs($other)
             ->get(route('ideas.show', $idea))
-            ->assertForbidden();
+            ->assertOk();
     }
 }

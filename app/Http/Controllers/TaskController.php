@@ -17,11 +17,8 @@ class TaskController extends Controller
 {
     public function index(): Response
     {
-        $userId = (string) Auth::id();
-
         $tasks = Task::query()
-            ->where('user_id', $userId)
-            ->with(['status', 'content', 'subtasks'])
+            ->with(['status', 'content', 'subtasks', 'user'])
             ->when(request('assignee'), fn ($q, $assignee) => $q->where('assignee', 'ilike', "%{$assignee}%"))
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('type'), fn ($q, $type) => $q->where('type', $type))
@@ -33,19 +30,17 @@ class TaskController extends Controller
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $tasks,
-            'statuses' => TaskStatus::where('user_id', $userId)->orderBy('order')->get(),
-            'contents' => Content::where('user_id', $userId)->orderBy('title')->get(['id', 'title']),
+            'statuses' => TaskStatus::query()->orderBy('order')->get(),
+            'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
             'filters' => request()->only(['assignee', 'priority', 'type', 'content_id', 'search']),
         ]);
     }
 
     public function create(): Response
     {
-        $userId = (string) Auth::id();
-
         return Inertia::render('Tasks/Create', [
-            'statuses' => TaskStatus::where('user_id', $userId)->orderBy('order')->get(),
-            'contents' => Content::where('user_id', $userId)->orderBy('title')->get(['id', 'title']),
+            'statuses' => TaskStatus::query()->orderBy('order')->get(),
+            'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
@@ -65,21 +60,15 @@ class TaskController extends Controller
 
     public function edit(Task $task): Response
     {
-        $this->authorize('update', $task);
-
-        $userId = (string) Auth::id();
-
         return Inertia::render('Tasks/Edit', [
             'task' => $task->load('subtasks'),
-            'statuses' => TaskStatus::where('user_id', $userId)->orderBy('order')->get(),
-            'contents' => Content::where('user_id', $userId)->orderBy('title')->get(['id', 'title']),
+            'statuses' => TaskStatus::query()->orderBy('order')->get(),
+            'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
-        $this->authorize('update', $task);
-
         $task->update($request->safe()->all());
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa atualizada com sucesso.');
@@ -87,7 +76,6 @@ class TaskController extends Controller
 
     public function destroy(Task $task): RedirectResponse
     {
-        $this->authorize('delete', $task);
         $task->delete();
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa removida com sucesso.');
@@ -95,13 +83,7 @@ class TaskController extends Controller
 
     public function updateStatus(UpdateTaskStatusRequest $request, Task $task): RedirectResponse
     {
-        $this->authorize('update', $task);
-
-        abort_unless(
-            TaskStatus::where('id', $request->task_status_id)->where('user_id', (string) Auth::id())->exists(),
-            422,
-            'Status invalido para este usuario.'
-        );
+        abort_unless(TaskStatus::where('id', $request->task_status_id)->exists(), 422, 'Status inválido.');
 
         $task->update(['task_status_id' => $request->task_status_id]);
 

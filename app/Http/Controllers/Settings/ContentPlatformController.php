@@ -26,7 +26,7 @@ class ContentPlatformController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $item = ContentPlatform::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentPlatform::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -39,7 +39,7 @@ class ContentPlatformController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = ContentPlatform::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentPlatform::findOrFail($id);
         $item->delete();
 
         return back()->with('success', 'Plataforma removida com sucesso.');

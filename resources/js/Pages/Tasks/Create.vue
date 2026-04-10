@@ -33,7 +33,7 @@ const removeSubtask = (index) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Nova tarefa" subtitle="Registre tarefas operacionais e de conteudo">
+        <BoPageHeader title="Nova tarefa" subtitle="Registre tarefas operacionais e de conteúdo">
             <template #actions>
                 <Link :href="route('tasks.index')">
                     <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
@@ -44,23 +44,33 @@ const removeSubtask = (index) => {
         <form class="space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados da tarefa" description="Dados essenciais para acompanhamento">
                 <div class="md:col-span-2 space-y-2">
-                    <label for="task-title">Titulo</label>
+                    <label for="task-title">Título</label>
                     <InputText id="task-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                     <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label for="task-description">Descricao</label>
+                    <label for="task-description">Descrição</label>
                     <Textarea id="task-description" v-model="form.description" rows="4" fluid :invalid="!!form.errors.description" />
                 </div>
 
                 <div class="space-y-2">
                     <label for="task-type">Tipo</label>
-                    <Select id="task-type" v-model="form.type" :options="['content', 'administrative']" />
+                    <Select
+                        id="task-type"
+                        v-model="form.type"
+                        :options="[
+                            { label: 'Conteúdo', value: 'content' },
+                            { label: 'Administrativa', value: 'administrative' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-content">Conteudo relacionado</label>
+                    <label for="task-content">Conteúdo relacionado</label>
                     <Select
                         id="task-content"
                         v-model="form.content_id"
@@ -82,11 +92,23 @@ const removeSubtask = (index) => {
 
                 <div class="space-y-2">
                     <label for="task-priority">Prioridade</label>
-                    <Select id="task-priority" v-model="form.priority" :options="['low', 'medium', 'high', 'urgent']" fluid />
+                    <Select
+                        id="task-priority"
+                        v-model="form.priority"
+                        :options="[
+                            { label: 'Baixa', value: 'low' },
+                            { label: 'Média', value: 'medium' },
+                            { label: 'Alta', value: 'high' },
+                            { label: 'Urgente', value: 'urgent' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-assignee">Responsavel</label>
+                    <label for="task-assignee">Responsável</label>
                     <InputText id="task-assignee" v-model="form.assignee" fluid />
                 </div>
 
@@ -102,7 +124,7 @@ const removeSubtask = (index) => {
                     <div class="space-y-2">
                         <div v-for="(subtask, index) in form.subtasks" :key="index" class="flex items-center gap-2 rounded-xl border border-slate-200/80 p-2 dark:border-slate-800">
                             <Checkbox v-model="subtask.completed" binary />
-                            <InputText v-model="subtask.title" class="w-full" placeholder="Titulo da subtarefa" />
+                            <InputText v-model="subtask.title" class="w-full" placeholder="Título da subtarefa" />
                             <Button type="button" icon="pi pi-trash" text severity="danger" @click="removeSubtask(index)" />
                         </div>
                         <Button type="button" icon="pi pi-plus" label="Adicionar subtarefa" outlined @click="addSubtask" />

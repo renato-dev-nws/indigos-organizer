@@ -16,8 +16,7 @@ class VenueController extends Controller
     public function index(): Response
     {
         $venues = Venue::query()
-            ->where('user_id', (string) Auth::id())
-            ->with('size')
+            ->with(['size', 'user'])
             ->when(request('venue_size_id'), fn ($q, $sizeId) => $q->where('venue_size_id', $sizeId))
             ->when(request('search'), fn ($q, $search) => $q->where('name', 'ilike', "%{$search}%"))
             ->latest()
@@ -50,17 +49,13 @@ class VenueController extends Controller
 
     public function show(Venue $venue): Response
     {
-        $this->authorize('view', $venue);
-
         return Inertia::render('Venues/Show', [
-            'venue' => $venue->load('size'),
+            'venue' => $venue->load(['size', 'user']),
         ]);
     }
 
     public function edit(Venue $venue): Response
     {
-        $this->authorize('update', $venue);
-
         return Inertia::render('Venues/Edit', [
             'venue' => $venue,
             'sizes' => VenueSize::orderBy('name')->get(),
@@ -69,7 +64,6 @@ class VenueController extends Controller
 
     public function update(UpdateVenueRequest $request, Venue $venue): RedirectResponse
     {
-        $this->authorize('update', $venue);
         $venue->update($request->validated());
 
         return redirect()->route('venues.index')->with('success', 'Casa de show atualizada com sucesso.');
@@ -77,7 +71,6 @@ class VenueController extends Controller
 
     public function destroy(Venue $venue): RedirectResponse
     {
-        $this->authorize('delete', $venue);
         $venue->delete();
 
         return redirect()->route('venues.index')->with('success', 'Casa de show removida com sucesso.');

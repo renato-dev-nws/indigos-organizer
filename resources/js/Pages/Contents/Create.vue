@@ -40,7 +40,7 @@ const removeLink = (index) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Novo conteudo" subtitle="Crie e planeje o conteudo com metadados completos">
+        <BoPageHeader title="Novo conteúdo" subtitle="Crie e planeje o conteúdo com metadados completos">
             <template #actions>
                 <Link :href="route('contents.index')">
                     <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
@@ -49,9 +49,9 @@ const removeLink = (index) => {
         </BoPageHeader>
 
         <form class="space-y-4" @submit.prevent="submit">
-            <BoFormSection title="Dados principais" description="Informacoes de planejamento e classificacao">
+            <BoFormSection title="Dados principais" description="Informações de planejamento e classificação">
                 <div class="md:col-span-2 space-y-2">
-                    <label for="content-title">Titulo</label>
+                    <label for="content-title">Título</label>
                     <InputText id="content-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                     <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
                 </div>
@@ -63,7 +63,20 @@ const removeLink = (index) => {
 
                 <div class="space-y-2">
                     <label for="content-status">Status</label>
-                    <Select id="content-status" v-model="form.status" :options="['queued', 'in_production', 'cancelled', 'paused', 'published']" />
+                    <Select
+                        id="content-status"
+                        v-model="form.status"
+                        :options="[
+                            { label: 'Na fila', value: 'queued' },
+                            { label: 'Em produção', value: 'in_production' },
+                            { label: 'Cancelado', value: 'cancelled' },
+                            { label: 'Pausado', value: 'paused' },
+                            { label: 'Publicado', value: 'published' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
@@ -82,7 +95,7 @@ const removeLink = (index) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="planned-publish">Publicacao planejada</label>
+                    <label for="planned-publish">Publicação planejada</label>
                     <DatePicker id="planned-publish" v-model="form.planned_publish_at" show-time hour-format="24" fluid />
                 </div>
 
@@ -102,7 +115,7 @@ const removeLink = (index) => {
                 <template #content>
                     <div class="space-y-3">
                         <div v-for="(link, index) in form.links" :key="index" class="grid gap-3 rounded-xl border border-slate-200/80 p-3 md:grid-cols-2 dark:border-slate-800">
-                            <InputText v-model="link.title" placeholder="Titulo" />
+                            <InputText v-model="link.title" placeholder="Título" />
                             <div class="flex gap-2">
                                 <InputText v-model="link.url" class="w-full" placeholder="https://..." />
                                 <Button type="button" icon="pi pi-trash" text severity="danger" aria-label="Remover link" @click="removeLink(index)" />
@@ -118,7 +131,7 @@ const removeLink = (index) => {
                 <Link :href="route('contents.index')">
                     <Button type="button" label="Cancelar" outlined severity="secondary" />
                 </Link>
-                <Button type="submit" :loading="form.processing" label="Salvar conteudo" icon="pi pi-save" />
+                <Button type="submit" :loading="form.processing" label="Salvar conteúdo" icon="pi pi-save" />
             </div>
         </form>
     </div>

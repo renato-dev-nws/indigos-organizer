@@ -43,7 +43,7 @@ class ContentFileUploadTest extends TestCase
         $this->assertDatabaseMissing('content_files', ['id' => $file->id]);
     }
 
-    public function test_non_owner_cannot_upload_content_files(): void
+    public function test_non_owner_can_upload_content_files_in_collaborative_mode(): void
     {
         Storage::fake('local');
 
@@ -62,6 +62,8 @@ class ContentFileUploadTest extends TestCase
 
         $this->actingAs($other)
             ->post(route('contents.files.store', $content), ['file' => $upload])
-            ->assertForbidden();
+            ->assertStatus(302);
+
+        $this->assertDatabaseCount('content_files', 1);
     }
 }

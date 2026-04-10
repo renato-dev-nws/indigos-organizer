@@ -74,24 +74,34 @@ const removeSubtask = (subtaskId) => {
         </BoPageHeader>
 
         <form class="space-y-4" @submit.prevent="submit">
-            <BoFormSection title="Dados da tarefa" description="Ajuste status, prioridade e atribuicao">
+            <BoFormSection title="Dados da tarefa" description="Ajuste status, prioridade e atribuição">
                 <div class="md:col-span-2 space-y-2">
-                    <label for="task-title">Titulo</label>
+                    <label for="task-title">Título</label>
                     <InputText id="task-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label for="task-description">Descricao</label>
+                    <label for="task-description">Descrição</label>
                     <Textarea id="task-description" v-model="form.description" rows="4" fluid />
                 </div>
 
                 <div class="space-y-2">
                     <label for="task-type">Tipo</label>
-                    <Select id="task-type" v-model="form.type" :options="['content', 'administrative']" />
+                    <Select
+                        id="task-type"
+                        v-model="form.type"
+                        :options="[
+                            { label: 'Conteúdo', value: 'content' },
+                            { label: 'Administrativa', value: 'administrative' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-content">Conteudo relacionado</label>
+                    <label for="task-content">Conteúdo relacionado</label>
                     <Select
                         id="task-content"
                         v-model="form.content_id"
@@ -112,11 +122,23 @@ const removeSubtask = (subtaskId) => {
 
                 <div class="space-y-2">
                     <label for="task-priority">Prioridade</label>
-                    <Select id="task-priority" v-model="form.priority" :options="['low', 'medium', 'high', 'urgent']" fluid />
+                    <Select
+                        id="task-priority"
+                        v-model="form.priority"
+                        :options="[
+                            { label: 'Baixa', value: 'low' },
+                            { label: 'Média', value: 'medium' },
+                            { label: 'Alta', value: 'high' },
+                            { label: 'Urgente', value: 'urgent' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-assignee">Responsavel</label>
+                    <label for="task-assignee">Responsável</label>
                     <InputText id="task-assignee" v-model="form.assignee" fluid />
                 </div>
 

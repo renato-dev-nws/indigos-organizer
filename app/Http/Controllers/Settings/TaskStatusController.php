@@ -31,7 +31,7 @@ class TaskStatusController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $item = TaskStatus::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = TaskStatus::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -46,7 +46,7 @@ class TaskStatusController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = TaskStatus::where('id', $id)->where('user_id', (string) Auth::id())->withCount('tasks')->firstOrFail();
+        $item = TaskStatus::withCount('tasks')->findOrFail($id);
 
         if ($item->tasks_count > 0) {
             return back()->with('error', 'Nao e permitido remover status com tarefas vinculadas.');
@@ -65,14 +65,12 @@ class TaskStatusController extends Controller
         ]);
 
         $ids = $validated['ordered_ids'];
-        $userId = (string) Auth::id();
-        $ownedCount = TaskStatus::whereIn('id', $ids)->where('user_id', $userId)->count();
+        $existingCount = TaskStatus::whereIn('id', $ids)->count();
+        abort_unless($existingCount === count($ids), 403);
 
-        abort_unless($ownedCount === count($ids), 403);
-
-        DB::transaction(function () use ($ids, $userId): void {
+        DB::transaction(function () use ($ids): void {
             foreach ($ids as $index => $id) {
-                TaskStatus::where('id', $id)->where('user_id', $userId)->update(['order' => $index + 1]);
+                TaskStatus::where('id', $id)->update(['order' => $index + 1]);
             }
         });
 

@@ -12,7 +12,6 @@ class SubtaskController extends Controller
 {
     public function store(StoreSubtaskRequest $request, Task $task): RedirectResponse
     {
-        $this->authorize('update', $task);
         $task->subtasks()->create($request->validated());
 
         return back()->with('success', 'Subtarefa criada com sucesso.');
@@ -20,7 +19,6 @@ class SubtaskController extends Controller
 
     public function update(UpdateSubtaskRequest $request, Task $task, Subtask $subtask): RedirectResponse
     {
-        $this->authorize('update', $task);
         abort_unless($subtask->task_id === $task->id, 404);
 
         $subtask->update($request->validated());
@@ -30,7 +28,6 @@ class SubtaskController extends Controller
 
     public function destroy(Task $task, Subtask $subtask): RedirectResponse
     {
-        $this->authorize('update', $task);
         abort_unless($subtask->task_id === $task->id, 404);
 
         $subtask->delete();

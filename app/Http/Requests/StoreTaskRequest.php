@@ -31,7 +31,7 @@ class StoreTaskRequest extends FormRequest
         return [
             function (Validator $validator): void {
                 if ($this->input('type') === 'content' && ! $this->input('content_id')) {
-                    $validator->errors()->add('content_id', 'Content is required when type is content.');
+                    $validator->errors()->add('content_id', 'Conteúdo é obrigatório quando o tipo é conteúdo.');
                 }
             },
         ];

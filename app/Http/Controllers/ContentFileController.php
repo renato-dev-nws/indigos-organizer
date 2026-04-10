@@ -12,8 +12,6 @@ class ContentFileController extends Controller
 {
     public function store(StoreContentFileRequest $request, Content $content): RedirectResponse
     {
-        $this->authorize('update', $content);
-
         $file = $request->file('file');
         $path = $file->store('contents/'.$content->id, 'local');
 
@@ -29,7 +27,6 @@ class ContentFileController extends Controller
 
     public function destroy(Content $content, ContentFile $file): RedirectResponse
     {
-        $this->authorize('update', $content);
         abort_unless($file->content_id === $content->id, 404);
 
         Storage::disk('local')->delete($file->path);

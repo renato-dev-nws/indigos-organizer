@@ -50,7 +50,7 @@ const formatSize = (size) => {
             <Column header="Tamanho">
                 <template #body="{ data }">{{ formatSize(data.size) }}</template>
             </Column>
-            <Column header="Acoes" class="w-36">
+            <Column header="Ações" class="w-36">
                 <template #body="{ data }">
                     <BoConfirmButton
                         label="Remover"

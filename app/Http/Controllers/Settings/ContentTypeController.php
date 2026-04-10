@@ -26,7 +26,7 @@ class ContentTypeController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $item = ContentType::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentType::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -39,7 +39,7 @@ class ContentTypeController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = ContentType::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item = ContentType::findOrFail($id);
         $item->delete();
 
         return back()->with('success', 'Tipo de conteudo removido com sucesso.');

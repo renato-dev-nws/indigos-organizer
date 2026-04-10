@@ -21,10 +21,22 @@ const {
 const menuItems = computed(() => [
     { label: 'Dashboard', icon: 'pi pi-home', href: route('dashboard') },
     { label: 'Ideias', icon: 'pi pi-lightbulb', href: route('ideas.index') },
-    { label: 'Conteudos', icon: 'pi pi-video', href: route('contents.index') },
+    { label: 'Conteúdos', icon: 'pi pi-video', href: route('contents.index') },
     { label: 'Tarefas', icon: 'pi pi-check-square', href: route('tasks.index') },
     { label: 'Casas de Show', icon: 'pi pi-building', href: route('venues.index') },
-    { label: 'Configuracoes', icon: 'pi pi-cog', href: route('settings.index') },
+    { label: 'Usuários', icon: 'pi pi-users', href: route('users.index') },
+    {
+        label: 'Configurações',
+        icon: 'pi pi-cog',
+        items: [
+            { label: 'Tipos de ideia', icon: 'pi pi-tag', href: route('settings.pages.idea-types') },
+            { label: 'Categorias de ideia', icon: 'pi pi-bookmark', href: route('settings.pages.idea-categories') },
+            { label: 'Plataformas', icon: 'pi pi-mobile', href: route('settings.pages.content-platforms') },
+            { label: 'Tipos de conteúdo', icon: 'pi pi-clone', href: route('settings.pages.content-types') },
+            { label: 'Categorias de conteúdo', icon: 'pi pi-palette', href: route('settings.pages.content-categories') },
+            { label: 'Status de tarefas', icon: 'pi pi-sort-alt', href: route('settings.pages.task-statuses') },
+        ],
+    },
 ]);
 
 watch(

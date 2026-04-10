@@ -19,11 +19,8 @@ class ContentController extends Controller
 {
     public function index(): Response
     {
-        $userId = (string) Auth::id();
-
         $query = Content::query()
-            ->where('user_id', $userId)
-            ->with(['platform', 'type', 'categories', 'idea'])
+            ->with(['platform', 'type', 'categories', 'idea', 'user'])
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('content_platform_id'), fn ($q, $platformId) => $q->where('content_platform_id', $platformId))
             ->when(request('content_type_id'), fn ($q, $typeId) => $q->where('content_type_id', $typeId))
@@ -42,21 +39,19 @@ class ContentController extends Controller
         return Inertia::render('Contents/Index', [
             'contents' => $contents,
             'filters' => request()->only(['status', 'content_platform_id', 'content_type_id', 'content_category_id', 'planned_week', 'search']),
-            'platforms' => ContentPlatform::where('user_id', $userId)->orderBy('name')->get(),
-            'types' => ContentType::where('user_id', $userId)->orderBy('name')->get(),
-            'categories' => ContentCategory::where('user_id', $userId)->orderBy('name')->get(),
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => ContentType::query()->orderBy('name')->get(),
+            'categories' => ContentCategory::query()->orderBy('name')->get(),
         ]);
     }
 
     public function create(): Response
     {
-        $userId = (string) Auth::id();
-
         return Inertia::render('Contents/Create', [
-            'platforms' => ContentPlatform::where('user_id', $userId)->orderBy('name')->get(),
-            'types' => ContentType::where('user_id', $userId)->orderBy('name')->get(),
-            'categories' => ContentCategory::where('user_id', $userId)->orderBy('name')->get(),
-            'ideas' => Idea::where('user_id', $userId)->orderBy('title')->get(['id', 'title']),
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => ContentType::query()->orderBy('name')->get(),
+            'categories' => ContentCategory::query()->orderBy('name')->get(),
+            'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
@@ -78,32 +73,24 @@ class ContentController extends Controller
 
     public function show(Content $content): Response
     {
-        $this->authorize('view', $content);
-
         return Inertia::render('Contents/Show', [
-            'content' => $content->load(['platform', 'type', 'categories', 'files', 'links', 'idea']),
+            'content' => $content->load(['platform', 'type', 'categories', 'files', 'links', 'idea', 'user']),
         ]);
     }
 
     public function edit(Content $content): Response
     {
-        $this->authorize('update', $content);
-
-        $userId = (string) Auth::id();
-
         return Inertia::render('Contents/Edit', [
             'content' => $content->load(['categories', 'links', 'files']),
-            'platforms' => ContentPlatform::where('user_id', $userId)->orderBy('name')->get(),
-            'types' => ContentType::where('user_id', $userId)->orderBy('name')->get(),
-            'categories' => ContentCategory::where('user_id', $userId)->orderBy('name')->get(),
-            'ideas' => Idea::where('user_id', $userId)->orderBy('title')->get(['id', 'title']),
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => ContentType::query()->orderBy('name')->get(),
+            'categories' => ContentCategory::query()->orderBy('name')->get(),
+            'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
     public function update(UpdateContentRequest $request, Content $content): RedirectResponse
     {
-        $this->authorize('update', $content);
-
         $content->update($request->safe()->except(['content_category_ids', 'links']));
         $content->categories()->sync($request->input('content_category_ids', []));
 
@@ -117,7 +104,6 @@ class ContentController extends Controller
 
     public function destroy(Content $content): RedirectResponse
     {
-        $this->authorize('delete', $content);
         $content->delete();
 
         return redirect()->route('contents.index')->with('success', 'Conteudo removido com sucesso.');

@@ -34,7 +34,7 @@ defineProps({ idea: Object });
                         <p class="font-semibold">{{ idea.category?.name || '-' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Descricao</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Descrição</p>
                         <p>{{ idea.description || '-' }}</p>
                     </div>
                 </div>
@@ -42,14 +42,14 @@ defineProps({ idea: Object });
         </Card>
 
         <Card>
-            <template #title>Referencias</template>
+            <template #title>Referências</template>
             <template #content>
                 <DataTable :value="idea.references" data-key="id" striped-rows>
-                    <Column field="title" header="Titulo" />
-                    <Column field="description" header="Descricao" />
+                    <Column field="title" header="Título" />
+                    <Column field="description" header="Descrição" />
                     <Column header="URL">
                         <template #body="{ data }">
-                            <a :href="data.url" target="_blank" rel="noopener" class="text-cyan-600 underline dark:text-cyan-400">{{ data.url }}</a>
+                            <a :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">{{ data.url }}</a>
                         </template>
                     </Column>
                 </DataTable>

@@ -17,11 +17,8 @@ class IdeaController extends Controller
 {
     public function index(): Response
     {
-        $userId = (string) Auth::id();
-
         $ideas = Idea::query()
-            ->where('user_id', $userId)
-            ->with(['type', 'category'])
+            ->with(['type', 'category', 'user'])
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
             ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
@@ -33,18 +30,16 @@ class IdeaController extends Controller
         return Inertia::render('Ideas/Index', [
             'ideas' => $ideas,
             'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'search']),
-            'ideaTypes' => IdeaType::where('user_id', $userId)->orderBy('name')->get(),
-            'ideaCategories' => IdeaCategory::where('user_id', $userId)->orderBy('name')->get(),
+            'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
+            'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
         ]);
     }
 
     public function create(): Response
     {
-        $userId = (string) Auth::id();
-
         return Inertia::render('Ideas/Create', [
-            'ideaTypes' => IdeaType::where('user_id', $userId)->orderBy('name')->get(),
-            'ideaCategories' => IdeaCategory::where('user_id', $userId)->orderBy('name')->get(),
+            'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
+            'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -64,30 +59,22 @@ class IdeaController extends Controller
 
     public function show(Idea $idea): Response
     {
-        $this->authorize('view', $idea);
-
         return Inertia::render('Ideas/Show', [
-            'idea' => $idea->load(['type', 'category', 'references']),
+            'idea' => $idea->load(['type', 'category', 'references', 'user']),
         ]);
     }
 
     public function edit(Idea $idea): Response
     {
-        $this->authorize('update', $idea);
-
-        $userId = (string) Auth::id();
-
         return Inertia::render('Ideas/Edit', [
             'idea' => $idea->load('references'),
-            'ideaTypes' => IdeaType::where('user_id', $userId)->orderBy('name')->get(),
-            'ideaCategories' => IdeaCategory::where('user_id', $userId)->orderBy('name')->get(),
+            'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
+            'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
         ]);
     }
 
     public function update(UpdateIdeaRequest $request, Idea $idea): RedirectResponse
     {
-        $this->authorize('update', $idea);
-
         $idea->update($request->safe()->except('references'));
         $idea->references()->delete();
 
@@ -100,7 +87,6 @@ class IdeaController extends Controller
 
     public function destroy(Idea $idea): RedirectResponse
     {
-        $this->authorize('delete', $idea);
         $idea->delete();
 
         return redirect()->route('ideas.index')->with('success', 'Ideia removida com sucesso.');
@@ -108,8 +94,6 @@ class IdeaController extends Controller
 
     public function execute(Idea $idea, ExecuteIdeaAction $executeIdeaAction): RedirectResponse
     {
-        $this->authorize('update', $idea);
-
         abort_if(in_array($idea->status, ['cancelled', 'executed'], true), 422, 'Esta ideia nao pode ser executada.');
 
         $executeIdeaAction->handle($idea);

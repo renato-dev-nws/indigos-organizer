@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 defineProps({ content: Object });
@@ -10,7 +11,7 @@ defineProps({ content: Object });
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader :title="content.title" subtitle="Visao completa do conteudo">
+        <BoPageHeader :title="content.title" subtitle="Visão completa do conteúdo">
             <template #actions>
                 <Link :href="route('contents.edit', content.id)">
                     <Button icon="pi pi-pencil" label="Editar" />
@@ -34,8 +35,8 @@ defineProps({ content: Object });
                         <p class="font-semibold">{{ content.type?.name || '-' }}</p>
                     </div>
                     <div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Publicacao planejada</p>
-                        <p class="font-semibold">{{ content.planned_publish_at || '-' }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Publicação planejada</p>
+                        <p class="font-semibold"><BoDateText :value="content.planned_publish_at" mode="datetime" /></p>
                     </div>
                 </div>
             </template>
@@ -53,10 +54,10 @@ defineProps({ content: Object });
                 <template #title>Links</template>
                 <template #content>
                     <DataTable :value="content.links" data-key="id" size="small">
-                        <Column field="title" header="Titulo" />
+                        <Column field="title" header="Título" />
                         <Column header="URL">
                             <template #body="{ data }">
-                                <a :href="data.url" target="_blank" rel="noopener" class="text-cyan-600 underline dark:text-cyan-400">{{ data.url }}</a>
+                                <a :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">{{ data.url }}</a>
                             </template>
                         </Column>
                     </DataTable>

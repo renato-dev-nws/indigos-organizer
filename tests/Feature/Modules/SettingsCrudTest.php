@@ -58,7 +58,7 @@ class SettingsCrudTest extends TestCase
         $this->assertDatabaseHas('idea_types', ['id' => $type->id, 'name' => 'Atualizado', 'color' => '#aabbcc']);
     }
 
-    public function test_user_cannot_update_another_users_idea_type(): void
+    public function test_user_can_update_another_users_idea_type_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -71,7 +71,9 @@ class SettingsCrudTest extends TestCase
                 'name'  => 'Invasao',
                 'color' => '#ffffff',
             ])
-            ->assertNotFound();
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('idea_types', ['id' => $type->id, 'name' => 'Invasao']);
     }
 
     public function test_user_can_delete_idea_type_without_linked_ideas(): void
@@ -162,7 +164,7 @@ class SettingsCrudTest extends TestCase
         $this->assertDatabaseMissing('idea_categories', ['id' => $cat->id]);
     }
 
-    public function test_user_cannot_delete_another_users_idea_category(): void
+    public function test_user_can_delete_another_users_idea_category_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -172,7 +174,9 @@ class SettingsCrudTest extends TestCase
 
         $this->actingAs($other)
             ->delete(route('settings.idea-categories.destroy', $cat))
-            ->assertNotFound();
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('idea_categories', ['id' => $cat->id]);
     }
 
     // -------------------------------------------------------------------------
@@ -217,7 +221,7 @@ class SettingsCrudTest extends TestCase
         $this->assertDatabaseMissing('content_platforms', ['id' => $platform->id]);
     }
 
-    public function test_user_cannot_delete_another_users_content_platform(): void
+    public function test_user_can_delete_another_users_content_platform_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -227,7 +231,9 @@ class SettingsCrudTest extends TestCase
 
         $this->actingAs($other)
             ->delete(route('settings.content-platforms.destroy', $platform))
-            ->assertNotFound();
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('content_platforms', ['id' => $platform->id]);
     }
 
     // -------------------------------------------------------------------------
@@ -423,7 +429,7 @@ class SettingsCrudTest extends TestCase
         $this->assertDatabaseMissing('task_statuses', ['id' => $status->id]);
     }
 
-    public function test_user_cannot_delete_another_users_task_status(): void
+    public function test_user_can_delete_another_users_task_status_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -433,7 +439,9 @@ class SettingsCrudTest extends TestCase
 
         $this->actingAs($other)
             ->delete(route('settings.task-statuses.destroy', $status))
-            ->assertNotFound();
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('task_statuses', ['id' => $status->id]);
     }
 
     public function test_user_can_reorder_task_statuses(): void
@@ -455,7 +463,7 @@ class SettingsCrudTest extends TestCase
         $this->assertDatabaseHas('task_statuses', ['id' => $s2->id, 'order' => 3]);
     }
 
-    public function test_user_cannot_reorder_another_users_task_statuses(): void
+    public function test_user_can_reorder_another_users_task_statuses_in_collaborative_mode(): void
     {
         /** @var User $owner */
         $owner = User::factory()->createOne();
@@ -468,7 +476,10 @@ class SettingsCrudTest extends TestCase
             ->patch(route('settings.task-statuses.reorder'), [
                 'ordered_ids' => [$s2->id, $s1->id],
             ])
-            ->assertForbidden();
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_statuses', ['id' => $s2->id, 'order' => 1]);
+        $this->assertDatabaseHas('task_statuses', ['id' => $s1->id, 'order' => 2]);
     }
 
     // -------------------------------------------------------------------------

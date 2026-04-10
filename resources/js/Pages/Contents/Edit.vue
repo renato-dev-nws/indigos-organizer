@@ -57,7 +57,7 @@ const removeFile = (fileId) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar conteudo" subtitle="Atualize roteiro, links e anexos">
+        <BoPageHeader title="Editar conteúdo" subtitle="Atualize roteiro, links e anexos">
             <template #actions>
                 <Link :href="route('contents.show', content.id)">
                     <Button label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
@@ -66,9 +66,9 @@ const removeFile = (fileId) => {
         </BoPageHeader>
 
         <form class="space-y-4" @submit.prevent="submit">
-            <BoFormSection title="Dados principais" description="Informacoes editoriais e planejamento">
+            <BoFormSection title="Dados principais" description="Informações editoriais e planejamento">
                 <div class="md:col-span-2 space-y-2">
-                    <label for="content-title">Titulo</label>
+                    <label for="content-title">Título</label>
                     <InputText id="content-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                     <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
                 </div>
@@ -80,7 +80,20 @@ const removeFile = (fileId) => {
 
                 <div class="space-y-2">
                     <label for="content-status">Status</label>
-                    <Select id="content-status" v-model="form.status" :options="['queued', 'in_production', 'cancelled', 'paused', 'published']" />
+                    <Select
+                        id="content-status"
+                        v-model="form.status"
+                        :options="[
+                            { label: 'Na fila', value: 'queued' },
+                            { label: 'Em produção', value: 'in_production' },
+                            { label: 'Cancelado', value: 'cancelled' },
+                            { label: 'Pausado', value: 'paused' },
+                            { label: 'Publicado', value: 'published' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">
@@ -99,7 +112,7 @@ const removeFile = (fileId) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="planned-publish">Publicacao planejada</label>
+                    <label for="planned-publish">Publicação planejada</label>
                     <DatePicker id="planned-publish" v-model="form.planned_publish_at" show-time hour-format="24" fluid />
                 </div>
 
@@ -119,7 +132,7 @@ const removeFile = (fileId) => {
                 <template #content>
                     <div class="space-y-3">
                         <div v-for="(link, index) in form.links" :key="index" class="grid gap-3 rounded-xl border border-slate-200/80 p-3 md:grid-cols-2 dark:border-slate-800">
-                            <InputText v-model="link.title" placeholder="Titulo" />
+                            <InputText v-model="link.title" placeholder="Título" />
                             <div class="flex gap-2">
                                 <InputText v-model="link.url" class="w-full" placeholder="https://..." />
                                 <Button type="button" icon="pi pi-trash" text severity="danger" aria-label="Remover link" @click="removeLink(index)" />
@@ -141,7 +154,7 @@ const removeFile = (fileId) => {
                 <Link :href="route('contents.index')">
                     <Button type="button" label="Cancelar" outlined severity="secondary" />
                 </Link>
-                <Button type="submit" :loading="form.processing" label="Atualizar conteudo" icon="pi pi-save" />
+                <Button type="submit" :loading="form.processing" label="Atualizar conteúdo" icon="pi pi-save" />
             </div>
         </form>
     </div>

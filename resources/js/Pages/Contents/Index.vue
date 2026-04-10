@@ -7,6 +7,7 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({ contents: Object, filters: Object, platforms: Array, types: Array, categories: Array });
@@ -43,7 +44,7 @@ const paginate = (event) => {
 const removeContent = (id) => router.delete(route('contents.destroy', id), { preserveScroll: true });
 
 const calendarColumns = computed(() => {
-    const weekDays = ['Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado', 'Domingo'];
+    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
     const grouped = weekDays.map((label) => ({ label, items: [] }));
 
     for (const item of props.contents.data || []) {
@@ -63,20 +64,20 @@ const calendarColumns = computed(() => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Conteudos" subtitle="Planejamento e producao editorial">
+        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial">
             <template #actions>
                 <SelectButton
                     v-model="viewMode"
                     size="small"
                     :options="[
                         { label: 'Lista', value: 'list' },
-                        { label: 'Calendario', value: 'calendar' },
+                        { label: 'Calendário', value: 'calendar' },
                     ]"
                     option-label="label"
                     option-value="value"
                 />
                 <Link :href="route('contents.create')">
-                    <Button icon="pi pi-plus" label="Novo conteudo" />
+                    <Button icon="pi pi-plus" label="Novo conteúdo" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -84,7 +85,7 @@ const calendarColumns = computed(() => {
         <BoFilterBar @submit="submitFilters" @reset="resetFilters">
             <IconField>
                 <InputIcon class="pi pi-search" />
-                <InputText v-model="localFilters.search" placeholder="Buscar por titulo" />
+                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
             </IconField>
             <Select v-model="localFilters.status" :options="['queued', 'in_production', 'cancelled', 'paused', 'published']" placeholder="Status" show-clear />
             <Select v-model="localFilters.content_platform_id" :options="platforms" option-label="name" option-value="id" placeholder="Plataforma" show-clear />
@@ -96,7 +97,7 @@ const calendarColumns = computed(() => {
         <Card v-if="viewMode === 'list'">
             <template #content>
                 <DataTable :value="contents.data" data-key="id" responsive-layout="scroll" striped-rows>
-                    <Column field="title" header="Titulo" />
+                    <Column field="title" header="Título" />
                     <Column header="Plataforma">
                         <template #body="{ data }">{{ data.platform?.name || '-' }}</template>
                     </Column>
@@ -108,8 +109,15 @@ const calendarColumns = computed(() => {
                             <BoStatusTag :value="data.status" />
                         </template>
                     </Column>
-                    <Column field="planned_publish_at" header="Publicacao" />
-                    <Column header="Acoes" class="min-w-56">
+                    <Column header="Autor">
+                        <template #body="{ data }">{{ data.user?.name || '-' }}</template>
+                    </Column>
+                    <Column header="Publicação">
+                        <template #body="{ data }">
+                            <BoDateText :value="data.planned_publish_at" mode="datetime" />
+                        </template>
+                    </Column>
+                    <Column header="Ações" class="min-w-56">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-2">
                                 <Link :href="route('contents.show', data.id)">
@@ -118,7 +126,7 @@ const calendarColumns = computed(() => {
                                 <Link :href="route('contents.edit', data.id)">
                                     <Button icon="pi pi-pencil" label="Editar" size="small" outlined severity="secondary" />
                                 </Link>
-                                <BoConfirmButton label="Excluir" icon="pi pi-trash" severity="danger" message="Deseja remover este conteudo?" @confirm="removeContent(data.id)" />
+                                <BoConfirmButton label="Excluir" icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" @confirm="removeContent(data.id)" />
                             </div>
                         </template>
                     </Column>
@@ -143,7 +151,7 @@ const calendarColumns = computed(() => {
                 <template #content>
                     <div class="space-y-2">
                         <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                            Sem publicacoes.
+                            Sem publicações.
                         </div>
                         <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                             <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>

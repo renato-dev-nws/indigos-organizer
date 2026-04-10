@@ -27,7 +27,7 @@ class IdeaTypeController extends Controller
 
     public function update(Request $request, string $id): RedirectResponse
     {
-        $ideaType = IdeaType::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $ideaType = IdeaType::findOrFail($id);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -41,7 +41,7 @@ class IdeaTypeController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $ideaType = IdeaType::where('id', $id)->where('user_id', (string) Auth::id())->withCount('ideas')->firstOrFail();
+        $ideaType = IdeaType::withCount('ideas')->findOrFail($id);
 
         if ($ideaType->ideas_count > 0) {
             return back()->with('error', 'Nao e permitido remover um tipo de ideia vinculado a ideias.');
