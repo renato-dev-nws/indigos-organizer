@@ -20,7 +20,7 @@ class ExampleTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/');
+        $response = $this->get('/dashboard');
 
         $response->assertStatus(200);
     }

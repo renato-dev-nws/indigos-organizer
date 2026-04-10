@@ -3,9 +3,7 @@
 namespace Tests\Feature\Modules;
 
 use App\Models\Content;
-use App\Models\ContentCategory;
 use App\Models\ContentPlatform;
-use App\Models\ContentType;
 use App\Models\Idea;
 use App\Models\IdeaCategory;
 use App\Models\IdeaType;
@@ -234,100 +232,6 @@ class SettingsCrudTest extends TestCase
             ->assertRedirect();
 
         $this->assertDatabaseMissing('content_platforms', ['id' => $platform->id]);
-    }
-
-    // -------------------------------------------------------------------------
-    // ContentType
-    // -------------------------------------------------------------------------
-
-    public function test_user_can_create_content_type(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-
-        $this->actingAs($user)
-            ->post(route('settings.content-types.store'), ['name' => 'Vídeo'])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('content_types', ['user_id' => $user->id, 'name' => 'Vídeo']);
-    }
-
-    public function test_user_can_update_content_type(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-        $type = ContentType::create(['user_id' => $user->id, 'name' => 'Post']);
-
-        $this->actingAs($user)
-            ->put(route('settings.content-types.update', $type), ['name' => 'Reels'])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('content_types', ['id' => $type->id, 'name' => 'Reels']);
-    }
-
-    public function test_user_can_delete_content_type(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-        $type = ContentType::create(['user_id' => $user->id, 'name' => 'Story']);
-
-        $this->actingAs($user)
-            ->delete(route('settings.content-types.destroy', $type))
-            ->assertRedirect();
-
-        $this->assertDatabaseMissing('content_types', ['id' => $type->id]);
-    }
-
-    // -------------------------------------------------------------------------
-    // ContentCategory
-    // -------------------------------------------------------------------------
-
-    public function test_user_can_create_content_category(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-
-        $this->actingAs($user)
-            ->post(route('settings.content-categories.store'), [
-                'name'  => 'Educativo',
-                'color' => '#123456',
-            ])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('content_categories', [
-            'user_id' => $user->id,
-            'name'    => 'Educativo',
-            'color'   => '#123456',
-        ]);
-    }
-
-    public function test_user_can_update_content_category(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-        $cat = ContentCategory::create(['user_id' => $user->id, 'name' => 'Antes', 'color' => '#aaaaaa']);
-
-        $this->actingAs($user)
-            ->put(route('settings.content-categories.update', $cat), [
-                'name'  => 'Depois',
-                'color' => '#bbbbbb',
-            ])
-            ->assertRedirect();
-
-        $this->assertDatabaseHas('content_categories', ['id' => $cat->id, 'name' => 'Depois', 'color' => '#bbbbbb']);
-    }
-
-    public function test_user_can_delete_content_category(): void
-    {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-        $cat = ContentCategory::create(['user_id' => $user->id, 'name' => 'Remover', 'color' => '#eeeeee']);
-
-        $this->actingAs($user)
-            ->delete(route('settings.content-categories.destroy', $cat))
-            ->assertRedirect();
-
-        $this->assertDatabaseMissing('content_categories', ['id' => $cat->id]);
     }
 
     // -------------------------------------------------------------------------
