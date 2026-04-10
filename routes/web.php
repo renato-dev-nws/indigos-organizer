@@ -20,8 +20,8 @@ use App\Http\Controllers\VenueController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', DashboardController::class)->name('dashboard');
-    Route::get('/dashboard', DashboardController::class);
+    Route::redirect('/', '/dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::resource('ideas', IdeaController::class);
     Route::post('/ideas/{idea}/execute', [IdeaController::class, 'execute'])->name('ideas.execute');

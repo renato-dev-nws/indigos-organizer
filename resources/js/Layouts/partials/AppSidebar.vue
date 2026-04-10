@@ -1,4 +1,5 @@
 <script setup>
+import { Icon } from '@iconify/vue';
 import AppMenu from './AppMenu.vue';
 
 defineProps({
@@ -21,14 +22,16 @@ const emit = defineEmits(['closeMobile']);
 
 <template>
     <aside
-        class="fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/80 bg-slate-50/90 px-3 py-4 backdrop-blur md:block dark:border-slate-700 dark:bg-slate-900/90"
-        :class="collapsed ? 'w-20' : 'w-72'"
+        class="fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-950/95"
+        :class="collapsed ? 'w-[72px]' : 'w-64'"
     >
-        <div class="mb-6 flex items-center gap-3 px-2">
-            <div class="h-9 w-9 rounded-lg bg-indigo-600 text-center text-xl font-black leading-9 text-white">B</div>
+        <div class="mb-5 flex items-center gap-2.5 px-2">
+            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30">
+                <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
+            </div>
             <div v-if="!collapsed">
-                <p class="font-semibold">Band Organizer</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Painel colaborativo</p>
+                <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Band Organizer</p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500">Painel colaborativo</p>
             </div>
         </div>
 
@@ -42,11 +45,13 @@ const emit = defineEmits(['closeMobile']);
         @update:visible="emit('closeMobile')"
     >
         <template #header>
-            <div class="flex items-center gap-3">
-                <div class="h-9 w-9 rounded-lg bg-indigo-600 text-center text-xl font-black leading-9 text-white">B</div>
+            <div class="flex items-center gap-2.5">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30">
+                    <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
+                </div>
                 <div>
-                    <p class="font-semibold">Band Organizer</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Painel colaborativo</p>
+                    <p class="text-sm font-bold leading-tight">Band Organizer</p>
+                    <p class="text-[10px] text-slate-400">Painel colaborativo</p>
                 </div>
             </div>
         </template>

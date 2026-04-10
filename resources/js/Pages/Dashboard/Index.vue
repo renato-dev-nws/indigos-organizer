@@ -22,10 +22,10 @@ defineProps({
         />
 
         <div class="grid gap-4 lg:grid-cols-4">
-            <BoKpiCard label="Ideias pendentes" :value="summary.pendingIdeas" icon="pi pi-lightbulb" />
-            <BoKpiCard label="Conteúdos da semana" :value="summary.contentsThisWeek" icon="pi pi-video" />
-            <BoKpiCard label="Tarefas urgentes" :value="summary.urgentOpenTasks" icon="pi pi-bolt" />
-            <BoKpiCard label="Casas de show" :value="summary.venuesCount" icon="pi pi-building" />
+            <BoKpiCard label="Ideias pendentes" :value="summary.pendingIdeas" icon="ph:lightbulb-bold" />
+            <BoKpiCard label="Conteúdos da semana" :value="summary.contentsThisWeek" icon="ph:video-camera-bold" />
+            <BoKpiCard label="Tarefas urgentes" :value="summary.urgentOpenTasks" icon="ph:lightning-bold" />
+            <BoKpiCard label="Casas de show" :value="summary.venuesCount" icon="ph:music-notes-bold" />
         </div>
 
         <div class="grid gap-4 xl:grid-cols-2">

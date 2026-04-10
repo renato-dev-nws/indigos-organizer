@@ -48,6 +48,30 @@ body {
     cursor: grabbing;
 }
 
+/* ── ProseMirror / Rich Editor dark mode ───────────────────────── */
+.app-dark .bo-rich-editor .ProseMirror {
+    color: var(--bo-text);
+    caret-color: #818cf8;
+}
+
+.app-dark .bo-rich-editor .ProseMirror p.is-editor-empty:first-child::before {
+    color: #475569;
+}
+
+/* Global list rendering for the editor (both dark and light) */
+.bo-rich-editor .ProseMirror ul,
+.bo-rich-editor .ProseMirror ol {
+    padding-left: 1.5rem;
+}
+
+.bo-rich-editor .ProseMirror ul {
+    list-style-type: disc;
+}
+
+.bo-rich-editor .ProseMirror ol {
+    list-style-type: decimal;
+}
+
 .bo-kanban-drag-active {
     border-color: color-mix(in srgb, var(--bo-primary), transparent 55%);
     background-color: color-mix(in srgb, var(--bo-primary), transparent 96%);

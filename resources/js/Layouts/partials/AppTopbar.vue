@@ -1,5 +1,6 @@
 <script setup>
 import { usePage, Link } from '@inertiajs/vue3';
+import { Icon } from '@iconify/vue';
 import AppThemeSwitcher from '@/Components/AppThemeSwitcher.vue';
 
 defineProps({
@@ -23,30 +24,38 @@ const handleMenuClick = () => {
 </script>
 
 <template>
-    <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-950/80">
-        <div class="flex h-16 items-center justify-between gap-3 px-4 md:px-6">
+    <header class="sticky top-0 z-30 border-b border-slate-200/60 bg-white/90 backdrop-blur-md dark:border-slate-800/60 dark:bg-slate-950/90">
+        <div class="flex h-14 items-center justify-between gap-3 px-4 md:px-5">
             <div class="flex items-center gap-2">
-                <Button
-                    :icon="collapsed ? 'pi pi-angle-right' : 'pi pi-angle-left'"
-                    rounded
-                    text
-                    aria-label="Alternar menu"
+                <button
+                    type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    :aria-label="collapsed ? 'Expandir menu' : 'Recolher menu'"
                     @click="handleMenuClick"
-                />
-                <div>
-                    <h1 class="text-base font-semibold">Band Organizer</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Painel de operação</p>
+                >
+                    <Icon :icon="collapsed ? 'ph:arrow-line-right-bold' : 'ph:arrow-line-left-bold'" class="h-[18px] w-[18px]" />
+                </button>
+                <div class="hidden sm:block">
+                    <h1 class="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-100">Band Organizer</h1>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500">Painel de operação</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2">
                 <AppThemeSwitcher />
                 <div class="hidden text-right sm:block">
-                    <p class="text-sm font-semibold">{{ page.props.auth?.user?.name }}</p>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ page.props.auth?.user?.email }}</p>
+                    <p class="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-200">{{ page.props.auth?.user?.name }}</p>
+                    <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ page.props.auth?.user?.email }}</p>
                 </div>
                 <Link :href="route('logout')" method="post" as="button">
-                    <Button icon="pi pi-sign-out" rounded text severity="secondary" aria-label="Sair" />
+                    <button
+                        type="button"
+                        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-slate-500 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+                        aria-label="Sair"
+                        title="Sair"
+                    >
+                        <Icon icon="ph:sign-out-bold" class="h-[17px] w-[17px]" />
+                    </button>
                 </Link>
             </div>
         </div>

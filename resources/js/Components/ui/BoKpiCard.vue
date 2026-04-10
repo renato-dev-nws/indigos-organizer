@@ -1,4 +1,6 @@
 <script setup>
+import { Icon } from '@iconify/vue';
+
 defineProps({
     label: {
         type: String,
@@ -10,7 +12,11 @@ defineProps({
     },
     icon: {
         type: String,
-        default: 'pi pi-chart-bar',
+        default: 'ph:chart-bar-bold',
+    },
+    color: {
+        type: String,
+        default: 'indigo',
     },
 });
 </script>
@@ -21,10 +27,10 @@ defineProps({
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-sm text-slate-500 dark:text-slate-400">{{ label }}</p>
-                    <p class="mt-2 text-3xl font-bold">{{ value }}</p>
+                    <p class="mt-2 text-3xl font-bold tracking-tight">{{ value }}</p>
                 </div>
-                <div class="rounded-xl bg-cyan-500/15 p-3 text-cyan-600 dark:text-cyan-300">
-                    <i :class="[icon, 'text-xl']"></i>
+                <div class="rounded-xl bg-indigo-500/10 p-3 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400">
+                    <Icon :icon="icon" class="h-5 w-5" />
                 </div>
             </div>
         </template>
