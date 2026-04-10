@@ -25,8 +25,8 @@ const statusLabels = {
 const localFilters = reactive({
     status: props.filters?.status ?? null,
     content_platform_id: props.filters?.content_platform_id ?? null,
-    content_type_id: props.filters?.content_type_id ?? null,
-    content_category_id: props.filters?.content_category_id ?? null,
+    idea_type_id: props.filters?.idea_type_id ?? null,
+    idea_category_id: props.filters?.idea_category_id ?? null,
     planned_week: props.filters?.planned_week ?? '',
     search: props.filters?.search ?? '',
 });
@@ -39,13 +39,13 @@ const filterChips = computed(() => {
         const p = props.platforms?.find((x) => x.id === localFilters.content_platform_id);
         if (p) chips.push({ key: 'content_platform_id', label: p.name });
     }
-    if (localFilters.content_type_id) {
-        const t = props.types?.find((x) => x.id === localFilters.content_type_id);
-        if (t) chips.push({ key: 'content_type_id', label: t.name });
+    if (localFilters.idea_type_id) {
+        const t = props.types?.find((x) => x.id === localFilters.idea_type_id);
+        if (t) chips.push({ key: 'idea_type_id', label: t.name });
     }
-    if (localFilters.content_category_id) {
-        const c = props.categories?.find((x) => x.id === localFilters.content_category_id);
-        if (c) chips.push({ key: 'content_category_id', label: c.name });
+    if (localFilters.idea_category_id) {
+        const c = props.categories?.find((x) => x.id === localFilters.idea_category_id);
+        if (c) chips.push({ key: 'idea_category_id', label: c.name });
     }
     if (localFilters.planned_week) chips.push({ key: 'planned_week', label: `Semana: ${localFilters.planned_week}` });
     return chips;
@@ -58,8 +58,8 @@ const submitFilters = () => {
 const resetFilters = () => {
     localFilters.status = null;
     localFilters.content_platform_id = null;
-    localFilters.content_type_id = null;
-    localFilters.content_category_id = null;
+    localFilters.idea_type_id = null;
+    localFilters.idea_category_id = null;
     localFilters.planned_week = '';
     localFilters.search = '';
     submitFilters();
@@ -146,11 +146,11 @@ const calendarColumns = computed(() => {
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Tipo</label>
-                <Select v-model="localFilters.content_type_id" :options="types" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />
+                <Select v-model="localFilters.idea_type_id" :options="types" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Categoria</label>
-                <Select v-model="localFilters.content_category_id" :options="categories" option-label="name" option-value="id" placeholder="Todas as categorias" show-clear />
+                <Select v-model="localFilters.idea_category_id" :options="categories" option-label="name" option-value="id" placeholder="Todas as categorias" show-clear />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Semana</label>

@@ -26,4 +26,9 @@ class IdeaCategory extends Model
     {
         return $this->hasMany(Idea::class);
     }
+
+    public function contents(): HasMany
+    {
+        return $this->hasMany(Content::class);
+    }
 }

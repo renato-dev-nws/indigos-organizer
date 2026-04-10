@@ -12,6 +12,7 @@ defineProps({
     routeBase: String,
     withColor: Boolean,
     withOrder: Boolean,
+    reorderOnly: Boolean,
     disableDeleteWhen: String,
     disableDeleteMessage: String,
     reorderRoute: String,
@@ -29,6 +30,7 @@ defineProps({
             :route-base="routeBase"
             :with-color="withColor"
             :with-order="withOrder"
+            :reorder-only="reorderOnly"
             :disable-delete-when="disableDeleteWhen"
             :disable-delete-message="disableDeleteMessage"
             :reorder-route="reorderRoute"

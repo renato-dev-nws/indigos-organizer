@@ -15,6 +15,8 @@ class ExecuteIdeaAction
                 'title' => $idea->title,
                 'idea_id' => $idea->id,
                 'user_id' => $idea->user_id,
+                'idea_type_id' => $idea->idea_type_id,
+                'idea_category_id' => $idea->idea_category_id,
                 'status' => 'queued',
             ]);
 

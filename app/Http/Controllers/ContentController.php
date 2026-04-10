@@ -5,15 +5,108 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreContentRequest;
 use App\Http\Requests\UpdateContentRequest;
 use App\Models\Content;
-use App\Models\ContentCategory;
 use App\Models\ContentPlatform;
-use App\Models\ContentType;
 use App\Models\Idea;
+use App\Models\IdeaCategory;
+use App\Models\IdeaType;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+
+class ContentController extends Controller
+{
+    public function index(): Response
+    {
+        $query = Content::query()
+            ->with(['platform', 'type', 'category', 'idea', 'user'])
+            ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
+            ->when(request('content_platform_id'), fn ($q, $platformId) => $q->where('content_platform_id', $platformId))
+            ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
+            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
+
+        if (request('planned_week')) {
+            [$year, $week] = explode('-W', request('planned_week'));
+            $start = Carbon::now()->setISODate((int) $year, (int) $week)->startOfWeek();
+            $end = (clone $start)->endOfWeek();
+            $query->whereBetween('planned_publish_at', [$start, $end]);
+        }
+
+        $contents = $query->latest()->paginate(15)->withQueryString();
+
+        return Inertia::render('Contents/Index', [
+            'contents' => $contents,
+            'filters' => request()->only(['status', 'content_platform_id', 'idea_type_id', 'idea_category_id', 'planned_week', 'search']),
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => IdeaType::query()->orderBy('name')->get(),
+            'categories' => IdeaCategory::query()->orderBy('name')->get(),
+        ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('Contents/Create', [
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => IdeaType::query()->orderBy('name')->get(),
+            'categories' => IdeaCategory::query()->orderBy('name')->get(),
+            'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
+        ]);
+    }
+
+    public function store(StoreContentRequest $request): RedirectResponse
+    {
+        $content = Content::create([
+            ...$request->safe()->except(['links']),
+            'user_id' => (string) Auth::id(),
+        ]);
+
+        foreach ($request->input('links', []) as $link) {
+            $content->links()->create($link);
+        }
+
+        return redirect()->route('contents.index')->with('success', 'Conteudo criado com sucesso.');
+    }
+
+    public function show(Content $content): Response
+    {
+        return Inertia::render('Contents/Show', [
+            'content' => $content->load(['platform', 'type', 'category', 'files', 'links', 'idea', 'user']),
+        ]);
+    }
+
+    public function edit(Content $content): Response
+    {
+        return Inertia::render('Contents/Edit', [
+            'content' => $content->load(['type', 'category', 'links', 'files']),
+            'platforms' => ContentPlatform::query()->orderBy('name')->get(),
+            'types' => IdeaType::query()->orderBy('name')->get(),
+            'categories' => IdeaCategory::query()->orderBy('name')->get(),
+            'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
+        ]);
+    }
+
+    public function update(UpdateContentRequest $request, Content $content): RedirectResponse
+    {
+        $content->update($request->safe()->except(['links']));
+
+        $content->links()->delete();
+        foreach ($request->input('links', []) as $link) {
+            $content->links()->create($link);
+        }
+
+        return redirect()->route('contents.index')->with('success', 'Conteudo atualizado com sucesso.');
+    }
+
+    public function destroy(Content $content): RedirectResponse
+    {
+        $content->delete();
+
+        return redirect()->route('contents.index')->with('success', 'Conteudo removido com sucesso.');
+    }
+}
+
 
 class ContentController extends Controller
 {

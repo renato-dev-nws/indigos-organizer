@@ -29,11 +29,9 @@ const menuItems = computed(() => [
         label: 'Configurações',
         icon: 'ph:gear-six-bold',
         items: [
-            { label: 'Tipos de ideia', icon: 'ph:tag-bold', href: route('settings.pages.idea-types') },
-            { label: 'Categorias de ideia', icon: 'ph:bookmark-bold', href: route('settings.pages.idea-categories') },
+            { label: 'Tipos', icon: 'ph:tag-bold', href: route('settings.pages.types') },
+            { label: 'Categorias', icon: 'ph:bookmark-bold', href: route('settings.pages.categories') },
             { label: 'Plataformas', icon: 'ph:device-mobile-bold', href: route('settings.pages.content-platforms') },
-            { label: 'Tipos de conteúdo', icon: 'ph:copy-bold', href: route('settings.pages.content-types') },
-            { label: 'Categorias de conteúdo', icon: 'ph:paint-brush-bold', href: route('settings.pages.content-categories') },
             { label: 'Status de tarefas', icon: 'ph:sort-ascending-bold', href: route('settings.pages.task-statuses') },
         ],
     },

@@ -5,9 +5,7 @@ use App\Http\Controllers\ContentFileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Settings\ContentCategoryController;
 use App\Http\Controllers\Settings\ContentPlatformController;
-use App\Http\Controllers\Settings\ContentTypeController;
 use App\Http\Controllers\Settings\IdeaCategoryController;
 use App\Http\Controllers\Settings\IdeaTypeController;
 use App\Http\Controllers\Settings\SettingsController;
@@ -40,18 +38,14 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::get('/settings/idea-types', [SettingsController::class, 'ideaTypes'])->name('settings.pages.idea-types');
-    Route::get('/settings/idea-categories', [SettingsController::class, 'ideaCategories'])->name('settings.pages.idea-categories');
+    Route::get('/settings/types', [SettingsController::class, 'types'])->name('settings.pages.types');
+    Route::get('/settings/categories', [SettingsController::class, 'categories'])->name('settings.pages.categories');
     Route::get('/settings/content-platforms', [SettingsController::class, 'contentPlatforms'])->name('settings.pages.content-platforms');
-    Route::get('/settings/content-types', [SettingsController::class, 'contentTypes'])->name('settings.pages.content-types');
-    Route::get('/settings/content-categories', [SettingsController::class, 'contentCategories'])->name('settings.pages.content-categories');
     Route::get('/settings/task-statuses', [SettingsController::class, 'taskStatuses'])->name('settings.pages.task-statuses');
     Route::put('/settings/theme', [ThemeController::class, 'update'])->name('settings.theme');
     Route::resource('/settings/idea-types', IdeaTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-types');
     Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
     Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');
-    Route::resource('/settings/content-types', ContentTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.content-types');
-    Route::resource('/settings/content-categories', ContentCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.content-categories');
     Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');
     Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
 

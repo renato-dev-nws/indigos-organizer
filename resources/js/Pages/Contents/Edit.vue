@@ -15,9 +15,9 @@ const form = useForm({
     title: props.content.title,
     script: props.content.script,
     content_platform_id: props.content.content_platform_id,
-    content_type_id: props.content.content_type_id,
+    idea_type_id: props.content.idea_type_id,
+    idea_category_id: props.content.idea_category_id,
     status: props.content.status,
-    content_category_ids: props.content.categories?.map((c) => c.id) ?? [],
     links: props.content.links ?? [],
     planned_publish_at: props.content.planned_publish_at,
     published_at: props.content.published_at,
@@ -103,12 +103,12 @@ const removeFile = (fileId) => {
 
                 <div class="space-y-2">
                     <label for="content-type">Tipo</label>
-                    <Select id="content-type" v-model="form.content_type_id" :options="types" option-label="name" option-value="id" show-clear fluid />
+                    <Select id="content-type" v-model="form.idea_type_id" :options="types" option-label="name" option-value="id" show-clear fluid />
                 </div>
 
-                <div class="md:col-span-2 space-y-2">
-                    <label for="content-categories">Categorias</label>
-                    <MultiSelect id="content-categories" v-model="form.content_category_ids" :options="categories" option-label="name" option-value="id" display="chip" fluid />
+                <div class="space-y-2">
+                    <label for="content-category">Categoria</label>
+                    <Select id="content-category" v-model="form.idea_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">

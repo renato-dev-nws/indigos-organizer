@@ -3,7 +3,7 @@ import { onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 onMounted(() => {
-    router.get(route('settings.pages.idea-types'));
+    router.get(route('settings.pages.types'));
 });
 </script>
 

@@ -12,6 +12,7 @@ const props = defineProps({
     routeBase: { type: String, required: true },
     withColor: { type: Boolean, default: false },
     withOrder: { type: Boolean, default: false },
+    reorderOnly: { type: Boolean, default: false },
     disableDeleteWhen: { type: String, default: '' },
     disableDeleteMessage: { type: String, default: 'Este registro nao pode ser removido.' },
     reorderRoute: { type: String, default: '' },
@@ -167,58 +168,88 @@ const onPage = (event) => {
         <template #content>
             <p v-if="description" class="mb-4 text-sm text-muted-color">{{ description }}</p>
 
-            <DataTable :value="paginatedItems" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
-                <Column field="name" header="Nome" sortable />
-                <Column v-if="withColor" field="color" header="Cor" class="w-40">
-                    <template #body="{ data }">
-                        <div class="flex items-center gap-2">
-                            <span class="inline-block h-4 w-4 rounded" :style="{ backgroundColor: data.color }" />
-                            <span>{{ data.color }}</span>
-                        </div>
-                    </template>
-                </Column>
-                <Column v-if="withOrder" field="order" header="Ordem" class="w-24" />
-                <Column header="Ações" class="bo-action-col w-20">
-                    <template #body="{ data }">
-                        <div class="flex gap-1">
-                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
-                            <BoConfirmButton
-                                icon="pi pi-trash"
-                                severity="danger"
-                                :disabled="!canDelete(data)"
-                                message="Deseja remover este registro?"
-                                :rounded="true"
-                                @confirm="remove(data)"
-                            />
-                        </div>
-                    </template>
-                </Column>
-            </DataTable>
-
-            <Paginator
-                class="mt-3"
-                :rows="rows"
-                :first="first"
-                :total-records="filteredItems.length"
-                :rows-per-page-options="[5, 8, 12, 20]"
-                @page="onPage"
-            />
-
-            <div v-if="hasReorder" class="mt-6 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
-                <p class="mb-2 text-sm font-semibold">Reordenar status (arraste e solte)</p>
+            <!-- Reorder-only mode: show only draggable list (e.g. task statuses) -->
+            <template v-if="reorderOnly && hasReorder">
                 <draggable :list="orderDraft" item-key="id" handle=".drag-handle" class="space-y-2">
                     <template #item="{ element, index }">
-                        <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
-                            <div class="flex items-center gap-2">
-                                <i class="pi pi-bars drag-handle cursor-grab text-slate-500" />
-                                <span class="text-sm">{{ index + 1 }}. {{ element.name }}</span>
+                        <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-900">
+                            <div class="flex items-center gap-3">
+                                <i class="pi pi-bars drag-handle cursor-grab text-slate-400 dark:text-slate-600" />
+                                <div v-if="withColor" class="h-3 w-3 rounded-full" :style="{ backgroundColor: element.color }" />
+                                <span class="text-sm font-medium">{{ index + 1 }}. {{ element.name }}</span>
                             </div>
-                            <Tag :value="element.color" :style="{ backgroundColor: element.color, color: '#fff' }" />
+                            <div class="flex gap-1">
+                                <Button icon="pi pi-pencil" size="small" text rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(element)" />
+                                <BoConfirmButton
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    :disabled="!canDelete(element)"
+                                    message="Deseja remover este registro?"
+                                    :rounded="true"
+                                    @confirm="remove(element)"
+                                />
+                            </div>
                         </div>
                     </template>
                 </draggable>
                 <Button class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
-            </div>
+            </template>
+
+            <!-- Normal mode: DataTable + optional reorder section -->
+            <template v-else>
+                <DataTable :value="paginatedItems" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+                    <Column field="name" header="Nome" sortable />
+                    <Column v-if="withColor" field="color" header="Cor" class="w-40">
+                        <template #body="{ data }">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-block h-4 w-4 rounded" :style="{ backgroundColor: data.color }" />
+                                <span>{{ data.color }}</span>
+                            </div>
+                        </template>
+                    </Column>
+                    <Column v-if="withOrder" field="order" header="Ordem" class="w-24" />
+                    <Column header="Ações" class="bo-action-col w-20">
+                        <template #body="{ data }">
+                            <div class="flex gap-1">
+                                <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
+                                <BoConfirmButton
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    :disabled="!canDelete(data)"
+                                    message="Deseja remover este registro?"
+                                    :rounded="true"
+                                    @confirm="remove(data)"
+                                />
+                            </div>
+                        </template>
+                    </Column>
+                </DataTable>
+
+                <Paginator
+                    class="mt-3"
+                    :rows="rows"
+                    :first="first"
+                    :total-records="filteredItems.length"
+                    :rows-per-page-options="[5, 8, 12, 20]"
+                    @page="onPage"
+                />
+
+                <div v-if="hasReorder" class="mt-6 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
+                    <p class="mb-2 text-sm font-semibold">Reordenar status (arraste e solte)</p>
+                    <draggable :list="orderDraft" item-key="id" handle=".drag-handle" class="space-y-2">
+                        <template #item="{ element, index }">
+                            <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
+                                <div class="flex items-center gap-2">
+                                    <i class="pi pi-bars drag-handle cursor-grab text-slate-500" />
+                                    <span class="text-sm">{{ index + 1 }}. {{ element.name }}</span>
+                                </div>
+                                <Tag :value="element.color" :style="{ backgroundColor: element.color, color: '#fff' }" />
+                            </div>
+                        </template>
+                    </draggable>
+                    <Button class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
+                </div>
+            </template>
         </template>
     </Card>
 

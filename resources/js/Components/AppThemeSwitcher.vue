@@ -1,36 +1,62 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useTheme } from '@/Composables/useTheme';
 import { Icon } from '@iconify/vue';
 
 const page = usePage();
 const { setTheme } = useTheme();
+const popover = ref(null);
 
 const currentTheme = computed(() => page.props.auth?.user?.theme ?? 'system');
 
+const currentIcon = computed(() => {
+    if (currentTheme.value === 'light') return 'ph:sun-bold';
+    if (currentTheme.value === 'dark') return 'ph:moon-bold';
+    return 'ph:monitor-bold';
+});
+
 const themes = [
-    { key: 'light', icon: 'ph:sun-bold', label: 'Tema claro' },
-    { key: 'dark', icon: 'ph:moon-bold', label: 'Tema escuro' },
-    { key: 'system', icon: 'ph:monitor-bold', label: 'Tema do sistema' },
+    { key: 'light', icon: 'ph:sun-bold', label: 'Claro' },
+    { key: 'dark', icon: 'ph:moon-bold', label: 'Escuro' },
+    { key: 'system', icon: 'ph:monitor-bold', label: 'Sistema' },
 ];
+
+const toggle = (event) => popover.value?.toggle(event);
+
+const pick = (key) => {
+    setTheme(key);
+    popover.value?.hide();
+};
 </script>
 
 <template>
-    <div class="flex items-center gap-0.5 rounded-lg border border-slate-200/80 bg-slate-100/60 p-0.5 dark:border-slate-700/80 dark:bg-slate-800/60">
-        <button
-            v-for="t in themes"
-            :key="t.key"
-            type="button"
-            class="rounded-md p-1.5 transition-all duration-150"
-            :class="currentTheme === t.key
-                ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400'
-                : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'"
-            :aria-label="t.label"
-            :title="t.label"
-            @click="setTheme(t.key)"
-        >
-            <Icon :icon="t.icon" class="h-[15px] w-[15px]" />
-        </button>
-    </div>
+    <button
+        type="button"
+        class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        aria-label="Selecionar tema"
+        title="Selecionar tema"
+        @click="toggle"
+    >
+        <Icon :icon="currentIcon" class="h-[17px] w-[17px]" />
+    </button>
+
+    <Popover ref="popover">
+        <div class="flex items-center gap-1 p-1">
+            <button
+                v-for="t in themes"
+                :key="t.key"
+                type="button"
+                class="flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-[11px] font-medium transition-all duration-150"
+                :class="currentTheme === t.key
+                    ? 'bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200'"
+                :aria-label="t.label"
+                @click="pick(t.key)"
+            >
+                <Icon :icon="t.icon" class="h-4 w-4" />
+                <span>{{ t.label }}</span>
+            </button>
+        </div>
+    </Popover>
 </template>
