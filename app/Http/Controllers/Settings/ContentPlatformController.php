@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Controllers\Settings;
+
+use App\Http\Controllers\Controller;
+use App\Models\ContentPlatform;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class ContentPlatformController extends Controller
+{
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        ContentPlatform::create([
+            ...$data,
+            'user_id' => (string) Auth::id(),
+        ]);
+
+        return back()->with('success', 'Plataforma criada com sucesso.');
+    }
+
+    public function update(Request $request, string $id): RedirectResponse
+    {
+        $item = ContentPlatform::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $item->update($data);
+
+        return back()->with('success', 'Plataforma atualizada com sucesso.');
+    }
+
+    public function destroy(string $id): RedirectResponse
+    {
+        $item = ContentPlatform::where('id', $id)->where('user_id', (string) Auth::id())->firstOrFail();
+        $item->delete();
+
+        return back()->with('success', 'Plataforma removida com sucesso.');
+    }
+}

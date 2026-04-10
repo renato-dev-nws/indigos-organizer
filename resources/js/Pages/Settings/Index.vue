@@ -2,8 +2,18 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import AppThemeSwitcher from '@/Components/AppThemeSwitcher.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import SettingsCrudSection from '@/Components/settings/SettingsCrudSection.vue';
 
 defineOptions({ layout: AppLayout });
+
+defineProps({
+    ideaTypes: Array,
+    ideaCategories: Array,
+    contentPlatforms: Array,
+    contentTypes: Array,
+    contentCategories: Array,
+    taskStatuses: Array,
+});
 </script>
 
 <template>
@@ -29,30 +39,65 @@ defineOptions({ layout: AppLayout });
                 </TabPanel>
 
                 <TabPanel value="1">
-                    <Card>
-                        <template #title>Tipos e categorias de ideia</template>
-                        <template #content>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Estrutura pronta para CRUD inline com DataTable + Dialog, mantendo o backend atual.</p>
-                        </template>
-                    </Card>
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <SettingsCrudSection
+                            title="Tipos de ideia"
+                            description="Gerencie tipos com nome e cor."
+                            :items="ideaTypes"
+                            route-base="settings.idea-types"
+                            with-color
+                            disable-delete-when="ideas_count"
+                            disable-delete-message="Nao e permitido excluir tipo com ideias vinculadas."
+                        />
+
+                        <SettingsCrudSection
+                            title="Categorias de ideia"
+                            description="Gerencie categorias usadas nas ideias."
+                            :items="ideaCategories"
+                            route-base="settings.idea-categories"
+                        />
+                    </div>
                 </TabPanel>
 
                 <TabPanel value="2">
-                    <Card>
-                        <template #title>Plataformas, tipos e categorias de conteudo</template>
-                        <template #content>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Estrutura pronta para CRUD inline por aba de conteudo, sem alterar contratos de API.</p>
-                        </template>
-                    </Card>
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <SettingsCrudSection
+                            title="Plataformas de conteudo"
+                            description="Ex.: TikTok, Instagram, YouTube."
+                            :items="contentPlatforms"
+                            route-base="settings.content-platforms"
+                        />
+
+                        <SettingsCrudSection
+                            title="Tipos de conteudo"
+                            description="Ex.: Reel, Shorts, Story."
+                            :items="contentTypes"
+                            route-base="settings.content-types"
+                        />
+
+                        <SettingsCrudSection
+                            class="lg:col-span-2"
+                            title="Categorias de conteudo"
+                            description="Categorias com cores para classificacao."
+                            :items="contentCategories"
+                            route-base="settings.content-categories"
+                            with-color
+                        />
+                    </div>
                 </TabPanel>
 
                 <TabPanel value="3">
-                    <Card>
-                        <template #title>Status de tarefas</template>
-                        <template #content>
-                            <p class="text-sm text-slate-500 dark:text-slate-400">Preparado para listagem e reorder drag-and-drop quando os endpoints de settings estiverem expostos.</p>
-                        </template>
-                    </Card>
+                    <SettingsCrudSection
+                        title="Status de tarefas"
+                        description="CRUD inline completo com reorder drag-and-drop."
+                        :items="taskStatuses"
+                        route-base="settings.task-statuses"
+                        with-color
+                        with-order
+                        disable-delete-when="tasks_count"
+                        disable-delete-message="Nao e permitido remover status com tarefas vinculadas."
+                        reorder-route="settings.task-statuses.reorder"
+                    />
                 </TabPanel>
             </TabPanels>
         </Tabs>

@@ -8,6 +8,7 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import AppKanbanCard from '@/Components/AppKanbanCard.vue';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({ tasks: Object, statuses: Array, contents: Array, filters: Object });
@@ -156,14 +157,7 @@ const onKanbanChange = (statusId, event) => {
                         @change="(event) => onKanbanChange(column.id, event)"
                     >
                         <template #item="{ element }">
-                            <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                                <p class="mb-2 font-semibold">{{ element.title }}</p>
-                                <div class="mb-2 flex items-center justify-between">
-                                    <BoPriorityTag :value="element.priority" />
-                                    <span class="text-xs text-slate-500 dark:text-slate-400">{{ element.assignee || 'Sem responsavel' }}</span>
-                                </div>
-                                <ProgressBar :value="Math.round(((element.subtasks?.filter((s) => s.completed).length || 0) / (element.subtasks?.length || 1)) * 100)" style="height: 0.4rem" />
-                            </div>
+                            <AppKanbanCard :task="element" />
                         </template>
                     </draggable>
                 </template>

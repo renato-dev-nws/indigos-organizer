@@ -3,7 +3,8 @@ import { Link, router, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
-import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import AppRichText from '@/Components/AppRichText.vue';
+import AppFileUpload from '@/Components/AppFileUpload.vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -32,7 +33,7 @@ const removeLink = (index) => {
     form.links.splice(index, 1);
 };
 
-const uploadFile = async ({ files }) => {
+const uploadFile = async (files) => {
     if (!files?.length) {
         return;
     }
@@ -109,7 +110,7 @@ const removeFile = (fileId) => {
 
                 <div class="md:col-span-2 space-y-2">
                     <label for="content-script">Roteiro</label>
-                    <Editor id="content-script" v-model="form.script" editor-style="height: 220px" />
+                    <AppRichText id="content-script" v-model="form.script" :min-height="240" />
                 </div>
             </BoFormSection>
 
@@ -132,17 +133,7 @@ const removeFile = (fileId) => {
             <Card>
                 <template #title>Anexos</template>
                 <template #content>
-                    <FileUpload mode="basic" custom-upload auto choose-label="Enviar arquivo" @uploader="uploadFile" />
-                    <DataTable class="mt-4" :value="content.files" data-key="id" striped-rows size="small">
-                        <Column field="original_name" header="Arquivo" />
-                        <Column field="mime_type" header="MIME" />
-                        <Column field="size" header="Tamanho" />
-                        <Column header="Acoes">
-                            <template #body="{ data }">
-                                <BoConfirmButton label="Remover" icon="pi pi-trash" severity="danger" message="Deseja remover este arquivo?" @confirm="removeFile(data.id)" />
-                            </template>
-                        </Column>
-                    </DataTable>
+                    <AppFileUpload :files="content.files" @upload="uploadFile" @remove="removeFile" />
                 </template>
             </Card>
 
