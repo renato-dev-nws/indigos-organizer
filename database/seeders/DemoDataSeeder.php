@@ -20,8 +20,6 @@ class DemoDataSeeder extends Seeder
         $ideaTypes = IdeaType::where('user_id', $user->id)->get();
         $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
         $platforms = \App\Models\ContentPlatform::where('user_id', $user->id)->get();
-        $contentTypes = \App\Models\ContentType::where('user_id', $user->id)->get();
-        $contentCategories = \App\Models\ContentCategory::where('user_id', $user->id)->get();
         $taskStatuses = \App\Models\TaskStatus::where('user_id', $user->id)->orderBy('order')->get();
 
         $ideas = collect([
@@ -56,7 +54,7 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Video making of', 'status' => 'published', 'offset' => -1],
             ['title' => 'Reel agenda de shows', 'status' => 'in_production', 'offset' => 2],
             ['title' => 'Story chamada para live', 'status' => 'queued', 'offset' => 4],
-        ])->map(function ($row, $index) use ($user, $ideas, $platforms, $contentTypes, $contentCategories) {
+        ])->map(function ($row, $index) use ($user, $ideas, $ideaTypes, $ideaCategories, $platforms) {
             $planned = Carbon::now()->addDays($row['offset']);
             $publishedAt = $row['status'] === 'published' ? (clone $planned)->addHours(2) : null;
 
@@ -66,13 +64,12 @@ class DemoDataSeeder extends Seeder
                 'title' => $row['title'],
                 'script' => '<p>Roteiro inicial de exemplo.</p>',
                 'content_platform_id' => $platforms[$index % $platforms->count()]?->id,
-                'content_type_id' => $contentTypes[$index % $contentTypes->count()]?->id,
+                'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
+                'idea_category_id' => $ideaCategories[$index % $ideaCategories->count()]?->id,
                 'status' => $row['status'],
                 'planned_publish_at' => $planned,
                 'published_at' => $publishedAt,
             ]);
-
-            $content->categories()->sync($contentCategories->take(2)->pluck('id')->all());
 
             $content->links()->create([
                 'title' => 'Link externo',

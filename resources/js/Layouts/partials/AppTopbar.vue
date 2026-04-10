@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 import AppThemeSwitcher from '@/Components/AppThemeSwitcher.vue';
@@ -12,6 +13,7 @@ defineProps({
 
 const emit = defineEmits(['toggleDesktopSidebar', 'openMobileSidebar']);
 const page = usePage();
+const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
 
 const handleMenuClick = () => {
     if (window.innerWidth < 768) {
@@ -38,7 +40,16 @@ const handleMenuClick = () => {
 
                 <!-- Logo visível apenas no mobile -->
                 <div class="flex items-center gap-2 md:hidden">
-                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-indigo-700">
+                    <img
+                        v-if="iconUrl"
+                        :src="iconUrl"
+                        alt="Ícone"
+                        class="h-7 w-7 rounded-md object-contain"
+                    />
+                    <div
+                        v-else
+                        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-indigo-700"
+                    >
                         <Icon icon="ph:music-notes-bold" class="h-3.5 w-3.5 text-white" />
                     </div>
                     <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Band Organizer</span>

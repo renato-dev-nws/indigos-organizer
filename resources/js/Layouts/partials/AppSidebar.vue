@@ -1,5 +1,7 @@
 <script setup>
+import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
+import { usePage } from '@inertiajs/vue3';
 import AppMenu from './AppMenu.vue';
 
 defineProps({
@@ -18,6 +20,10 @@ defineProps({
 });
 
 const emit = defineEmits(['closeMobile']);
+
+const page = usePage();
+const logoUrl = computed(() => page.props.systemSettings?.logo_url ?? null);
+const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
 </script>
 
 <template>
@@ -26,13 +32,42 @@ const emit = defineEmits(['closeMobile']);
         :class="collapsed ? 'w-[72px]' : 'w-64'"
     >
         <div class="mb-5 flex items-center gap-2.5 px-2">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30">
-                <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
-            </div>
-            <div v-if="!collapsed">
-                <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Band Organizer</p>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500">Painel colaborativo</p>
-            </div>
+            <!-- Collapsed: show icon or gradient fallback -->
+            <template v-if="collapsed">
+                <img
+                    v-if="iconUrl"
+                    :src="iconUrl"
+                    alt="Ícone"
+                    class="h-8 w-8 shrink-0 rounded-lg object-contain"
+                />
+                <div
+                    v-else
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
+                >
+                    <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
+                </div>
+            </template>
+
+            <!-- Expanded: show logo or gradient + text -->
+            <template v-else>
+                <img
+                    v-if="logoUrl"
+                    :src="logoUrl"
+                    alt="Logo"
+                    class="h-9 max-w-[180px] object-contain"
+                />
+                <template v-else>
+                    <div
+                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
+                    >
+                        <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Band Organizer</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Painel colaborativo</p>
+                    </div>
+                </template>
+            </template>
         </div>
 
         <AppMenu :items="items" :collapsed="collapsed" />
@@ -46,7 +81,16 @@ const emit = defineEmits(['closeMobile']);
     >
         <template #header>
             <div class="flex items-center gap-2.5">
-                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30">
+                <img
+                    v-if="iconUrl"
+                    :src="iconUrl"
+                    alt="Ícone"
+                    class="h-8 w-8 rounded-lg object-contain"
+                />
+                <div
+                    v-else
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
+                >
                     <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
                 </div>
                 <div>

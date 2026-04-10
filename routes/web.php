@@ -9,6 +9,7 @@ use App\Http\Controllers\Settings\ContentPlatformController;
 use App\Http\Controllers\Settings\IdeaCategoryController;
 use App\Http\Controllers\Settings\IdeaTypeController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\SystemSettingController;
 use App\Http\Controllers\Settings\TaskStatusController;
 use App\Http\Controllers\Settings\ThemeController;
 use App\Http\Controllers\SubtaskController;
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/categories', [SettingsController::class, 'categories'])->name('settings.pages.categories');
     Route::get('/settings/content-platforms', [SettingsController::class, 'contentPlatforms'])->name('settings.pages.content-platforms');
     Route::get('/settings/task-statuses', [SettingsController::class, 'taskStatuses'])->name('settings.pages.task-statuses');
+    Route::get('/settings/system', [SystemSettingController::class, 'index'])->name('settings.pages.system');
+    Route::post('/settings/system', [SystemSettingController::class, 'update'])->name('settings.system.update');
     Route::put('/settings/theme', [ThemeController::class, 'update'])->name('settings.theme');
     Route::resource('/settings/idea-types', IdeaTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-types');
     Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
@@ -52,6 +55,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Serve PWA service worker from root scope with correct headers
+Route::get('/sw.js', function () {
+    $path = public_path('build/sw.js');
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/javascript',
+        'Service-Worker-Allowed' => '/',
+        'Cache-Control' => 'no-cache',
+    ]);
 });
 
 require __DIR__.'/auth.php';

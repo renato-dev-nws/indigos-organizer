@@ -27,6 +27,8 @@ export default defineConfig({
         }),
         VitePWA({
             registerType: 'autoUpdate',
+            // Don't auto-inject into HTML (we handle it in app.blade.php)
+            injectRegister: false,
             includeAssets: ['icons/icon-192x192.png', 'icons/icon-512x512.png'],
             manifest: {
                 name: 'Band Organizer',
@@ -52,7 +54,12 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                // Don't navigate-fallback (server handles routing)
                 navigateFallback: null,
+                navigateFallbackDenylist: [/^\/api\//],
+            },
+            devOptions: {
+                enabled: true,
             },
         }),
     ],

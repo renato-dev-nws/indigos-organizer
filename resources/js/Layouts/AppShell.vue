@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue';
+import { computed, watch, watchEffect } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -33,6 +33,7 @@ const menuItems = computed(() => [
             { label: 'Categorias', icon: 'ph:bookmark-bold', href: route('settings.pages.categories') },
             { label: 'Plataformas', icon: 'ph:device-mobile-bold', href: route('settings.pages.content-platforms') },
             { label: 'Status de tarefas', icon: 'ph:sort-ascending-bold', href: route('settings.pages.task-statuses') },
+            { label: 'Sistema', icon: 'ph:sliders-bold', href: route('settings.pages.system') },
         ],
     },
 ]);
@@ -50,6 +51,20 @@ watch(
     },
     { immediate: true, deep: true },
 );
+
+// Dynamically update the browser favicon when a system icon is set
+watchEffect(() => {
+    const iconUrl = page.props.systemSettings?.icon_url;
+    if (iconUrl) {
+        let link = /** @type {HTMLLinkElement|null} */ (document.querySelector("link[rel='icon']"));
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+        }
+        link.href = iconUrl;
+    }
+});
 </script>
 
 <template>

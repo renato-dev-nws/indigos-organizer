@@ -1,14 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { usePage } from '@inertiajs/vue3';
 import { useTheme } from '@/Composables/useTheme';
 import { Icon } from '@iconify/vue';
 
-const page = usePage();
-const { setTheme } = useTheme();
+const { currentTheme, setTheme } = useTheme();
 const popover = ref(null);
-
-const currentTheme = computed(() => page.props.auth?.user?.theme ?? 'system');
 
 const currentIcon = computed(() => {
     if (currentTheme.value === 'light') return 'ph:sun-bold';
