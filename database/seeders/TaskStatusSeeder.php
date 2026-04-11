@@ -10,7 +10,7 @@ class TaskStatusSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'demo@band.com')->firstOrFail();
+        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
             ['name' => 'Pendente', 'color' => '#94a3b8', 'order' => 1],

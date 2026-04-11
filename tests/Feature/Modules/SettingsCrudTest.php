@@ -96,7 +96,8 @@ class SettingsCrudTest extends TestCase
             'user_id'      => $user->id,
             'idea_type_id' => $type->id,
             'title'        => 'Ideia vinculada',
-            'status'       => 'pending',
+            'status'       => 'in_drawer',
+            'related_type' => 'none',
         ]);
 
         $this->actingAs($user)

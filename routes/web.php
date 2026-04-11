@@ -4,7 +4,10 @@ use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentFileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IdeaController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SharedInfoController;
+use App\Http\Controllers\SharedInfoDocumentController;
 use App\Http\Controllers\Settings\ContentPlatformController;
 use App\Http\Controllers\Settings\IdeaCategoryController;
 use App\Http\Controllers\Settings\IdeaTypeController;
@@ -23,7 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     Route::resource('ideas', IdeaController::class);
-    Route::post('/ideas/{idea}/execute', [IdeaController::class, 'execute'])->name('ideas.execute');
+    Route::post('/ideas/{idea}/vote', [IdeaController::class, 'vote'])->name('ideas.vote');
 
     Route::resource('contents', ContentController::class);
     Route::post('/contents/{content}/files', [ContentFileController::class, 'store'])->name('contents.files.store');
@@ -36,6 +39,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy');
 
     Route::resource('venues', VenueController::class);
+    Route::resource('plans', PlanController::class);
+    Route::resource('shared-infos', SharedInfoController::class);
+    Route::delete('/shared-infos/{sharedInfo}/documents/{document}', [SharedInfoDocumentController::class, 'destroy'])
+        ->name('shared-infos.documents.destroy');
     Route::resource('users', UserController::class)->except(['show']);
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

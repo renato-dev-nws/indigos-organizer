@@ -20,6 +20,7 @@ const cycleTheme = () => {
 
 const page = usePage();
 const logoUrl = computed(() => page.props.systemSettings?.logo_url ?? null);
+const isInlineSvg = computed(() => typeof logoUrl.value === 'string' && logoUrl.value.trim().startsWith('<svg'));
 </script>
 
 <template>
@@ -40,7 +41,8 @@ const logoUrl = computed(() => page.props.systemSettings?.logo_url ?? null);
         <!-- Logo / App name -->
         <div class="mb-6 flex flex-col items-center gap-3">
             <template v-if="logoUrl">
-                <img :src="logoUrl" alt="Logo" class="h-16 w-auto object-contain" />
+                <div v-if="isInlineSvg" class="h-16 w-auto" v-html="logoUrl" />
+                <img v-else :src="logoUrl" alt="Logo" class="h-16 w-auto object-contain" />
                 <span class="text-xs text-slate-400 dark:text-slate-500">Band Organizer</span>
             </template>
             <template v-else>

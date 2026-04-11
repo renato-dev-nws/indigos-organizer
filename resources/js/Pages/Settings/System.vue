@@ -118,7 +118,7 @@ const handleRemoveIcon = () => {
                 <div>
                     <h2 class="font-semibold text-slate-800 dark:text-slate-100">Ícone</h2>
                     <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        Aparece como ícone no navegador, na barra lateral recolhida e no topo em mobile. Formatos: PNG, ICO, WebP (máx. 512 KB). Quadrado (512×512 recomendado).
+                        Aparece como ícone no navegador, na barra lateral recolhida e no topo em mobile. Formatos: PNG, SVG, ICO, WebP (máx. 512 KB). Quadrado (512×512 recomendado).
                     </p>
                 </div>
 

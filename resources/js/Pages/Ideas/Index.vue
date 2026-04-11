@@ -11,19 +11,15 @@ import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({
-    ideas: Object,
-    filters: Object,
-    ideaTypes: Array,
-    ideaCategories: Array,
-});
+const props = defineProps({ ideas: Object, filters: Object, ideaTypes: Array, ideaCategories: Array });
 
 const statusLabels = {
-    pending: 'Pendente',
-    maturing: 'Amadurecendo',
-    cancelled: 'Cancelado',
-    in_production: 'Em produção',
-    executed: 'Executado',
+    in_drawer: 'Na gaveta',
+    on_table: 'Na mesa',
+    on_board: 'No quadro',
+    executing: 'Em execução',
+    executed: 'Executada',
+    trash: 'No lixo',
 };
 
 const localFilters = reactive({
@@ -37,21 +33,10 @@ const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.status) chips.push({ key: 'status', label: statusLabels[localFilters.status] || localFilters.status });
-    if (localFilters.idea_type_id) {
-        const type = props.ideaTypes?.find((t) => t.id === localFilters.idea_type_id);
-        if (type) chips.push({ key: 'idea_type_id', label: type.name });
-    }
-    if (localFilters.idea_category_id) {
-        const cat = props.ideaCategories?.find((c) => c.id === localFilters.idea_category_id);
-        if (cat) chips.push({ key: 'idea_category_id', label: cat.name });
-    }
     return chips;
 });
 
-const submitFilters = () => {
-    router.get(route('ideas.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
-};
-
+const submitFilters = () => router.get(route('ideas.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
 const resetFilters = () => {
     localFilters.status = null;
     localFilters.idea_type_id = null;
@@ -59,113 +44,91 @@ const resetFilters = () => {
     localFilters.search = '';
     submitFilters();
 };
-
 const removeChip = (key) => {
     localFilters[key] = key === 'search' ? '' : null;
     submitFilters();
 };
-
-const paginate = (event) => {
-    router.get(route('ideas.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
-};
-
-const executeIdea = (id) => router.post(route('ideas.execute', id), {}, { preserveScroll: true });
+const paginate = (event) => router.get(route('ideas.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveScroll: true });
 </script>
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e execução de ideias">
+        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda">
             <template #actions>
-                <Link :href="route('ideas.create')">
-                    <Button icon="pi pi-plus" label="Nova ideia" />
-                </Link>
+                <Link :href="route('ideas.create')"><Button icon="pi pi-plus" label="Nova ideia" /></Link>
             </template>
         </BoPageHeader>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
-                <IconField>
-                    <InputIcon class="pi pi-search" />
-                    <InputText v-model="localFilters.search" placeholder="Buscar por título" />
-                </IconField>
+                <InputText v-model="localFilters.search" placeholder="Buscar por título" />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Status</label>
                 <Select
                     v-model="localFilters.status"
-                    :options="[
-                        { value: 'pending', label: 'Pendente' },
-                        { value: 'maturing', label: 'Amadurecendo' },
-                        { value: 'cancelled', label: 'Cancelado' },
-                        { value: 'in_production', label: 'Em produção' },
-                        { value: 'executed', label: 'Executado' },
-                    ]"
+                    :options="Object.entries(statusLabels).map(([value, label]) => ({ value, label }))"
                     option-label="label"
                     option-value="value"
-                    placeholder="Todos os status"
                     show-clear
+                    placeholder="Todos"
                 />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Tipo</label>
-                <Select v-model="localFilters.idea_type_id" :options="ideaTypes" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />
+                <Select v-model="localFilters.idea_type_id" :options="ideaTypes" option-label="name" option-value="id" show-clear />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Categoria</label>
-                <Select v-model="localFilters.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" placeholder="Todas as categorias" show-clear />
+                <Select v-model="localFilters.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" show-clear />
             </div>
         </BoFilterBar>
 
-        <Card>
-            <template #content>
-                <DataTable :value="ideas.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
-                    <Column field="title" header="Título" sortable />
-                    <Column field="type.name" header="Tipo" sortable />
-                    <Column field="category.name" header="Categoria" sortable />
-                    <Column header="Status" sort-field="status" sortable>
-                        <template #body="{ data }">
-                            <BoStatusTag :value="data.status" />
-                        </template>
-                    </Column>
-                    <Column field="user.name" header="Autor" sortable />
-                    <Column header="Atualizado em" sort-field="updated_at" sortable>
-                        <template #body="{ data }">
-                            <BoDateText :value="data.updated_at" mode="datetime" />
-                        </template>
-                    </Column>
-                    <Column header="Ações" class="bo-action-col w-32">
-                        <template #body="{ data }">
-                            <div class="flex gap-1">
-                                <Button
-                                    icon="pi pi-play"
-                                    size="small"
-                                    outlined
-                                    rounded
-                                    v-tooltip.top="'Executar'"
-                                    @click="executeIdea(data.id)"
-                                />
-                                <Link :href="route('ideas.edit', data.id)">
-                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" />
-                                </Link>
-                                <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta ideia?" :rounded="true" @confirm="removeIdea(data.id)" />
-                            </div>
-                        </template>
-                    </Column>
-                    <template #empty>
-                        <BoDataTableEmpty />
-                    </template>
-                </DataTable>
+        <div class="hidden md:block">
+            <Card>
+                <template #content>
+                    <DataTable :value="ideas.data" data-key="id" striped-rows>
+                        <Column field="title" header="Título" />
+                        <Column field="type.name" header="Tipo" />
+                        <Column field="category.name" header="Categoria" />
+                        <Column header="Status">
+                            <template #body="{ data }"><BoStatusTag :value="data.status" /></template>
+                        </Column>
+                        <Column header="Atualizado em">
+                            <template #body="{ data }"><BoDateText :value="data.updated_at" mode="datetime" /></template>
+                        </Column>
+                        <Column header="Ações" class="bo-action-col w-24">
+                            <template #body="{ data }">
+                                <div class="flex gap-1">
+                                    <Link :href="route('ideas.show', data.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
+                                    <Link :href="route('ideas.edit', data.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                                    <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(data.id)" />
+                                </div>
+                            </template>
+                        </Column>
+                        <template #empty><BoDataTableEmpty /></template>
+                    </DataTable>
+                    <Paginator class="mt-4" :rows="ideas.per_page" :total-records="ideas.total" :first="(ideas.current_page - 1) * ideas.per_page" @page="paginate" />
+                </template>
+            </Card>
+        </div>
 
-                <Paginator
-                    class="mt-4"
-                    :rows="ideas.per_page"
-                    :total-records="ideas.total"
-                    :first="(ideas.current_page - 1) * ideas.per_page"
-                    @page="paginate"
-                />
-            </template>
-        </Card>
+        <div class="block space-y-3 md:hidden">
+            <div v-for="idea in ideas.data" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="mb-2 flex items-start justify-between gap-2">
+                    <h3 class="font-semibold">{{ idea.title }}</h3>
+                    <BoStatusTag :value="idea.status" />
+                </div>
+                <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }} · {{ idea.category?.name || '-' }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
+                <div class="mt-3 flex justify-end gap-1">
+                    <Link :href="route('ideas.show', idea.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
+                    <Link :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                    <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
+                </div>
+            </div>
+        </div>
     </div>
 </template>

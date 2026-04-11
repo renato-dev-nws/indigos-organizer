@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\ExecuteIdeaAction;
 use App\Http\Requests\StoreIdeaRequest;
 use App\Http\Requests\UpdateIdeaRequest;
+use App\Models\Content;
 use App\Models\Idea;
 use App\Models\IdeaCategory;
+use App\Models\IdeaVote;
 use App\Models\IdeaType;
+use App\Models\Plan;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +22,11 @@ class IdeaController extends Controller
     public function index(): Response
     {
         $ideas = Idea::query()
-            ->with(['type', 'category', 'user'])
+            ->with(['type', 'category', 'user', 'content', 'plan', 'planPhase'])
+            ->where(function ($q) {
+                $q->where('is_private', false)
+                    ->orWhere('user_id', Auth::id());
+            })
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
             ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
@@ -40,13 +48,25 @@ class IdeaController extends Controller
         return Inertia::render('Ideas/Create', [
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function store(StoreIdeaRequest $request): RedirectResponse
     {
+        $payload = $request->safe()->except(['references', 'voter_users']);
+        if (($payload['related_type'] ?? null) !== 'existing_content') {
+            $payload['content_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'existing_plan') {
+            $payload['plan_id'] = null;
+            $payload['plan_phase_id'] = null;
+        }
+
         $idea = Idea::create([
-            ...$request->safe()->except('references'),
+            ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
 
@@ -54,29 +74,52 @@ class IdeaController extends Controller
             $idea->references()->create($reference);
         }
 
+        $idea->voterUsers()->sync($request->input('voter_users', []));
+
         return redirect()->route('ideas.index')->with('success', 'Ideia criada com sucesso.');
     }
 
     public function show(Idea $idea): Response
     {
+        $idea->load(['type', 'category', 'references', 'user', 'content', 'plan', 'planPhase', 'votes.user', 'voterUsers']);
+        $userVote = $idea->votes()->where('user_id', Auth::id())->first();
+
         return Inertia::render('Ideas/Show', [
-            'idea' => $idea->load(['type', 'category', 'references', 'user']),
+            'idea' => $idea,
+            'userVote' => $userVote,
         ]);
     }
 
     public function edit(Idea $idea): Response
     {
         return Inertia::render('Ideas/Edit', [
-            'idea' => $idea->load('references'),
+            'idea' => $idea->load(['references', 'voterUsers']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'voterUsers' => $idea->voterUsers()->pluck('users.id')->all(),
         ]);
     }
 
     public function update(UpdateIdeaRequest $request, Idea $idea): RedirectResponse
     {
-        $idea->update($request->safe()->except('references'));
+        $payload = $request->safe()->except(['references', 'voter_users']);
+        if (($payload['related_type'] ?? null) !== 'existing_content') {
+            $payload['content_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'existing_plan') {
+            $payload['plan_id'] = null;
+            $payload['plan_phase_id'] = null;
+        }
+        if (($payload['status'] ?? null) !== 'in_drawer') {
+            $payload['is_private'] = false;
+        }
+
+        $idea->update($payload);
         $idea->references()->delete();
+        $idea->voterUsers()->sync($request->input('voter_users', []));
 
         foreach ($request->input('references', []) as $reference) {
             $idea->references()->create($reference);
@@ -92,12 +135,23 @@ class IdeaController extends Controller
         return redirect()->route('ideas.index')->with('success', 'Ideia removida com sucesso.');
     }
 
-    public function execute(Idea $idea, ExecuteIdeaAction $executeIdeaAction): RedirectResponse
+    public function vote(Request $request, Idea $idea): RedirectResponse
     {
-        abort_if(in_array($idea->status, ['cancelled', 'executed'], true), 422, 'Esta ideia nao pode ser executada.');
+        $request->validate([
+            'vote' => ['required', 'in:on_table,in_drawer,trash'],
+        ]);
 
-        $executeIdeaAction->handle($idea);
+        abort_if($idea->status !== 'on_board', 422, 'Somente ideias no quadro podem receber voto.');
 
-        return redirect()->route('contents.index')->with('success', 'Ideia convertida em conteudo com sucesso.');
+        $eligible = ! $idea->voterUsers()->exists()
+            || $idea->voterUsers()->where('user_id', Auth::id())->exists();
+        abort_if(! $eligible, 403, 'Você não pode votar nesta ideia.');
+
+        IdeaVote::updateOrCreate(
+            ['idea_id' => $idea->id, 'user_id' => (string) Auth::id()],
+            ['vote' => $request->string('vote')->toString()],
+        );
+
+        return back()->with('success', 'Voto registrado.');
     }
 }

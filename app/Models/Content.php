@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -21,7 +22,6 @@ class Content extends Model
         'idea_id',
         'title',
         'script',
-        'content_platform_id',
         'idea_type_id',
         'idea_category_id',
         'status',
@@ -47,9 +47,9 @@ class Content extends Model
         return $this->belongsTo(Idea::class);
     }
 
-    public function platform(): BelongsTo
+    public function platforms(): BelongsToMany
     {
-        return $this->belongsTo(ContentPlatform::class, 'content_platform_id');
+        return $this->belongsToMany(ContentPlatform::class, 'content_platform_content');
     }
 
     public function type(): BelongsTo

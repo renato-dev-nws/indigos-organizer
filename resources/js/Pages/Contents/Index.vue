@@ -162,7 +162,13 @@ const calendarColumns = computed(() => {
             <template #content>
                 <DataTable :value="contents.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="title" header="Título" sortable />
-                    <Column field="platform.name" header="Plataforma" sortable />
+                    <Column header="Plataformas">
+                        <template #body="{ data }">
+                            <div class="flex flex-wrap gap-1">
+                                <Tag v-for="platform in data.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
+                            </div>
+                        </template>
+                    </Column>
                     <Column field="type.name" header="Tipo" sortable />
                     <Column header="Status" sort-field="status" sortable>
                         <template #body="{ data }">
@@ -203,7 +209,25 @@ const calendarColumns = computed(() => {
             </template>
         </Card>
 
-        <div v-else class="grid gap-4 lg:grid-cols-7">
+        <div v-else-if="viewMode === 'mobile'" class="block space-y-3 md:hidden">
+            <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="mb-2 flex items-start justify-between gap-2">
+                    <h3 class="font-semibold">{{ content.title }}</h3>
+                    <BoStatusTag :value="content.status" />
+                </div>
+                <div class="mb-2 flex flex-wrap gap-1">
+                    <Tag v-for="platform in content.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
+                </div>
+                <p class="text-xs text-slate-500">{{ content.type?.name || '-' }} · {{ content.category?.name || '-' }}</p>
+                <div class="mt-3 flex justify-end gap-1">
+                    <Link :href="route('contents.show', content.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
+                    <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                    <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(content.id)" />
+                </div>
+            </div>
+        </div>
+
+        <div v-else-if="viewMode === 'calendar'" class="grid gap-4 lg:grid-cols-7">
             <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
                 <template #title>{{ column.label }}</template>
                 <template #content>

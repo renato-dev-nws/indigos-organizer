@@ -14,6 +14,7 @@ defineProps({
 const emit = defineEmits(['toggleDesktopSidebar', 'openMobileSidebar']);
 const page = usePage();
 const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
+const isInlineSvgIcon = computed(() => typeof iconUrl.value === 'string' && iconUrl.value.trim().startsWith('<svg'));
 
 const handleMenuClick = () => {
     if (window.innerWidth < 768) {
@@ -40,12 +41,8 @@ const handleMenuClick = () => {
 
                 <!-- Logo visível apenas no mobile -->
                 <div class="flex items-center gap-2 md:hidden">
-                    <img
-                        v-if="iconUrl"
-                        :src="iconUrl"
-                        alt="Ícone"
-                        class="h-7 w-7 rounded-md object-contain"
-                    />
+                    <div v-if="iconUrl && isInlineSvgIcon" class="h-7 w-7 rounded-md" v-html="iconUrl" />
+                    <img v-else-if="iconUrl" :src="iconUrl" alt="Ícone" class="h-7 w-7 rounded-md object-contain" />
                     <div
                         v-else
                         class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-indigo-700"

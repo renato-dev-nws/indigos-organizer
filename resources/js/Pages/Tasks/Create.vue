@@ -1,39 +1,48 @@
 <script setup>
+import { computed, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
-const props = defineProps({ statuses: Array, contents: Array });
-
+const props = defineProps({ statuses: Array, contents: Array, plans: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
+    related_type: 'administrative',
+    content_id: null,
+    plan_id: null,
+    plan_phase_id: null,
     title: '',
     description: '',
-    type: 'content',
-    content_id: null,
-    task_status_id: props.statuses?.[0]?.id,
-    assignee: '',
+    assigned_user_id: null,
     priority: 'medium',
     due_date: '',
+    task_status_id: props.statuses?.[0]?.id ?? null,
     subtasks: [],
 });
 
+const selectedPlan = computed(() => props.plans?.find((plan) => plan.id === form.plan_id));
+const phaseOptions = computed(() => selectedPlan.value?.phases ?? []);
+
+watch(() => form.related_type, () => {
+    form.content_id = null;
+    form.plan_id = null;
+    form.plan_phase_id = null;
+});
+
+watch(() => form.plan_id, () => {
+    form.plan_phase_id = null;
+});
+
 const submit = () => form.post(route('tasks.store'));
-
-const addSubtask = () => {
-    form.subtasks.push({ title: '', completed: false, order: form.subtasks.length });
-};
-
-const removeSubtask = (index) => {
-    form.subtasks.splice(index, 1);
-};
+const addSubtask = () => form.subtasks.push({ title: '', completed: false, order: form.subtasks.length + 1 });
+const removeSubtask = (index) => form.subtasks.splice(index, 1);
 </script>
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Nova tarefa" subtitle="Registre tarefas operacionais e de conteúdo">
+        <BoPageHeader title="Nova tarefa" subtitle="Cadastre tarefas relacionadas a conteúdo, plano ou administrativo">
             <template #actions>
                 <Link :href="route('tasks.index')">
                     <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
@@ -42,26 +51,15 @@ const removeSubtask = (index) => {
         </BoPageHeader>
 
         <form class="space-y-4" @submit.prevent="submit">
-            <BoFormSection title="Dados da tarefa" description="Dados essenciais para acompanhamento">
-                <div class="md:col-span-2 space-y-2">
-                    <label for="task-title">Título</label>
-                    <InputText id="task-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
-                    <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
-                </div>
-
-                <div class="md:col-span-2 space-y-2">
-                    <label for="task-description">Descrição</label>
-                    <Textarea id="task-description" v-model="form.description" rows="4" fluid :invalid="!!form.errors.description" />
-                </div>
-
+            <BoFormSection title="Dados da tarefa" description="Defina vínculo, responsável e prioridade">
                 <div class="space-y-2">
-                    <label for="task-type">Tipo</label>
+                    <label>Relacionada a</label>
                     <Select
-                        id="task-type"
-                        v-model="form.type"
+                        v-model="form.related_type"
                         :options="[
                             { label: 'Conteúdo', value: 'content' },
-                            { label: 'Administrativa', value: 'administrative' },
+                            { label: 'Plano', value: 'plan' },
+                            { label: 'Administrativo', value: 'administrative' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -69,31 +67,49 @@ const removeSubtask = (index) => {
                     />
                 </div>
 
-                <div class="space-y-2">
-                    <label for="task-content">Conteúdo relacionado</label>
-                    <Select
-                        id="task-content"
-                        v-model="form.content_id"
-                        :options="contents"
-                        option-label="title"
-                        option-value="id"
-                        :disabled="form.type !== 'content'"
-                        :invalid="!!form.errors.content_id"
-                        show-clear
-                        fluid
-                    />
+                <div v-if="form.related_type === 'content'" class="space-y-2">
+                    <label>Conteúdo</label>
+                    <Select v-model="form.content_id" :options="contents" option-label="title" option-value="id" show-clear fluid :invalid="!!form.errors.content_id" />
                     <Message v-if="form.errors.content_id" severity="error" size="small" variant="simple">{{ form.errors.content_id }}</Message>
                 </div>
 
-                <div class="space-y-2">
-                    <label for="task-status">Status</label>
-                    <Select id="task-status" v-model="form.task_status_id" :options="statuses" option-label="name" option-value="id" fluid />
+                <div v-if="form.related_type === 'plan'" class="space-y-2">
+                    <label>Plano</label>
+                    <Select v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid :invalid="!!form.errors.plan_id" />
+                    <Message v-if="form.errors.plan_id" severity="error" size="small" variant="simple">{{ form.errors.plan_id }}</Message>
+                </div>
+
+                <div v-if="form.related_type === 'plan' && form.plan_id" class="space-y-2">
+                    <label>Fase do plano (opcional)</label>
+                    <Select v-model="form.plan_phase_id" :options="phaseOptions" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Título</label>
+                    <InputText v-model="form.title" fluid :invalid="!!form.errors.title" />
+                    <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Descrição</label>
+                    <Textarea v-model="form.description" rows="4" fluid />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-priority">Prioridade</label>
+                    <label>Responsável</label>
                     <Select
-                        id="task-priority"
+                        v-model="form.assigned_user_id"
+                        :options="[{ id: null, name: 'Todos' }, ...users]"
+                        option-label="name"
+                        option-value="id"
+                        show-clear
+                        fluid
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label>Prioridade</label>
+                    <Select
                         v-model="form.priority"
                         :options="[
                             { label: 'Baixa', value: 'low' },
@@ -108,13 +124,13 @@ const removeSubtask = (index) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-assignee">Responsável</label>
-                    <InputText id="task-assignee" v-model="form.assignee" fluid />
+                    <label>Prazo</label>
+                    <DatePicker v-model="form.due_date" fluid />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-due-date">Prazo</label>
-                    <DatePicker id="task-due-date" v-model="form.due_date" fluid />
+                    <label>Status</label>
+                    <Select v-model="form.task_status_id" :options="statuses" option-label="name" option-value="id" fluid />
                 </div>
             </BoFormSection>
 
@@ -122,8 +138,7 @@ const removeSubtask = (index) => {
                 <template #title>Subtarefas</template>
                 <template #content>
                     <div class="space-y-2">
-                        <div v-for="(subtask, index) in form.subtasks" :key="index" class="flex items-center gap-2 rounded-xl border border-slate-200/80 p-2 dark:border-slate-800">
-                            <Checkbox v-model="subtask.completed" binary />
+                        <div v-for="(subtask, index) in form.subtasks" :key="index" class="flex items-center gap-2">
                             <InputText v-model="subtask.title" class="w-full" placeholder="Título da subtarefa" />
                             <Button type="button" icon="pi pi-trash" text severity="danger" @click="removeSubtask(index)" />
                         </div>

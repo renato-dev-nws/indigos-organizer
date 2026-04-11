@@ -18,12 +18,14 @@ class Task extends Model
 
     protected $fillable = [
         'user_id',
+        'assigned_user_id',
+        'related_type',
         'content_id',
+        'plan_id',
+        'plan_phase_id',
         'title',
         'description',
-        'type',
         'task_status_id',
-        'assignee',
         'priority',
         'due_date',
     ];
@@ -43,6 +45,21 @@ class Task extends Model
     public function content(): BelongsTo
     {
         return $this->belongsTo(Content::class);
+    }
+
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function planPhase(): BelongsTo
+    {
+        return $this->belongsTo(PlanPhase::class);
     }
 
     public function status(): BelongsTo

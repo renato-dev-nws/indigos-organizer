@@ -10,9 +10,9 @@ class IdeaCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'demo@band.com')->firstOrFail();
+        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
-        foreach (['Identidade Visual', 'Redes Sociais', 'Shows ao Vivo', 'Estudio', 'Administrativo'] as $name) {
+        foreach (['Divulgação', 'Marketing', 'Informativo', 'Série', 'Humor', 'História'] as $name) {
             IdeaCategory::firstOrCreate(['user_id' => $user->id, 'name' => $name]);
         }
     }

@@ -6,8 +6,10 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
 use App\Models\Content;
+use App\Models\Plan;
 use App\Models\Task;
 use App\Models\TaskStatus;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -18,10 +20,10 @@ class TaskController extends Controller
     public function index(): Response
     {
         $tasks = Task::query()
-            ->with(['status', 'content', 'subtasks', 'user'])
-            ->when(request('assignee'), fn ($q, $assignee) => $q->where('assignee', 'ilike', "%{$assignee}%"))
+            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase'])
+            ->when(request('assigned_user_id'), fn ($q, $assignedUserId) => $q->where('assigned_user_id', $assignedUserId))
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
-            ->when(request('type'), fn ($q, $type) => $q->where('type', $type))
+            ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
             ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
             ->latest()
@@ -32,7 +34,13 @@ class TaskController extends Controller
             'tasks' => $tasks,
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
-            'filters' => request()->only(['assignee', 'priority', 'type', 'content_id', 'search']),
+            'plans' => Plan::query()
+                ->whereIn('status', ['queued', 'running'])
+                ->with('phases')
+                ->orderBy('title')
+                ->get(['id', 'title', 'status']),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search']),
         ]);
     }
 
@@ -40,14 +48,25 @@ class TaskController extends Controller
     {
         return Inertia::render('Tasks/Create', [
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
-            'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function store(StoreTaskRequest $request): RedirectResponse
     {
+        $payload = $request->safe()->all();
+        if (($payload['related_type'] ?? null) !== 'content') {
+            $payload['content_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'plan') {
+            $payload['plan_id'] = null;
+            $payload['plan_phase_id'] = null;
+        }
+
         $task = Task::create([
-            ...$request->safe()->all(),
+            ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
 
@@ -63,13 +82,24 @@ class TaskController extends Controller
         return Inertia::render('Tasks/Edit', [
             'task' => $task->load('subtasks'),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
-            'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
-        $task->update($request->safe()->all());
+        $payload = $request->safe()->all();
+        if (($payload['related_type'] ?? null) !== 'content') {
+            $payload['content_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'plan') {
+            $payload['plan_id'] = null;
+            $payload['plan_phase_id'] = null;
+        }
+
+        $task->update($payload);
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa atualizada com sucesso.');
     }

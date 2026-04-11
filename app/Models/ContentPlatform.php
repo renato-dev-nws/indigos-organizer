@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ContentPlatform extends Model
 {
@@ -22,8 +22,8 @@ class ContentPlatform extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function contents(): HasMany
+    public function contents(): BelongsToMany
     {
-        return $this->hasMany(Content::class);
+        return $this->belongsToMany(Content::class, 'content_platform_content');
     }
 }

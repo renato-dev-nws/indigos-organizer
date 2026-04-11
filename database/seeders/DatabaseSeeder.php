@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'Database\\Seeders\\ContentPlatformSeeder',
             'Database\\Seeders\\TaskStatusSeeder',
             'Database\\Seeders\\DemoDataSeeder',
+            'Database\\Seeders\\PlanSeeder',
         ]);
     }
 }

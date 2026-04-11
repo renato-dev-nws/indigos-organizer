@@ -10,13 +10,15 @@ class IdeaTypeSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'demo@band.com')->firstOrFail();
+        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
-            ['name' => 'Musica Nova', 'color' => '#6366f1'],
-            ['name' => 'Campanha de MKT', 'color' => '#f59e0b'],
-            ['name' => 'Ideia de Merch', 'color' => '#10b981'],
-            ['name' => 'Clipe / Video', 'color' => '#ef4444'],
+            ['name' => 'Video', 'color' => '#ef4444'],
+            ['name' => 'Reel', 'color' => '#8b5cf6'],
+            ['name' => 'Story', 'color' => '#f59e0b'],
+            ['name' => 'Post', 'color' => '#3b82f6'],
+            ['name' => 'Produção musical', 'color' => '#10b981'],
+            ['name' => 'Identidade visual', 'color' => '#ec4899'],
         ];
 
         foreach ($data as $item) {

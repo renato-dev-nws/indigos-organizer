@@ -14,7 +14,7 @@ const form = useForm({
     idea_id: props.content.idea_id,
     title: props.content.title,
     script: props.content.script,
-    content_platform_id: props.content.content_platform_id,
+    content_platform_ids: props.content.platforms?.map((platform) => platform.id) ?? [],
     idea_type_id: props.content.idea_type_id,
     idea_category_id: props.content.idea_category_id,
     status: props.content.status,
@@ -97,8 +97,16 @@ const removeFile = (fileId) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="content-platform">Plataforma</label>
-                    <Select id="content-platform" v-model="form.content_platform_id" :options="platforms" option-label="name" option-value="id" show-clear fluid />
+                    <label for="content-platforms">Plataformas</label>
+                    <MultiSelect
+                        id="content-platforms"
+                        v-model="form.content_platform_ids"
+                        :options="platforms"
+                        option-label="name"
+                        option-value="id"
+                        placeholder="Selecionar plataformas"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">

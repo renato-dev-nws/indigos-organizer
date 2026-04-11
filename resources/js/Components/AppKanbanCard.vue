@@ -30,10 +30,16 @@ const completion = () => {
         <p v-if="task.content?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
             Conteúdo: {{ task.content.title }}
         </p>
+        <p v-else-if="task.planPhase?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
+            Fase: {{ task.planPhase.title }}
+        </p>
+        <p v-else-if="task.plan?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
+            Plano: {{ task.plan.title }}
+        </p>
 
         <div class="mb-2 flex items-center justify-between gap-2">
             <BoPriorityTag :value="task.priority" />
-            <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ task.assignee || 'Sem responsável' }}</span>
+            <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</span>
         </div>
 
         <ProgressBar :value="completion()" style="height: 0.4rem" />

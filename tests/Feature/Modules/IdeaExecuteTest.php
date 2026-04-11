@@ -3,10 +3,9 @@
 namespace Tests\Feature\Modules;
 
 use App\Models\Idea;
-use App\Models\IdeaCategory;
-use App\Models\IdeaReference;
-use App\Models\IdeaType;
+use App\Models\IdeaVote;
 use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,78 +13,67 @@ class IdeaExecuteTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_execute_idea_and_generate_content_with_links(): void
+    public function test_eligible_user_can_vote_on_board_idea(): void
     {
-        /** @var User $user */
-        $user = User::factory()->createOne();
-
-        $type = IdeaType::create(['user_id' => $user->id, 'name' => 'Clipe', 'color' => '#111111']);
-        $category = IdeaCategory::create(['user_id' => $user->id, 'name' => 'Letras']);
+        /** @var Authenticatable $owner */
+        $owner = User::factory()->createOne();
+        /** @var Authenticatable $voter */
+        $voter = User::factory()->createOne();
 
         $idea = Idea::create([
-            'user_id'          => $user->id,
-            'idea_type_id'     => $type->id,
-            'idea_category_id' => $category->id,
-            'title'            => 'Nova ideia de teste',
-            'description'      => 'descricao',
-            'status'           => 'pending',
+            'user_id' => $owner->id,
+            'title' => 'Ideia em votação',
+            'description' => 'descrição',
+            'status' => 'on_board',
+            'related_type' => 'none',
         ]);
 
-        IdeaReference::create([
-            'idea_id'     => $idea->id,
-            'title'       => 'Referencia 1',
-            'description' => 'ref',
-            'url'         => 'https://example.com/ref-1',
+        $idea->voterUsers()->attach($voter->id);
+
+        $response = $this->actingAs($voter)->post(route('ideas.vote', $idea), [
+            'vote' => 'on_table',
         ]);
 
-        $response = $this->actingAs($user)->post(route('ideas.execute', $idea));
+        $response->assertRedirect();
 
-        $response->assertRedirect(route('contents.index'));
-
-        $this->assertDatabaseHas('contents', [
-            'user_id'          => $user->id,
-            'idea_id'          => $idea->id,
-            'title'            => 'Nova ideia de teste',
-            'status'           => 'queued',
-            'idea_type_id'     => $type->id,
-            'idea_category_id' => $category->id,
-        ]);
-
-        $this->assertDatabaseHas('ideas', [
-            'id'     => $idea->id,
-            'status' => 'in_production',
-        ]);
-
-        $content = \App\Models\Content::where('idea_id', $idea->id)->firstOrFail();
-
-        $this->assertDatabaseHas('content_links', [
-            'content_id' => $content->id,
-            'title'      => 'Referencia 1',
-            'url'        => 'https://example.com/ref-1',
+        $this->assertDatabaseHas('idea_votes', [
+            'idea_id' => $idea->id,
+            'user_id' => $voter->id,
+            'vote' => 'on_table',
         ]);
     }
 
-    public function test_execute_idea_without_type_and_category_still_creates_content(): void
+    public function test_vote_updates_existing_vote_record(): void
     {
-        /** @var User $user */
-        $user = User::factory()->createOne();
+        /** @var Authenticatable $owner */
+        $owner = User::factory()->createOne();
+        /** @var Authenticatable $voter */
+        $voter = User::factory()->createOne();
 
         $idea = Idea::create([
-            'user_id'     => $user->id,
-            'title'       => 'Ideia sem tipo',
-            'description' => 'sem tipo nem categoria',
-            'status'      => 'pending',
+            'user_id' => $owner->id,
+            'title' => 'Ideia em votação',
+            'description' => 'descrição',
+            'status' => 'on_board',
+            'related_type' => 'none',
         ]);
 
-        $this->actingAs($user)->post(route('ideas.execute', $idea))->assertRedirect(route('contents.index'));
+        IdeaVote::create([
+            'idea_id' => $idea->id,
+            'user_id' => $voter->id,
+            'vote' => 'on_table',
+        ]);
 
-        $this->assertDatabaseHas('contents', [
-            'user_id'          => $user->id,
-            'idea_id'          => $idea->id,
-            'title'            => 'Ideia sem tipo',
-            'status'           => 'queued',
-            'idea_type_id'     => null,
-            'idea_category_id' => null,
+        $response = $this->actingAs($voter)->post(route('ideas.vote', $idea), [
+            'vote' => 'trash',
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('idea_votes', [
+            'idea_id' => $idea->id,
+            'user_id' => $voter->id,
+            'vote' => 'trash',
         ]);
     }
 }

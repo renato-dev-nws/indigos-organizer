@@ -23,6 +23,8 @@ const menuItems = computed(() => [
     { label: 'Ideias', icon: 'ph:lightbulb-bold', href: route('ideas.index') },
     { label: 'Conteúdos', icon: 'ph:video-camera-bold', href: route('contents.index') },
     { label: 'Tarefas', icon: 'ph:check-square-bold', href: route('tasks.index') },
+    { label: 'Planos', icon: 'ph:map-trifold-bold', href: route('plans.index') },
+    { label: 'Informações', icon: 'ph:info-bold', href: route('shared-infos.index') },
     { label: 'Casas de Show', icon: 'ph:music-notes-bold', href: route('venues.index') },
     { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
     {

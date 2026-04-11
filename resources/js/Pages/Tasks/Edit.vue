@@ -1,71 +1,45 @@
 <script setup>
-import { Link, router, useForm } from '@inertiajs/vue3';
-import draggable from 'vuedraggable';
+import { computed, watch } from 'vue';
+import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
-import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
-const props = defineProps({ task: Object, statuses: Array, contents: Array });
+const props = defineProps({ task: Object, statuses: Array, contents: Array, plans: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
+    related_type: props.task.related_type,
+    content_id: props.task.content_id,
+    plan_id: props.task.plan_id,
+    plan_phase_id: props.task.plan_phase_id,
     title: props.task.title,
     description: props.task.description,
-    type: props.task.type,
-    content_id: props.task.content_id,
-    task_status_id: props.task.task_status_id,
-    assignee: props.task.assignee,
+    assigned_user_id: props.task.assigned_user_id,
     priority: props.task.priority,
     due_date: props.task.due_date,
+    task_status_id: props.task.task_status_id,
+});
+
+const selectedPlan = computed(() => props.plans?.find((plan) => plan.id === form.plan_id));
+const phaseOptions = computed(() => selectedPlan.value?.phases ?? []);
+
+watch(() => form.related_type, () => {
+    form.content_id = null;
+    form.plan_id = null;
+    form.plan_phase_id = null;
+});
+
+watch(() => form.plan_id, () => {
+    form.plan_phase_id = null;
 });
 
 const submit = () => form.put(route('tasks.update', props.task.id));
-
-const newSubtask = useForm({ title: '', completed: false, order: (props.task.subtasks?.length ?? 0) + 1 });
-
-const addSubtask = () => {
-    newSubtask.post(route('tasks.subtasks.store', props.task.id), {
-        preserveScroll: true,
-        onSuccess: () => newSubtask.reset(),
-    });
-};
-
-const updateSubtask = (subtask, changes = {}) => {
-    router.patch(
-        route('tasks.subtasks.update', [props.task.id, subtask.id]),
-        {
-            title: subtask.title,
-            completed: subtask.completed,
-            order: subtask.order,
-            ...changes,
-        },
-        { preserveScroll: true },
-    );
-};
-
-const reorderSubtasks = () => {
-    props.task.subtasks.forEach((subtask, index) => {
-        router.patch(
-            route('tasks.subtasks.update', [props.task.id, subtask.id]),
-            {
-                title: subtask.title,
-                completed: subtask.completed,
-                order: index,
-            },
-            { preserveScroll: true },
-        );
-    });
-};
-
-const removeSubtask = (subtaskId) => {
-    router.delete(route('tasks.subtasks.destroy', [props.task.id, subtaskId]), { preserveScroll: true });
-};
 </script>
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar tarefa" subtitle="Atualize dados e subtarefas">
+        <BoPageHeader title="Editar tarefa" subtitle="Atualize o vínculo e os metadados da tarefa">
             <template #actions>
                 <Link :href="route('tasks.index')">
                     <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
@@ -74,25 +48,15 @@ const removeSubtask = (subtaskId) => {
         </BoPageHeader>
 
         <form class="space-y-4" @submit.prevent="submit">
-            <BoFormSection title="Dados da tarefa" description="Ajuste status, prioridade e atribuição">
-                <div class="md:col-span-2 space-y-2">
-                    <label for="task-title">Título</label>
-                    <InputText id="task-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
-                </div>
-
-                <div class="md:col-span-2 space-y-2">
-                    <label for="task-description">Descrição</label>
-                    <Textarea id="task-description" v-model="form.description" rows="4" fluid />
-                </div>
-
+            <BoFormSection title="Dados da tarefa" description="Defina vínculo, responsável e prioridade">
                 <div class="space-y-2">
-                    <label for="task-type">Tipo</label>
+                    <label>Relacionada a</label>
                     <Select
-                        id="task-type"
-                        v-model="form.type"
+                        v-model="form.related_type"
                         :options="[
                             { label: 'Conteúdo', value: 'content' },
-                            { label: 'Administrativa', value: 'administrative' },
+                            { label: 'Plano', value: 'plan' },
+                            { label: 'Administrativo', value: 'administrative' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -100,30 +64,39 @@ const removeSubtask = (subtaskId) => {
                     />
                 </div>
 
-                <div class="space-y-2">
-                    <label for="task-content">Conteúdo relacionado</label>
-                    <Select
-                        id="task-content"
-                        v-model="form.content_id"
-                        :options="contents"
-                        option-label="title"
-                        option-value="id"
-                        :disabled="form.type !== 'content'"
-                        :invalid="!!form.errors.content_id"
-                        show-clear
-                        fluid
-                    />
+                <div v-if="form.related_type === 'content'" class="space-y-2">
+                    <label>Conteúdo</label>
+                    <Select v-model="form.content_id" :options="contents" option-label="title" option-value="id" show-clear fluid :invalid="!!form.errors.content_id" />
+                </div>
+
+                <div v-if="form.related_type === 'plan'" class="space-y-2">
+                    <label>Plano</label>
+                    <Select v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid :invalid="!!form.errors.plan_id" />
+                </div>
+
+                <div v-if="form.related_type === 'plan' && form.plan_id" class="space-y-2">
+                    <label>Fase do plano (opcional)</label>
+                    <Select v-model="form.plan_phase_id" :options="phaseOptions" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Título</label>
+                    <InputText v-model="form.title" fluid :invalid="!!form.errors.title" />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Descrição</label>
+                    <Textarea v-model="form.description" rows="4" fluid />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-status">Status</label>
-                    <Select id="task-status" v-model="form.task_status_id" :options="statuses" option-label="name" option-value="id" fluid />
+                    <label>Responsável</label>
+                    <Select v-model="form.assigned_user_id" :options="[{ id: null, name: 'Todos' }, ...users]" option-label="name" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-priority">Prioridade</label>
+                    <label>Prioridade</label>
                     <Select
-                        id="task-priority"
                         v-model="form.priority"
                         :options="[
                             { label: 'Baixa', value: 'low' },
@@ -138,35 +111,15 @@ const removeSubtask = (subtaskId) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-assignee">Responsável</label>
-                    <InputText id="task-assignee" v-model="form.assignee" fluid />
+                    <label>Prazo</label>
+                    <DatePicker v-model="form.due_date" fluid />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="task-due-date">Prazo</label>
-                    <DatePicker id="task-due-date" v-model="form.due_date" fluid />
+                    <label>Status</label>
+                    <Select v-model="form.task_status_id" :options="statuses" option-label="name" option-value="id" fluid />
                 </div>
             </BoFormSection>
-
-            <Card>
-                <template #title>Subtarefas</template>
-                <template #content>
-                    <draggable :list="task.subtasks" item-key="id" class="space-y-2" @change="reorderSubtasks">
-                        <template #item="{ element }">
-                            <div class="flex items-center gap-2 rounded-xl border border-slate-200/80 p-2 dark:border-slate-800">
-                                <Checkbox :model-value="element.completed" binary @update:model-value="(value) => updateSubtask(element, { completed: value })" />
-                                <InputText v-model="element.title" class="w-full" @blur="updateSubtask(element)" />
-                                <BoConfirmButton label="Remover" icon="pi pi-trash" severity="danger" message="Remover subtarefa?" @confirm="removeSubtask(element.id)" />
-                            </div>
-                        </template>
-                    </draggable>
-
-                    <div class="mt-3 flex items-center gap-2">
-                        <InputText v-model="newSubtask.title" class="w-full" placeholder="Nova subtarefa" />
-                        <Button type="button" icon="pi pi-plus" label="Adicionar" @click="addSubtask" />
-                    </div>
-                </template>
-            </Card>
 
             <div class="flex justify-end gap-2">
                 <Link :href="route('tasks.index')">

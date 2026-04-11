@@ -18,7 +18,7 @@ const form = useForm({
     idea_id: null,
     title: '',
     script: '',
-    content_platform_id: null,
+    content_platform_ids: [],
     idea_type_id: null,
     idea_category_id: null,
     status: 'queued',
@@ -80,8 +80,16 @@ const removeLink = (index) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="content-platform">Plataforma</label>
-                    <Select id="content-platform" v-model="form.content_platform_id" :options="platforms" option-label="name" option-value="id" show-clear fluid />
+                    <label for="content-platforms">Plataformas</label>
+                    <MultiSelect
+                        id="content-platforms"
+                        v-model="form.content_platform_ids"
+                        :options="platforms"
+                        option-label="name"
+                        option-value="id"
+                        placeholder="Selecionar plataformas"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">

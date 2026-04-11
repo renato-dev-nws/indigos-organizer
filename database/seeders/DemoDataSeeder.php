@@ -15,7 +15,8 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'demo@band.com')->firstOrFail();
+        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
+        $users = User::query()->orderBy('name')->get();
 
         $ideaTypes = IdeaType::where('user_id', $user->id)->get();
         $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
@@ -23,10 +24,10 @@ class DemoDataSeeder extends Seeder
         $taskStatuses = \App\Models\TaskStatus::where('user_id', $user->id)->orderBy('order')->get();
 
         $ideas = collect([
-            ['title' => 'Lancar single no inverno', 'status' => 'pending'],
-            ['title' => 'Serie de bastidores da tour', 'status' => 'maturing'],
-            ['title' => 'Parceria com marca local', 'status' => 'cancelled'],
-            ['title' => 'Clipe acustico na rua', 'status' => 'in_production'],
+            ['title' => 'Lancar single no inverno', 'status' => 'in_drawer'],
+            ['title' => 'Serie de bastidores da tour', 'status' => 'on_table'],
+            ['title' => 'Parceria com marca local', 'status' => 'trash'],
+            ['title' => 'Clipe acustico na rua', 'status' => 'executing'],
             ['title' => 'Campanha pre-save', 'status' => 'executed'],
         ])->map(function ($row, $index) use ($user, $ideaTypes, $ideaCategories) {
             return Idea::create([
@@ -36,6 +37,7 @@ class DemoDataSeeder extends Seeder
                 'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
                 'idea_category_id' => $ideaCategories[$index % $ideaCategories->count()]?->id,
                 'status' => $row['status'],
+                'related_type' => 'none',
             ]);
         });
 
@@ -63,13 +65,17 @@ class DemoDataSeeder extends Seeder
                 'idea_id' => $ideas[$index % $ideas->count()]?->id,
                 'title' => $row['title'],
                 'script' => '<p>Roteiro inicial de exemplo.</p>',
-                'content_platform_id' => $platforms[$index % $platforms->count()]?->id,
                 'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
                 'idea_category_id' => $ideaCategories[$index % $ideaCategories->count()]?->id,
                 'status' => $row['status'],
                 'planned_publish_at' => $planned,
                 'published_at' => $publishedAt,
             ]);
+
+            $platformId = $platforms[$index % max($platforms->count(), 1)]?->id;
+            if ($platformId) {
+                $content->platforms()->sync([$platformId]);
+            }
 
             $content->links()->create([
                 'title' => 'Link externo',
@@ -82,12 +88,14 @@ class DemoDataSeeder extends Seeder
         foreach (range(1, 8) as $index) {
             $task = Task::create([
                 'user_id' => $user->id,
+                'assigned_user_id' => $index % 2 === 0 ? null : ($users[$index % max($users->count(), 1)]?->id),
+                'related_type' => $index % 3 === 0 ? 'administrative' : 'content',
                 'content_id' => $index <= 4 ? $contents[$index % $contents->count()]?->id : null,
+                'plan_id' => null,
+                'plan_phase_id' => null,
                 'title' => 'Tarefa '.$index,
                 'description' => 'Descricao da tarefa '.$index,
-                'type' => $index % 3 === 0 ? 'administrative' : 'content',
                 'task_status_id' => $taskStatuses[$index % $taskStatuses->count()]?->id,
-                'assignee' => $index % 2 === 0 ? 'Renato' : 'Equipe',
                 'priority' => ['low', 'medium', 'high', 'urgent'][$index % 4],
                 'due_date' => Carbon::now()->addDays($index),
             ]);

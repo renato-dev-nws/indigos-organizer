@@ -20,9 +20,9 @@ class ContentController extends Controller
     public function index(): Response
     {
         $query = Content::query()
-            ->with(['platform', 'type', 'category', 'idea', 'user'])
+            ->with(['platforms', 'type', 'category', 'idea', 'user'])
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
-            ->when(request('content_platform_id'), fn ($q, $platformId) => $q->where('content_platform_id', $platformId))
+            ->when(request('content_platform_id'), fn ($q, $platformId) => $q->whereHas('platforms', fn ($q2) => $q2->where('content_platforms.id', $platformId)))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
             ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
@@ -58,9 +58,11 @@ class ContentController extends Controller
     public function store(StoreContentRequest $request): RedirectResponse
     {
         $content = Content::create([
-            ...$request->safe()->except(['links']),
+            ...$request->safe()->except(['links', 'content_platform_ids']),
             'user_id' => (string) Auth::id(),
         ]);
+
+        $content->platforms()->sync($request->input('content_platform_ids', []));
 
         foreach ($request->input('links', []) as $link) {
             $content->links()->create($link);
@@ -72,14 +74,14 @@ class ContentController extends Controller
     public function show(Content $content): Response
     {
         return Inertia::render('Contents/Show', [
-            'content' => $content->load(['platform', 'type', 'category', 'files', 'links', 'idea', 'user']),
+            'content' => $content->load(['platforms', 'type', 'category', 'files', 'links', 'idea', 'user']),
         ]);
     }
 
     public function edit(Content $content): Response
     {
         return Inertia::render('Contents/Edit', [
-            'content' => $content->load(['type', 'category', 'links', 'files']),
+            'content' => $content->load(['platforms', 'type', 'category', 'links', 'files']),
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
@@ -89,7 +91,8 @@ class ContentController extends Controller
 
     public function update(UpdateContentRequest $request, Content $content): RedirectResponse
     {
-        $content->update($request->safe()->except(['links']));
+        $content->update($request->safe()->except(['links', 'content_platform_ids']));
+        $content->platforms()->sync($request->input('content_platform_ids', []));
 
         $content->links()->delete();
         foreach ($request->input('links', []) as $link) {

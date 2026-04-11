@@ -18,8 +18,8 @@ class SystemSettingController extends Controller
         $iconPath = SystemSetting::get('icon_path');
 
         return Inertia::render('Settings/System', [
-            'logoUrl' => $logoPath ? Storage::disk('public')->url($logoPath) : null,
-            'iconUrl' => $iconPath ? Storage::disk('public')->url($iconPath) : null,
+            'logoUrl' => $logoPath ? Storage::url($logoPath) : null,
+            'iconUrl' => $iconPath ? Storage::url($iconPath) : null,
         ]);
     }
 
@@ -35,7 +35,7 @@ class SystemSettingController extends Controller
         }
 
         if ($request->hasFile('icon')) {
-            $request->validate(['icon' => ['image', 'mimes:jpg,jpeg,png,ico,webp', 'max:512']]);
+            $request->validate(['icon' => ['image', 'mimes:jpeg,png,gif,svg,webp,ico', 'max:512']]);
             $old = SystemSetting::get('icon_path');
             if ($old) Storage::disk('public')->delete($old);
             $ext = $request->file('icon')->extension();

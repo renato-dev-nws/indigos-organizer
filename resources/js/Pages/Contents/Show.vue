@@ -27,8 +27,11 @@ defineProps({ content: Object });
                         <BoStatusTag :value="content.status" />
                     </div>
                     <div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400">Plataforma</p>
-                        <p class="font-semibold">{{ content.platform?.name || '-' }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Plataformas</p>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            <Tag v-for="platform in content.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
+                            <span v-if="!content.platforms?.length" class="font-semibold">-</span>
+                        </div>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Tipo</p>

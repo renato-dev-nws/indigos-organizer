@@ -25,9 +25,10 @@ class TaskStatusUpdateTest extends TestCase
 
         $task = Task::create([
             'user_id' => $owner->id,
+            'assigned_user_id' => $owner->id,
+            'related_type' => 'administrative',
             'title' => 'Task 1',
             'description' => 'desc',
-            'type' => 'administrative',
             'task_status_id' => $ownerStatusA->id,
             'priority' => 'medium',
         ]);
@@ -62,9 +63,10 @@ class TaskStatusUpdateTest extends TestCase
 
         $task = Task::create([
             'user_id' => $owner->id,
+            'assigned_user_id' => $owner->id,
+            'related_type' => 'administrative',
             'title' => 'Task owner',
             'description' => 'desc',
-            'type' => 'administrative',
             'task_status_id' => $ownerStatus->id,
             'priority' => 'medium',
         ]);

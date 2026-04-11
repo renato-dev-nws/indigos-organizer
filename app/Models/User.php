@@ -60,4 +60,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Venue::class);
     }
+
+    public function plans(): HasMany
+    {
+        return $this->hasMany(Plan::class);
+    }
+
+    public function sharedInfos(): HasMany
+    {
+        return $this->hasMany(SharedInfo::class);
+    }
 }

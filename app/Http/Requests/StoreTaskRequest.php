@@ -15,14 +15,19 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'assigned_user_id' => ['nullable', 'uuid', 'exists:users,id'],
+            'related_type' => ['required', 'in:content,plan,administrative'],
             'content_id' => ['nullable', 'uuid', 'exists:contents,id'],
+            'plan_id' => ['nullable', 'uuid', 'exists:plans,id'],
+            'plan_phase_id' => ['nullable', 'uuid', 'exists:plan_phases,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type' => ['required', 'in:content,administrative'],
             'task_status_id' => ['required', 'uuid', 'exists:task_statuses,id'],
-            'assignee' => ['nullable', 'string', 'max:255'],
             'priority' => ['required', 'in:low,medium,high,urgent'],
             'due_date' => ['nullable', 'date'],
+            'subtasks' => ['nullable', 'array'],
+            'subtasks.*.title' => ['required_with:subtasks', 'string', 'max:255'],
+            'subtasks.*.completed' => ['boolean'],
         ];
     }
 
@@ -30,8 +35,12 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($this->input('type') === 'content' && ! $this->input('content_id')) {
+                if ($this->input('related_type') === 'content' && ! $this->input('content_id')) {
                     $validator->errors()->add('content_id', 'Conteúdo é obrigatório quando o tipo é conteúdo.');
+                }
+
+                if ($this->input('related_type') === 'plan' && ! $this->input('plan_id')) {
+                    $validator->errors()->add('plan_id', 'Plano é obrigatório quando o tipo é plano.');
                 }
             },
         ];

@@ -18,7 +18,12 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignUuid('idea_type_id')->nullable()->constrained('idea_types')->nullOnDelete();
             $table->foreignUuid('idea_category_id')->nullable()->constrained('idea_categories')->nullOnDelete();
-            $table->enum('status', ['pending', 'maturing', 'cancelled', 'in_production', 'executed'])->default('pending');
+            $table->enum('status', ['in_drawer', 'on_table', 'on_board', 'executing', 'executed', 'trash'])->default('in_drawer');
+            $table->enum('related_type', ['new_content', 'new_plan', 'existing_content', 'existing_plan', 'administrative', 'none'])->default('none');
+            $table->uuid('content_id')->nullable();
+            $table->foreignUuid('plan_id')->nullable()->constrained('plans')->nullOnDelete();
+            $table->foreignUuid('plan_phase_id')->nullable()->constrained('plan_phases')->nullOnDelete();
+            $table->boolean('is_private')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });
