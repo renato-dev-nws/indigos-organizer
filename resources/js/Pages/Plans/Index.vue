@@ -88,6 +88,8 @@ const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveS
                     <BoStatusTag :value="plan.status" />
                 </div>
                 <ProgressBar :value="plan.progress" style="height:0.4rem" />
+                <p class="mt-2 text-xs text-slate-500">Início: <BoDateText :value="plan.start_date" mode="date" /></p>
+                <p class="text-xs text-slate-500">Fim: <BoDateText :value="plan.end_date" mode="date" /></p>
                 <p class="mt-2 text-xs text-slate-500">Fases: {{ plan.phases?.length || 0 }}</p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('plans.show', plan.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>

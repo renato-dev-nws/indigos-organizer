@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -10,11 +11,39 @@ const props = defineProps({ boardIdeas: Array, myTasks: Array });
 const vote = (ideaId, voteValue) => {
     router.post(route('ideas.vote', ideaId), { vote: voteValue }, { preserveScroll: true });
 };
+
+const dashboardCards = computed(() => [
+    {
+        title: 'Ideias aguardando voto',
+        value: props.boardIdeas.length,
+        subtitle: 'No quadro para você decidir',
+    },
+    {
+        title: 'Minhas tarefas recentes',
+        value: props.myTasks.length,
+        subtitle: 'Últimas 5 tarefas visíveis',
+    },
+    {
+        title: 'Prioridade urgente',
+        value: props.myTasks.filter((task) => task.priority === 'urgent').length,
+        subtitle: 'Itens críticos na sua fila',
+    },
+]);
 </script>
 
 <template>
     <div class="space-y-6">
         <BoPageHeader title="Dashboard" subtitle="Pendências de votação e tarefas recentes" />
+
+        <div class="grid gap-3 md:grid-cols-3">
+            <Card v-for="card in dashboardCards" :key="card.title">
+                <template #content>
+                    <p class="text-xs uppercase tracking-wide text-slate-500">{{ card.title }}</p>
+                    <p class="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ card.value }}</p>
+                    <p class="mt-1 text-sm text-slate-500">{{ card.subtitle }}</p>
+                </template>
+            </Card>
+        </div>
 
         <Card>
             <template #title>Ideias para votação</template>

@@ -123,6 +123,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
                 </div>
                 <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }} · {{ idea.category?.name || '-' }}</p>
                 <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
+                <p class="text-xs text-slate-500">Atualizado em: <BoDateText :value="idea.updated_at" mode="datetime" /></p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('ideas.show', idea.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>

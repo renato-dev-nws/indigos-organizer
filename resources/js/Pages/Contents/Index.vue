@@ -99,16 +99,18 @@ const calendarColumns = computed(() => {
     <div class="space-y-4">
         <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial">
             <template #actions>
-                <SelectButton
-                    v-model="viewMode"
-                    size="small"
-                    :options="[
-                        { label: 'Lista', value: 'list' },
-                        { label: 'Calendário', value: 'calendar' },
-                    ]"
-                    option-label="label"
-                    option-value="value"
-                />
+                <div class="hidden md:block">
+                    <SelectButton
+                        v-model="viewMode"
+                        size="small"
+                        :options="[
+                            { label: 'Lista', value: 'list' },
+                            { label: 'Calendário', value: 'calendar' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                    />
+                </div>
                 <Link :href="route('contents.create')">
                     <Button icon="pi pi-plus" label="Novo conteúdo" />
                 </Link>
@@ -158,9 +160,10 @@ const calendarColumns = computed(() => {
             </div>
         </BoFilterBar>
 
-        <Card v-if="viewMode === 'list'">
-            <template #content>
-                <DataTable :value="contents.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
+        <div class="hidden md:block">
+            <Card v-if="viewMode === 'list'">
+                <template #content>
+                    <DataTable :value="contents.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="title" header="Título" sortable />
                     <Column header="Plataformas">
                         <template #body="{ data }">
@@ -197,19 +200,37 @@ const calendarColumns = computed(() => {
                     <template #empty>
                         <BoDataTableEmpty />
                     </template>
-                </DataTable>
+                    </DataTable>
 
-                <Paginator
-                    class="mt-4"
-                    :rows="contents.per_page"
-                    :total-records="contents.total"
-                    :first="(contents.current_page - 1) * contents.per_page"
-                    @page="paginate"
-                />
-            </template>
-        </Card>
+                    <Paginator
+                        class="mt-4"
+                        :rows="contents.per_page"
+                        :total-records="contents.total"
+                        :first="(contents.current_page - 1) * contents.per_page"
+                        @page="paginate"
+                    />
+                </template>
+            </Card>
 
-        <div v-else-if="viewMode === 'mobile'" class="block space-y-3 md:hidden">
+            <div v-else class="grid gap-4 lg:grid-cols-7">
+                <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
+                    <template #title>{{ column.label }}</template>
+                    <template #content>
+                        <div class="space-y-2">
+                            <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                Sem publicações.
+                            </div>
+                            <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
+                                <BoStatusTag :value="content.status" />
+                            </div>
+                        </div>
+                    </template>
+                </Card>
+            </div>
+        </div>
+
+        <div class="block space-y-3 md:hidden">
             <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ content.title }}</h3>
@@ -219,29 +240,14 @@ const calendarColumns = computed(() => {
                     <Tag v-for="platform in content.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
                 </div>
                 <p class="text-xs text-slate-500">{{ content.type?.name || '-' }} · {{ content.category?.name || '-' }}</p>
+                <p class="text-xs text-slate-500">Autor: {{ content.user?.name || '-' }}</p>
+                <p class="text-xs text-slate-500">Publicação: <BoDateText :value="content.planned_publish_at" mode="datetime" /></p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('contents.show', content.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
                     <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(content.id)" />
                 </div>
             </div>
-        </div>
-
-        <div v-else-if="viewMode === 'calendar'" class="grid gap-4 lg:grid-cols-7">
-            <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
-                <template #title>{{ column.label }}</template>
-                <template #content>
-                    <div class="space-y-2">
-                        <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                            Sem publicações.
-                        </div>
-                        <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                            <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
-                            <BoStatusTag :value="content.status" />
-                        </div>
-                    </div>
-                </template>
-            </Card>
         </div>
     </div>
 </template>
