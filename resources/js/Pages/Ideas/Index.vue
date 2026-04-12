@@ -11,7 +11,7 @@ import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({ ideas: Object, filters: Object, ideaTypes: Array, ideaCategories: Array });
+const props = defineProps({ ideas: Object, filters: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array });
 const viewMode = ref('list');
 
 const statusLabels = {
@@ -27,6 +27,7 @@ const localFilters = reactive({
     status: props.filters?.status ?? null,
     idea_type_id: props.filters?.idea_type_id ?? null,
     idea_category_id: props.filters?.idea_category_id ?? null,
+    venue_style_id: props.filters?.venue_style_id ?? null,
     search: props.filters?.search ?? '',
 });
 
@@ -34,6 +35,10 @@ const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.status) chips.push({ key: 'status', label: statusLabels[localFilters.status] || localFilters.status });
+    if (localFilters.venue_style_id) {
+        const style = props.venueStyles?.find((item) => item.id === localFilters.venue_style_id);
+        if (style) chips.push({ key: 'venue_style_id', label: style.name });
+    }
     return chips;
 });
 
@@ -42,6 +47,7 @@ const resetFilters = () => {
     localFilters.status = null;
     localFilters.idea_type_id = null;
     localFilters.idea_category_id = null;
+    localFilters.venue_style_id = null;
     localFilters.search = '';
     submitFilters();
 };
@@ -78,7 +84,10 @@ const kanbanColumns = computed(() => {
                         option-value="value"
                     />
                 </div>
-                <Link :href="route('ideas.create')"><Button icon="pi pi-plus" label="Nova ideia" /></Link>
+                <Link :href="route('ideas.create')">
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Nova ideia" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Nova ideia" />
+                </Link>
             </template>
         </BoPageHeader>
 
@@ -106,6 +115,10 @@ const kanbanColumns = computed(() => {
                 <label class="text-sm font-medium">Categoria</label>
                 <Select v-model="localFilters.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" show-clear />
             </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Estilo</label>
+                <Select v-model="localFilters.venue_style_id" :options="venueStyles" option-label="name" option-value="id" show-clear />
+            </div>
         </BoFilterBar>
 
         <div v-if="viewMode === 'list'" class="hidden md:block">
@@ -115,6 +128,14 @@ const kanbanColumns = computed(() => {
                         <Column field="title" header="Título" />
                         <Column field="type.name" header="Tipo" />
                         <Column field="category.name" header="Categoria" />
+                        <Column header="Estilos">
+                            <template #body="{ data }">
+                                <div class="flex flex-wrap gap-1">
+                                    <Tag v-for="style in data.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                                    <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
+                                </div>
+                            </template>
+                        </Column>
                         <Column header="Status">
                             <template #body="{ data }"><BoStatusTag :value="data.status" /></template>
                         </Column>
@@ -144,6 +165,9 @@ const kanbanColumns = computed(() => {
                     <BoStatusTag :value="idea.status" />
                 </div>
                 <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }} · {{ idea.category?.name || '-' }}</p>
+                <div class="mt-2 flex flex-wrap gap-1">
+                    <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                </div>
                 <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
                 <p class="text-xs text-slate-500">Atualizado em: <BoDateText :value="idea.updated_at" mode="datetime" /></p>
                 <div class="mt-3 flex justify-end gap-1">
@@ -169,6 +193,9 @@ const kanbanColumns = computed(() => {
                             <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
                                 <span class="truncate">{{ idea.category?.name || 'Sem categoria' }}</span>
                                 <span class="truncate">{{ idea.type?.name || 'Sem tipo' }}</span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-1">
+                                <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
                             </div>
                         </Link>
                         <p v-if="!column.items.length" class="text-xs text-slate-500">Sem ideias nesta coluna.</p>

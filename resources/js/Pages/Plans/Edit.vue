@@ -26,7 +26,10 @@ const submit = () => form.put(route('plans.update', props.plan.id));
     <div class="space-y-6">
         <BoPageHeader title="Editar plano" subtitle="Atualize o plano e suas fases">
             <template #actions>
-                <Link :href="route('plans.show', plan.id)"><Button label="Visualizar" icon="pi pi-eye" outlined severity="secondary" /></Link>
+                <Link :href="route('plans.show', plan.id)">
+                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
+                </Link>
             </template>
         </BoPageHeader>
 

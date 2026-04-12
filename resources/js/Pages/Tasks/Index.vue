@@ -197,8 +197,8 @@ const swimlaneRows = computed(() =>
                         option-value="value"
                     />
                 </div>
-                <Button class="hidden md:inline-flex" icon="pi pi-plus" label="Nova tarefa" @click="openCreateModal" />
-                <Button class="inline-flex md:hidden" icon="pi pi-plus" rounded aria-label="Nova tarefa" @click="openCreateModal" />
+                <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Nova tarefa" @click="openCreateModal" />
+                <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Nova tarefa" @click="openCreateModal" />
             </template>
         </BoPageHeader>
 

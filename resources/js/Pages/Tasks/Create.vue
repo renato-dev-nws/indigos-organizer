@@ -45,7 +45,8 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
         <BoPageHeader title="Nova tarefa" subtitle="Cadastre tarefas relacionadas a conteúdo, plano ou administrativo">
             <template #actions>
                 <Link :href="route('tasks.index')">
-                    <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>

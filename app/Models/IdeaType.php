@@ -15,7 +15,7 @@ class IdeaType extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['user_id', 'name', 'color'];
+    protected $fillable = ['user_id', 'name', 'color', 'icon'];
 
     public function user(): BelongsTo
     {

@@ -87,4 +87,17 @@ Route::get('/sw.js', function () {
     ]);
 });
 
+// Workbox runtime file is generated under /public/build, but sw.js imports it from root.
+Route::get('/{workbox}', function (string $workbox) {
+    $path = public_path('build/'.$workbox);
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/javascript',
+        'Cache-Control' => 'public, max-age=31536000, immutable',
+    ]);
+})->where('workbox', 'workbox-[A-Za-z0-9_-]+\.js');
+
 require __DIR__.'/auth.php';

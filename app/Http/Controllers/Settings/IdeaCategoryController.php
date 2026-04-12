@@ -14,6 +14,7 @@ class IdeaCategoryController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         IdeaCategory::create([
@@ -30,6 +31,7 @@ class IdeaCategoryController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         $item->update($data);
@@ -39,7 +41,12 @@ class IdeaCategoryController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = IdeaCategory::findOrFail($id);
+        $item = IdeaCategory::withCount(['ideas', 'contents'])->findOrFail($id);
+
+        if ($item->ideas_count > 0 || $item->contents_count > 0) {
+            return back()->with('error', 'Nao e permitido remover categoria vinculada a ideias ou conteudos.');
+        }
+
         $item->delete();
 
         return back()->with('success', 'Categoria de ideia removida com sucesso.');

@@ -66,16 +66,19 @@ class VenueController extends Controller
     {
         return Inertia::render('Venues/Create', [
             'sizes' => VenueSize::orderBy('name')->get(),
-            'types' => VenueType::orderBy('name')->get(['id', 'name']),
-            'categories' => VenueCategory::orderBy('name')->get(['id', 'name']),
-            'styles' => VenueStyle::orderBy('name')->get(['id', 'name']),
+            'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
+            'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
+            'styles' => VenueStyle::orderBy('name')->get(['id', 'name', 'icon']),
         ]);
     }
 
     public function store(StoreVenueRequest $request): RedirectResponse
     {
+        $payload = $request->validated();
+        $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
+
         Venue::create([
-            ...$request->validated(),
+            ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
 
@@ -94,15 +97,18 @@ class VenueController extends Controller
         return Inertia::render('Venues/Edit', [
             'venue' => $venue,
             'sizes' => VenueSize::orderBy('name')->get(),
-            'types' => VenueType::orderBy('name')->get(['id', 'name']),
-            'categories' => VenueCategory::orderBy('name')->get(['id', 'name']),
-            'styles' => VenueStyle::orderBy('name')->get(['id', 'name']),
+            'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
+            'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
+            'styles' => VenueStyle::orderBy('name')->get(['id', 'name', 'icon']),
         ]);
     }
 
     public function update(UpdateVenueRequest $request, Venue $venue): RedirectResponse
     {
-        $venue->update($request->validated());
+        $payload = $request->validated();
+        $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
+
+        $venue->update($payload);
 
         return redirect()->route('venues.index')->with('success', 'Local atualizado com sucesso.');
     }

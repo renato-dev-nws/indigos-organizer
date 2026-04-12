@@ -6,7 +6,7 @@ import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
-const props = defineProps({ ideaTypes: Array, ideaCategories: Array, plans: Array, contents: Array, users: Array });
+const props = defineProps({ ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
@@ -18,6 +18,7 @@ const form = useForm({
     description: '',
     idea_type_id: null,
     idea_category_id: null,
+    venue_style_ids: [],
     status: 'in_drawer',
     is_private: false,
     voter_users: [],
@@ -48,7 +49,8 @@ const removeReference = (index) => form.references.splice(index, 1);
         <BoPageHeader title="Nova ideia" subtitle="Cadastre ideias relacionadas ao conteúdo, plano ou gestão da banda">
             <template #actions>
                 <Link :href="route('ideas.index')">
-                    <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -107,6 +109,11 @@ const removeReference = (index) => form.references.splice(index, 1);
                 <div class="space-y-2">
                     <label>Categoria</label>
                     <Select v-model="form.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Estilos</label>
+                    <MultiSelect v-model="form.venue_style_ids" :options="venueStyles" option-label="name" option-value="id" display="chip" fluid />
                 </div>
 
                 <div class="space-y-2">

@@ -6,12 +6,13 @@ import SettingsCrudSection from '@/Components/settings/SettingsCrudSection.vue';
 
 defineOptions({ layout: AppLayout });
 
-defineProps({
+const props = defineProps({
     title: String,
     description: String,
     items: Array,
     routeBase: String,
     withColor: Boolean,
+    withIcon: Boolean,
     withOrder: Boolean,
     reorderOnly: Boolean,
     disableDeleteWhen: String,
@@ -62,6 +63,7 @@ const switchTab = (tab) => {
             :items="items"
             :route-base="routeBase"
             :with-color="withColor"
+            :with-icon="withIcon"
             :with-order="withOrder"
             :reorder-only="reorderOnly"
             :disable-delete-when="disableDeleteWhen"

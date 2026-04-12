@@ -15,6 +15,7 @@ class VenueCategoryController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         VenueCategory::create([
@@ -32,6 +33,7 @@ class VenueCategoryController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         $item->update($data);

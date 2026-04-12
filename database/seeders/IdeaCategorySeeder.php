@@ -12,8 +12,20 @@ class IdeaCategorySeeder extends Seeder
     {
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
-        foreach (['Divulgação', 'Marketing', 'Informativo', 'Série', 'Humor', 'História'] as $name) {
-            IdeaCategory::firstOrCreate(['user_id' => $user->id, 'name' => $name]);
+        $data = [
+            ['name' => 'Divulgação', 'icon' => 'pi pi-megaphone'],
+            ['name' => 'Marketing', 'icon' => 'pi pi-chart-line'],
+            ['name' => 'Informativo', 'icon' => 'pi pi-info-circle'],
+            ['name' => 'Série', 'icon' => 'pi pi-list'],
+            ['name' => 'Humor', 'icon' => 'pi pi-face-smile'],
+            ['name' => 'História', 'icon' => 'pi pi-book'],
+        ];
+
+        foreach ($data as $item) {
+            IdeaCategory::updateOrCreate(
+                ['user_id' => $user->id, 'name' => $item['name']],
+                ['icon' => $item['icon']],
+            );
         }
     }
 }

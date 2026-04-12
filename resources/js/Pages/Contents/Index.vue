@@ -31,6 +31,7 @@ const localFilters = reactive({
     content_platform_id: props.filters?.content_platform_id ?? null,
     idea_type_id: props.filters?.idea_type_id ?? null,
     idea_category_id: props.filters?.idea_category_id ?? null,
+    venue_style_id: props.filters?.venue_style_id ?? null,
     planned_week: props.filters?.planned_week ?? '',
     search: props.filters?.search ?? '',
 });
@@ -51,6 +52,10 @@ const filterChips = computed(() => {
         const c = props.categories?.find((x) => x.id === localFilters.idea_category_id);
         if (c) chips.push({ key: 'idea_category_id', label: c.name });
     }
+    if (localFilters.venue_style_id) {
+        const s = props.styles?.find((x) => x.id === localFilters.venue_style_id);
+        if (s) chips.push({ key: 'venue_style_id', label: s.name });
+    }
     if (localFilters.planned_week) chips.push({ key: 'planned_week', label: `Semana: ${localFilters.planned_week}` });
     return chips;
 });
@@ -64,6 +69,7 @@ const resetFilters = () => {
     localFilters.content_platform_id = null;
     localFilters.idea_type_id = null;
     localFilters.idea_category_id = null;
+    localFilters.venue_style_id = null;
     localFilters.planned_week = '';
     localFilters.search = '';
     submitFilters();
@@ -139,7 +145,8 @@ const fullCalendarOptions = computed(() => ({
                     />
                 </div>
                 <Link :href="route('contents.create')">
-                    <Button icon="pi pi-plus" label="Novo conteúdo" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo conteúdo" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo conteúdo" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -182,6 +189,10 @@ const fullCalendarOptions = computed(() => ({
                 <Select v-model="localFilters.idea_category_id" :options="categories" option-label="name" option-value="id" placeholder="Todas as categorias" show-clear />
             </div>
             <div class="space-y-2">
+                <label class="text-sm font-medium">Estilo</label>
+                <Select v-model="localFilters.venue_style_id" :options="styles" option-label="name" option-value="id" placeholder="Todos os estilos" show-clear />
+            </div>
+            <div class="space-y-2">
                 <label class="text-sm font-medium">Semana</label>
                 <InputText v-model="localFilters.planned_week" placeholder="Ex: 2026-W15" />
             </div>
@@ -200,6 +211,14 @@ const fullCalendarOptions = computed(() => ({
                         </template>
                     </Column>
                     <Column field="type.name" header="Tipo" sortable />
+                    <Column header="Estilos">
+                        <template #body="{ data }">
+                            <div class="flex flex-wrap gap-1">
+                                <Tag v-for="style in data.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                                <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </template>
+                    </Column>
                     <Column header="Status" sort-field="status" sortable>
                         <template #body="{ data }">
                             <BoStatusTag :value="data.status" />
@@ -273,6 +292,9 @@ const fullCalendarOptions = computed(() => ({
                     <Tag v-for="platform in content.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
                 </div>
                 <p class="text-xs text-slate-500">{{ content.type?.name || '-' }} · {{ content.category?.name || '-' }}</p>
+                <div class="mt-2 flex flex-wrap gap-1">
+                    <Tag v-for="style in content.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                </div>
                 <p class="text-xs text-slate-500">Autor: {{ content.user?.name || '-' }}</p>
                 <p class="text-xs text-slate-500">Publicação: <BoDateText :value="content.planned_publish_at" mode="datetime" /></p>
                 <div class="mt-3 flex justify-end gap-1">

@@ -61,8 +61,10 @@ class PlanController extends Controller
             'plan' => $plan->load([
                 'phases.tasks.status',
                 'phases.tasks.assignedUser',
+                'phases.tasks.subtasks',
                 'tasks.status',
                 'tasks.assignedUser',
+                'tasks.subtasks',
                 'user',
             ]),
         ]);

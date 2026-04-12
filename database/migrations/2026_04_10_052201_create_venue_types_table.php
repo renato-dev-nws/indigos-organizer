@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('name');
             $table->string('color')->nullable();
+            $table->string('icon')->nullable();
             $table->timestamps();
         });
     }

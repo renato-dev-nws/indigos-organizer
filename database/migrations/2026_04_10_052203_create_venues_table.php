@@ -34,7 +34,7 @@ return new class extends Migration
             $table->decimal('longitude', 10, 7)->nullable();
             $table->enum('status', ['undefined', 'not_relevant', 'contacted', 'vetoed', 'negotiating', 'open_doors'])->default('undefined');
             $table->unsignedInteger('performances_count')->default(0);
-            $table->string('equipment_tags')->nullable();
+            $table->json('equipment_tags')->nullable();
             $table->unsignedTinyInteger('rating')->nullable();
             $table->string('instagram_url')->nullable();
             $table->string('facebook_url')->nullable();

@@ -25,7 +25,10 @@ const submit = () => form.post(route('plans.store'));
     <div class="space-y-6">
         <BoPageHeader title="Novo plano" subtitle="Cadastre um plano com fases de execução">
             <template #actions>
-                <Link :href="route('plans.index')"><Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" /></Link>
+                <Link :href="route('plans.index')">
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
             </template>
         </BoPageHeader>
 

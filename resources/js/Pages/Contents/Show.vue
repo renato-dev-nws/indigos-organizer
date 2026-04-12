@@ -14,12 +14,12 @@ defineProps({ content: Object });
         <BoPageHeader :title="content.title" subtitle="Visão completa do conteúdo">
             <template #actions>
                 <Link :href="route('contents.index')">
-                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
                 <Link :href="route('contents.edit', content.id)">
-                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -41,6 +41,13 @@ defineProps({ content: Object });
                     <div>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Tipo</p>
                         <p class="font-semibold">{{ content.type?.name || '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Estilos</p>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            <Tag v-for="style in content.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                            <span v-if="!content.styles?.length" class="font-semibold">-</span>
+                        </div>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Publicação planejada</p>

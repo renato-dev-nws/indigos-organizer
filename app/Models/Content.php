@@ -76,4 +76,9 @@ class Content extends Model
     {
         return $this->hasMany(Task::class);
     }
+
+    public function styles(): BelongsToMany
+    {
+        return $this->belongsToMany(VenueStyle::class, 'content_venue_style');
+    }
 }

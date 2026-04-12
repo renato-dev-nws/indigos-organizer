@@ -30,7 +30,10 @@ const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveS
     <div class="space-y-6">
         <BoPageHeader title="Planos" subtitle="Gerencie os planos de execução da banda">
             <template #actions>
-                <Link :href="route('plans.create')"><Button icon="pi pi-plus" label="Novo plano" /></Link>
+                <Link :href="route('plans.create')">
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo plano" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo plano" />
+                </Link>
             </template>
         </BoPageHeader>
 

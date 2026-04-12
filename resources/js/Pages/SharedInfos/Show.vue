@@ -12,12 +12,12 @@ defineProps({ sharedInfo: Object });
         <BoPageHeader :title="sharedInfo.title" subtitle="Detalhes da informação compartilhada">
             <template #actions>
                 <Link :href="route('shared-infos.index')">
-                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
                 <Link :href="route('shared-infos.edit', sharedInfo.id)">
-                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
                 </Link>
             </template>
         </BoPageHeader>

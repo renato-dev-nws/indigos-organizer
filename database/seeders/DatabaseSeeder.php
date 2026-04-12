@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             'Database\\Seeders\\IdeaTypeSeeder',
             'Database\\Seeders\\IdeaCategorySeeder',
             'Database\\Seeders\\ContentPlatformSeeder',
+            'Database\\Seeders\\VenueTaxonomySeeder',
             'Database\\Seeders\\TaskStatusSeeder',
             'Database\\Seeders\\DemoDataSeeder',
             'Database\\Seeders\\PlanSeeder',

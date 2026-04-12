@@ -9,13 +9,14 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, ideas: Array });
+const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, venueStyleIds: Array });
 
 const form = useForm({
     idea_id: props.content.idea_id,
     title: props.content.title,
     script: props.content.script,
     content_platform_ids: props.content.platforms?.map((platform) => platform.id) ?? [],
+    venue_style_ids: props.venueStyleIds ?? [],
     idea_type_id: props.content.idea_type_id,
     idea_category_id: props.content.idea_category_id,
     status: props.content.status,
@@ -61,7 +62,8 @@ const removeFile = (fileId) => {
         <BoPageHeader title="Editar conteúdo" subtitle="Atualize roteiro, links e anexos">
             <template #actions>
                 <Link :href="route('contents.show', content.id)">
-                    <Button label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -118,6 +120,11 @@ const removeFile = (fileId) => {
                 <div class="space-y-2">
                     <label for="content-category">Categoria</label>
                     <Select id="content-category" v-model="form.idea_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label for="content-styles">Estilos</label>
+                    <MultiSelect id="content-styles" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" fluid />
                 </div>
 
                 <div class="space-y-2">

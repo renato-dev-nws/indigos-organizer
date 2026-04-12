@@ -56,6 +56,7 @@ class Venue extends Model
             'longitude' => 'float',
             'performances_count' => 'integer',
             'rating' => 'integer',
+            'equipment_tags' => 'array',
             'has_performed' => 'boolean',
         ];
     }

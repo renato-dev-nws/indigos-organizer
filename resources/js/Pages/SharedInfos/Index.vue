@@ -23,7 +23,10 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
     <div class="space-y-6">
         <BoPageHeader title="Informações" subtitle="Central de informações compartilhadas da banda">
             <template #actions>
-                <Link :href="route('shared-infos.create')"><Button icon="pi pi-plus" label="Nova informação" /></Link>
+                <Link :href="route('shared-infos.create')">
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Nova informação" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Nova informação" />
+                </Link>
             </template>
         </BoPageHeader>
 

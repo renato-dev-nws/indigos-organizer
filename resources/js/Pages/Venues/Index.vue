@@ -150,8 +150,8 @@ onMounted(() => {
         <BoPageHeader title="Locais" subtitle="Gestão de locais, contatos e geolocalização">
             <template #actions>
                 <Link :href="route('venues.create')">
-                    <Button class="hidden md:inline-flex" icon="pi pi-plus" label="Novo local" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-plus" rounded aria-label="Novo local" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo local" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo local" />
                 </Link>
             </template>
         </BoPageHeader>

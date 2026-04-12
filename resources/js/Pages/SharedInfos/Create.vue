@@ -19,7 +19,10 @@ const uploadFile = (files) => { form.documents = files; };
     <div class="space-y-6">
         <BoPageHeader title="Nova informação" subtitle="Compartilhe links e documentos com a banda">
             <template #actions>
-                <Link :href="route('shared-infos.index')"><Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" /></Link>
+                <Link :href="route('shared-infos.index')">
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
             </template>
         </BoPageHeader>
 

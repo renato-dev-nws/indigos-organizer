@@ -12,6 +12,7 @@ defineProps({
     platforms: Array,
     types: Array,
     categories: Array,
+    styles: Array,
     ideas: Array,
 });
 
@@ -20,6 +21,7 @@ const form = useForm({
     title: '',
     script: '',
     content_platform_ids: [],
+    venue_style_ids: [],
     idea_type_id: null,
     idea_category_id: null,
     status: 'queued',
@@ -44,7 +46,8 @@ const removeLink = (index) => {
         <BoPageHeader title="Novo conteúdo" subtitle="Crie e planeje o conteúdo com metadados completos">
             <template #actions>
                 <Link :href="route('contents.index')">
-                    <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -101,6 +104,11 @@ const removeLink = (index) => {
                 <div class="space-y-2">
                     <label for="content-category">Categoria</label>
                     <Select id="content-category" v-model="form.idea_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label for="content-styles">Estilos</label>
+                    <MultiSelect id="content-styles" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" fluid />
                 </div>
 
                 <div class="space-y-2">

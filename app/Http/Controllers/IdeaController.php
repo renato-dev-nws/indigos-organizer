@@ -12,6 +12,7 @@ use App\Models\IdeaVote;
 use App\Models\IdeaType;
 use App\Models\Plan;
 use App\Models\User;
+use App\Models\VenueStyle;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ class IdeaController extends Controller
     public function index(): Response
     {
         $ideas = Idea::query()
-            ->with(['type', 'category', 'user', 'content', 'plan', 'planPhase'])
+            ->with(['type', 'category', 'styles', 'user', 'content', 'plan', 'planPhase'])
             ->where(function ($q) {
                 $q->where('is_private', false)
                     ->orWhere('user_id', Auth::id());
@@ -31,6 +32,7 @@ class IdeaController extends Controller
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
             ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
             ->orderByDesc('updated_at')
             ->paginate(15)
@@ -38,9 +40,10 @@ class IdeaController extends Controller
 
         return Inertia::render('Ideas/Index', [
             'ideas' => $ideas,
-            'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'search']),
+            'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'venue_style_id', 'search']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
+            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
         ]);
     }
 
@@ -49,6 +52,7 @@ class IdeaController extends Controller
         return Inertia::render('Ideas/Create', [
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
+            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
@@ -57,7 +61,7 @@ class IdeaController extends Controller
 
     public function store(StoreIdeaRequest $request): RedirectResponse
     {
-        $payload = $request->safe()->except(['references', 'voter_users']);
+        $payload = $request->safe()->except(['references', 'voter_users', 'venue_style_ids']);
         if (($payload['related_type'] ?? null) !== 'existing_content') {
             $payload['content_id'] = null;
         }
@@ -76,13 +80,14 @@ class IdeaController extends Controller
         }
 
         $idea->voterUsers()->sync($request->input('voter_users', []));
+        $idea->styles()->sync($request->input('venue_style_ids', []));
 
         return redirect()->route('ideas.index')->with('success', 'Ideia criada com sucesso.');
     }
 
     public function show(Idea $idea): Response
     {
-        $idea->load(['type', 'category', 'references', 'user', 'content', 'plan', 'planPhase', 'votes.user', 'voterUsers']);
+        $idea->load(['type', 'category', 'styles', 'references', 'user', 'content', 'plan', 'planPhase', 'votes.user', 'voterUsers']);
         $userVote = $idea->votes()->where('user_id', Auth::id())->first();
 
         return Inertia::render('Ideas/Show', [
@@ -94,19 +99,21 @@ class IdeaController extends Controller
     public function edit(Idea $idea): Response
     {
         return Inertia::render('Ideas/Edit', [
-            'idea' => $idea->load(['references', 'voterUsers']),
+            'idea' => $idea->load(['references', 'voterUsers', 'styles']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
+            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'voterUsers' => $idea->voterUsers()->pluck('users.id')->all(),
+            'venueStyleIds' => $idea->styles()->pluck('venue_styles.id')->all(),
         ]);
     }
 
     public function update(UpdateIdeaRequest $request, Idea $idea): RedirectResponse
     {
-        $payload = $request->safe()->except(['references', 'voter_users']);
+        $payload = $request->safe()->except(['references', 'voter_users', 'venue_style_ids']);
         if (($payload['related_type'] ?? null) !== 'existing_content') {
             $payload['content_id'] = null;
         }
@@ -121,6 +128,7 @@ class IdeaController extends Controller
         $idea->update($payload);
         $idea->references()->delete();
         $idea->voterUsers()->sync($request->input('voter_users', []));
+        $idea->styles()->sync($request->input('venue_style_ids', []));
 
         foreach ($request->input('references', []) as $reference) {
             $idea->references()->create($reference);

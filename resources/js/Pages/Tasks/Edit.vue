@@ -42,7 +42,8 @@ const submit = () => form.put(route('tasks.update', props.task.id));
         <BoPageHeader title="Editar tarefa" subtitle="Atualize o vínculo e os metadados da tarefa">
             <template #actions>
                 <Link :href="route('tasks.index')">
-                    <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>

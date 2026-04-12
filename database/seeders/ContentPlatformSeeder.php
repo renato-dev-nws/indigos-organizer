@@ -12,8 +12,17 @@ class ContentPlatformSeeder extends Seeder
     {
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
-        foreach (['TikTok', 'Instagram', 'YouTube'] as $name) {
-            ContentPlatform::firstOrCreate(['user_id' => $user->id, 'name' => $name]);
+        $data = [
+            ['name' => 'TikTok', 'icon' => 'pi pi-mobile'],
+            ['name' => 'Instagram', 'icon' => 'pi pi-camera'],
+            ['name' => 'YouTube', 'icon' => 'pi pi-youtube'],
+        ];
+
+        foreach ($data as $item) {
+            ContentPlatform::updateOrCreate(
+                ['user_id' => $user->id, 'name' => $item['name']],
+                ['icon' => $item['icon']],
+            );
         }
     }
 }

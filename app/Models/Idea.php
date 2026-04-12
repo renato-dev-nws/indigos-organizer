@@ -82,4 +82,9 @@ class Idea extends Model
     {
         return $this->hasMany(IdeaVote::class);
     }
+
+    public function styles(): BelongsToMany
+    {
+        return $this->belongsToMany(VenueStyle::class, 'idea_venue_style');
+    }
 }

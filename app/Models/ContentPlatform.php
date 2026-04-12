@@ -15,7 +15,7 @@ class ContentPlatform extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['user_id', 'name'];
+    protected $fillable = ['user_id', 'name', 'icon'];
 
     public function user(): BelongsTo
     {

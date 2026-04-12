@@ -53,7 +53,8 @@ const removeUser = (id) => {
         <BoPageHeader title="Usuários" subtitle="Administração de acesso e autoria">
             <template #actions>
                 <Link :href="route('users.create')">
-                    <Button icon="pi pi-plus" label="Novo usuário" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo usuário" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo usuário" />
                 </Link>
             </template>
         </BoPageHeader>

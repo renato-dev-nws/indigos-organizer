@@ -22,14 +22,25 @@ class SettingsController extends Controller
 
     public function types(): Response
     {
+        $items = IdeaType::query()
+            ->withCount(['ideas', 'contents'])
+            ->orderBy('name')
+            ->get()
+            ->map(function (IdeaType $type) {
+                $type->setAttribute('links_count', (int) $type->ideas_count + (int) $type->contents_count);
+
+                return $type;
+            });
+
         return Inertia::render('Settings/CrudPage', [
             'title' => 'Tipos',
             'description' => 'Tipos utilizados em ideias e conteúdos.',
-            'items' => IdeaType::query()->withCount(['ideas', 'contents'])->orderBy('name')->get(),
+            'items' => $items,
             'routeBase' => 'settings.idea-types',
             'withColor' => true,
-            'disableDeleteWhen' => 'ideas_count',
-            'disableDeleteMessage' => 'Não é permitido excluir tipo com ideias vinculadas.',
+            'withIcon' => true,
+            'disableDeleteWhen' => 'links_count',
+            'disableDeleteMessage' => 'Não é permitido excluir tipo com ideias ou conteúdos vinculados.',
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
@@ -46,6 +57,7 @@ class SettingsController extends Controller
             'items' => VenueType::query()->withCount('venues')->orderBy('name')->get(),
             'routeBase' => 'settings.venue-types',
             'withColor' => true,
+            'withIcon' => true,
             'disableDeleteWhen' => 'venues_count',
             'disableDeleteMessage' => 'Não é permitido excluir tipo com locais vinculados.',
             'tabs' => [
@@ -58,13 +70,24 @@ class SettingsController extends Controller
 
     public function categories(): Response
     {
+        $items = IdeaCategory::query()
+            ->withCount(['ideas', 'contents'])
+            ->orderBy('name')
+            ->get()
+            ->map(function (IdeaCategory $category) {
+                $category->setAttribute('links_count', (int) $category->ideas_count + (int) $category->contents_count);
+
+                return $category;
+            });
+
         return Inertia::render('Settings/CrudPage', [
             'title' => 'Categorias',
             'description' => 'Categorias utilizadas em ideias e conteúdos.',
-            'items' => IdeaCategory::query()->withCount(['ideas', 'contents'])->orderBy('name')->get(),
+            'items' => $items,
             'routeBase' => 'settings.idea-categories',
-            'disableDeleteWhen' => 'ideas_count',
-            'disableDeleteMessage' => 'Não é permitido excluir categoria com ideias vinculadas.',
+            'withIcon' => true,
+            'disableDeleteWhen' => 'links_count',
+            'disableDeleteMessage' => 'Não é permitido excluir categoria com ideias ou conteúdos vinculados.',
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
@@ -81,6 +104,7 @@ class SettingsController extends Controller
             'items' => VenueCategory::query()->withCount('venues')->orderBy('name')->get(),
             'routeBase' => 'settings.venue-categories',
             'withColor' => true,
+            'withIcon' => true,
             'disableDeleteWhen' => 'venues_count',
             'disableDeleteMessage' => 'Não é permitido excluir categoria com locais vinculados.',
             'tabs' => [
@@ -93,14 +117,25 @@ class SettingsController extends Controller
 
     public function styles(): Response
     {
+        $items = VenueStyle::query()
+            ->withCount(['venues', 'ideas', 'contents'])
+            ->orderBy('name')
+            ->get()
+            ->map(function (VenueStyle $style) {
+                $style->setAttribute('links_count', (int) $style->venues_count + (int) $style->ideas_count + (int) $style->contents_count);
+
+                return $style;
+            });
+
         return Inertia::render('Settings/CrudPage', [
             'title' => 'Estilos',
             'description' => 'Estilos de conteúdo e locais.',
-            'items' => VenueStyle::query()->withCount('venues')->orderBy('name')->get(),
+            'items' => $items,
             'routeBase' => 'settings.venue-styles',
             'withColor' => true,
-            'disableDeleteWhen' => 'venues_count',
-            'disableDeleteMessage' => 'Não é permitido excluir estilo com locais vinculados.',
+            'withIcon' => true,
+            'disableDeleteWhen' => 'links_count',
+            'disableDeleteMessage' => 'Não é permitido excluir estilo vinculado a locais, ideias ou conteúdos.',
             'tabs' => [
                 ['label' => 'Conteúdo', 'value' => 'content'],
                 ['label' => 'Locais', 'value' => 'venues'],
@@ -114,8 +149,11 @@ class SettingsController extends Controller
         return Inertia::render('Settings/CrudPage', [
             'title' => 'Plataformas de conteúdo',
             'description' => 'Ex.: YouTube, Instagram, TikTok.',
-            'items' => ContentPlatform::query()->orderBy('name')->get(),
+            'items' => ContentPlatform::query()->withCount('contents')->orderBy('name')->get(),
             'routeBase' => 'settings.content-platforms',
+            'withIcon' => true,
+            'disableDeleteWhen' => 'contents_count',
+            'disableDeleteMessage' => 'Não é permitido excluir plataforma com conteúdos vinculados.',
         ]);
     }
 

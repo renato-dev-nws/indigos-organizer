@@ -24,7 +24,8 @@ const submit = () => form.put(route('users.update', props.user.id));
         <BoPageHeader title="Editar usuário" subtitle="Atualize os dados do usuário">
             <template #actions>
                 <Link :href="route('users.index')">
-                    <Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>

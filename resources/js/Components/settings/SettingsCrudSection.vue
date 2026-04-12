@@ -11,6 +11,7 @@ const props = defineProps({
     items: { type: Array, default: () => [] },
     routeBase: { type: String, required: true },
     withColor: { type: Boolean, default: false },
+    withIcon: { type: Boolean, default: false },
     withOrder: { type: Boolean, default: false },
     reorderOnly: { type: Boolean, default: false },
     disableDeleteWhen: { type: String, default: '' },
@@ -28,18 +29,21 @@ const rows = ref(8);
 const form = reactive({
     name: '',
     color: '#4f46e5',
+    icon: '',
     order: 1,
 });
 
 const errors = reactive({
     name: '',
     color: '',
+    icon: '',
     order: '',
 });
 
 const clearErrors = () => {
     errors.name = '';
     errors.color = '';
+    errors.icon = '';
     errors.order = '';
 };
 
@@ -56,6 +60,7 @@ const openCreate = () => {
     clearErrors();
     form.name = '';
     form.color = '#4f46e5';
+    form.icon = '';
     form.order = (props.items.at(-1)?.order || 0) + 1;
     dialogVisible.value = true;
 };
@@ -65,6 +70,7 @@ const openEdit = (item) => {
     clearErrors();
     form.name = item.name;
     form.color = item.color || '#4f46e5';
+    form.icon = item.icon || '';
     form.order = item.order || 1;
     dialogVisible.value = true;
 };
@@ -82,11 +88,15 @@ const validate = () => {
         errors.color = 'Cor deve estar no formato #RRGGBB.';
     }
 
+    if (props.withIcon && form.icon && form.icon.trim().length > 100) {
+        errors.icon = 'Ícone deve ter no máximo 100 caracteres.';
+    }
+
     if (props.withOrder && (!Number.isInteger(form.order) || form.order < 1)) {
         errors.order = 'Ordem deve ser um inteiro maior ou igual a 1.';
     }
 
-    return !errors.name && !errors.color && !errors.order;
+    return !errors.name && !errors.color && !errors.icon && !errors.order;
 };
 
 const save = () => {
@@ -97,6 +107,7 @@ const save = () => {
     const payload = {
         name: form.name.trim(),
         ...(props.withColor ? { color: form.color } : {}),
+        ...(props.withIcon ? { icon: (form.icon || '').trim() || null } : {}),
         ...(props.withOrder ? { order: form.order } : {}),
     };
 
@@ -199,6 +210,14 @@ const onPage = (event) => {
             <template v-else>
                 <DataTable :value="paginatedItems" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="name" header="Nome" sortable />
+                    <Column v-if="withIcon" field="icon" header="Ícone" class="w-40">
+                        <template #body="{ data }">
+                            <div class="flex items-center gap-2">
+                                <i v-if="data.icon" :class="data.icon" />
+                                <span class="text-xs text-slate-500">{{ data.icon || '-' }}</span>
+                            </div>
+                        </template>
+                    </Column>
                     <Column v-if="withColor" field="color" header="Cor" class="w-40">
                         <template #body="{ data }">
                             <div class="flex items-center gap-2">
@@ -264,6 +283,12 @@ const onPage = (event) => {
                 <label for="settings-color">Cor (hex)</label>
                 <InputText id="settings-color" v-model="form.color" fluid placeholder="#4f46e5" :invalid="!!errors.color" />
                 <Message v-if="errors.color" severity="error" size="small" variant="simple">{{ errors.color }}</Message>
+            </div>
+            <div v-if="withIcon" class="space-y-2">
+                <label for="settings-icon">Ícone (classe CSS)</label>
+                <InputText id="settings-icon" v-model="form.icon" fluid placeholder="pi pi-star" :invalid="!!errors.icon" />
+                <small class="text-slate-500">Exemplo: pi pi-video, pi pi-hashtag, pi pi-map-marker.</small>
+                <Message v-if="errors.icon" severity="error" size="small" variant="simple">{{ errors.icon }}</Message>
             </div>
             <div v-if="withOrder" class="space-y-2">
                 <label for="settings-order">Ordem</label>

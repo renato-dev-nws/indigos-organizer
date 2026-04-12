@@ -6,7 +6,7 @@ import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
-const props = defineProps({ idea: Object, ideaTypes: Array, ideaCategories: Array, plans: Array, contents: Array, users: Array, voterUsers: Array });
+const props = defineProps({ idea: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array, voterUsers: Array, venueStyleIds: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
@@ -18,6 +18,7 @@ const form = useForm({
     description: props.idea.description,
     idea_type_id: props.idea.idea_type_id,
     idea_category_id: props.idea.idea_category_id,
+    venue_style_ids: props.venueStyleIds ?? [],
     status: props.idea.status,
     is_private: props.idea.is_private,
     voter_users: props.voterUsers ?? [],
@@ -47,7 +48,10 @@ const removeReference = (index) => form.references.splice(index, 1);
     <div class="space-y-6">
         <BoPageHeader title="Editar ideia" subtitle="Atualize relacionamento, status e governança da ideia">
             <template #actions>
-                <Link :href="route('ideas.index')"><Button label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" /></Link>
+                <Link :href="route('ideas.index')">
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
             </template>
         </BoPageHeader>
 
@@ -105,6 +109,11 @@ const removeReference = (index) => form.references.splice(index, 1);
                 <div class="space-y-2">
                     <label>Categoria</label>
                     <Select v-model="form.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="md:col-span-2 space-y-2">
+                    <label>Estilos</label>
+                    <MultiSelect v-model="form.venue_style_ids" :options="venueStyles" option-label="name" option-value="id" display="chip" fluid />
                 </div>
 
                 <div class="space-y-2">

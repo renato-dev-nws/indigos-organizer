@@ -26,7 +26,10 @@ const removeDocument = (id) => router.delete(route('shared-infos.documents.destr
     <div class="space-y-6">
         <BoPageHeader title="Editar informação" subtitle="Atualize links e documentos compartilhados">
             <template #actions>
-                <Link :href="route('shared-infos.show', sharedInfo.id)"><Button label="Visualizar" icon="pi pi-eye" outlined severity="secondary" /></Link>
+                <Link :href="route('shared-infos.show', sharedInfo.id)">
+                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
+                </Link>
             </template>
         </BoPageHeader>
 

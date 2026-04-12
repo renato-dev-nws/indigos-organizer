@@ -1,4 +1,5 @@
 <script setup>
+import { nextTick, onMounted, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
@@ -34,7 +35,7 @@ const form = useForm({
     longitude: null,
     status: 'undefined',
     performances_count: 0,
-    equipment_tags: '',
+    equipment_tags: [],
     rating: null,
     instagram_url: '',
     facebook_url: '',
@@ -42,6 +43,95 @@ const form = useForm({
     website_url: '',
     notes: '',
     description: '',
+});
+
+const addressSearch = ref('');
+const addressInput = ref(null);
+
+const readAddressComponent = (components, wantedType, shortName = false) => {
+    const component = components.find((item) => item.types?.includes(wantedType));
+    if (!component) {
+        return '';
+    }
+
+    return shortName ? component.short_name : component.long_name;
+};
+
+const applyPlace = (place) => {
+    const components = place.address_components || [];
+    const route = readAddressComponent(components, 'route');
+    const streetNumber = readAddressComponent(components, 'street_number');
+
+    form.place_id = place.place_id || '';
+    form.address_line = route || place.name || '';
+    form.address_number = streetNumber;
+    form.neighborhood = readAddressComponent(components, 'sublocality') || readAddressComponent(components, 'neighborhood');
+    form.city = readAddressComponent(components, 'administrative_area_level_2') || readAddressComponent(components, 'locality');
+    form.state = readAddressComponent(components, 'administrative_area_level_1', true);
+    form.postal_code = readAddressComponent(components, 'postal_code');
+    form.country = readAddressComponent(components, 'country');
+    form.latitude = place.geometry?.location?.lat?.() ?? null;
+    form.longitude = place.geometry?.location?.lng?.() ?? null;
+
+    const addressChunks = [
+        route || place.name,
+        streetNumber,
+        form.neighborhood,
+        form.city,
+        form.state,
+    ].filter(Boolean);
+    addressSearch.value = addressChunks.join(', ');
+};
+
+const loadGooglePlaces = async () => {
+    if (window.google?.maps?.places) {
+        return true;
+    }
+
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!key) {
+        return false;
+    }
+
+    await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+
+    return !!window.google?.maps?.places;
+};
+
+const initAutocomplete = async () => {
+    await nextTick();
+    if (!addressInput.value) {
+        return;
+    }
+
+    const ready = await loadGooglePlaces();
+    if (!ready) {
+        return;
+    }
+
+    const autocomplete = new window.google.maps.places.Autocomplete(addressInput.value.$el?.querySelector('input') || addressInput.value.$el || addressInput.value, {
+        fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id'],
+        componentRestrictions: { country: 'br' },
+    });
+
+    autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place) {
+            applyPlace(place);
+        }
+    });
+};
+
+onMounted(() => {
+    initAutocomplete();
 });
 
 const submit = () => form.post(route('venues.store'));
@@ -52,8 +142,8 @@ const submit = () => form.post(route('venues.store'));
         <BoPageHeader title="Novo local" subtitle="Cadastre local, contato e dados de localização">
             <template #actions>
                 <Link :href="route('venues.index')">
-                    <Button class="hidden md:inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -131,43 +221,35 @@ const submit = () => form.post(route('venues.store'));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-equipment">Equipamentos (csv)</label>
-                    <InputText id="venue-equipment" v-model="form.equipment_tags" fluid />
+                    <label for="venue-equipment">Equipamentos</label>
+                    <Chips id="venue-equipment" v-model="form.equipment_tags" separator="," fluid />
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                    <label for="venue-address">Endereço</label>
-                    <InputText id="venue-address" v-model="form.address_line" placeholder="Rua / avenida" fluid />
+                    <label for="venue-address-search">Endereço</label>
+                    <InputText id="venue-address-search" ref="addressInput" v-model="addressSearch" placeholder="Digite e selecione um endereço" fluid />
+                    <small class="text-slate-500">Ao selecionar um endereço, cidade, estado, CEP e coordenadas são preenchidos automaticamente.</small>
                 </div>
 
-                <div class="space-y-2">
-                    <label for="venue-address-number">Número</label>
-                    <InputText id="venue-address-number" v-model="form.address_number" fluid />
+                <div class="hidden">
+                    <InputText v-model="form.place_id" />
+                    <InputText v-model="form.address_line" />
+                    <InputText v-model="form.address_number" />
+                    <InputText v-model="form.neighborhood" />
+                    <InputText v-model="form.city" />
+                    <InputText v-model="form.state" />
+                    <InputText v-model="form.postal_code" />
+                    <InputText v-model="form.country" />
                 </div>
 
-                <div class="space-y-2">
-                    <label for="venue-neighborhood">Bairro</label>
-                    <InputText id="venue-neighborhood" v-model="form.neighborhood" fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-city">Cidade</label>
-                    <InputText id="venue-city" v-model="form.city" fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-state">Estado</label>
-                    <InputText id="venue-state" v-model="form.state" fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-postal-code">CEP</label>
-                    <InputText id="venue-postal-code" v-model="form.postal_code" fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-country">País</label>
-                    <InputText id="venue-country" v-model="form.country" fluid />
+                <div v-if="form.city || form.state || form.latitude || form.longitude" class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+                    <p class="mb-2 font-semibold">Resumo da localização</p>
+                    <div class="grid gap-2 md:grid-cols-2">
+                        <p><strong>Cidade/UF:</strong> {{ form.city || '-' }} / {{ form.state || '-' }}</p>
+                        <p><strong>CEP:</strong> {{ form.postal_code || '-' }}</p>
+                        <p><strong>País:</strong> {{ form.country || '-' }}</p>
+                        <p><strong>Lat/Lng:</strong> {{ form.latitude || '-' }} / {{ form.longitude || '-' }}</p>
+                    </div>
                 </div>
 
                 <div class="space-y-2">

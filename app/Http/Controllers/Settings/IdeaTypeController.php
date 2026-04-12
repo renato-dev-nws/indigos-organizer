@@ -15,6 +15,7 @@ class IdeaTypeController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         IdeaType::create([
@@ -32,6 +33,7 @@ class IdeaTypeController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'icon' => ['nullable', 'string', 'max:100'],
         ]);
 
         $ideaType->update($data);
@@ -41,10 +43,10 @@ class IdeaTypeController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $ideaType = IdeaType::withCount('ideas')->findOrFail($id);
+        $ideaType = IdeaType::withCount(['ideas', 'contents'])->findOrFail($id);
 
-        if ($ideaType->ideas_count > 0) {
-            return back()->with('error', 'Nao e permitido remover um tipo de ideia vinculado a ideias.');
+        if ($ideaType->ideas_count > 0 || $ideaType->contents_count > 0) {
+            return back()->with('error', 'Nao e permitido remover um tipo de ideia vinculado a ideias ou conteudos.');
         }
 
         $ideaType->delete();

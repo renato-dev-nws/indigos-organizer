@@ -28,12 +28,12 @@ const vote = (value) => {
         <BoPageHeader :title="idea.title" subtitle="Detalhes completos da ideia">
             <template #actions>
                 <Link :href="route('ideas.index')">
-                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
                 <Link :href="route('ideas.edit', idea.id)">
-                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
-                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -52,6 +52,13 @@ const vote = (value) => {
                     <div>
                         <p class="text-sm text-slate-500">Categoria</p>
                         <p class="font-semibold">{{ idea.category?.name || '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-slate-500">Estilos</p>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                            <span v-if="!(idea.styles || []).length" class="font-semibold">-</span>
+                        </div>
                     </div>
                     <div>
                         <p class="text-sm text-slate-500">Descrição</p>

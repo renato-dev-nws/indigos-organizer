@@ -19,6 +19,8 @@ class StoreContentRequest extends FormRequest
             'script' => ['nullable', 'string'],
             'content_platform_ids' => ['nullable', 'array'],
             'content_platform_ids.*' => ['uuid', 'exists:content_platforms,id'],
+            'venue_style_ids' => ['nullable', 'array'],
+            'venue_style_ids.*' => ['uuid', 'exists:venue_styles,id'],
             'idea_type_id' => ['nullable', 'uuid', 'exists:idea_types,id'],
             'idea_category_id' => ['nullable', 'uuid', 'exists:idea_categories,id'],
             'status' => ['required', 'in:queued,in_production,cancelled,paused,published'],

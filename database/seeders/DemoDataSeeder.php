@@ -20,6 +20,9 @@ class DemoDataSeeder extends Seeder
 
         $ideaTypes = IdeaType::where('user_id', $user->id)->get();
         $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
+        $venueStyles = \App\Models\VenueStyle::where('user_id', $user->id)->get();
+        $venueTypes = \App\Models\VenueType::where('user_id', $user->id)->get();
+        $venueCategories = \App\Models\VenueCategory::where('user_id', $user->id)->get();
         $platforms = \App\Models\ContentPlatform::where('user_id', $user->id)->get();
         $taskStatuses = \App\Models\TaskStatus::where('user_id', $user->id)->orderBy('order')->get();
 
@@ -41,7 +44,7 @@ class DemoDataSeeder extends Seeder
             ]);
         });
 
-        $ideas->take(3)->each(function (Idea $idea, int $index): void {
+        $ideas->take(3)->each(function (Idea $idea, int $index) use ($venueStyles): void {
             $idea->references()->createMany([
                 [
                     'title' => 'Referencia '.($index + 1),
@@ -49,6 +52,11 @@ class DemoDataSeeder extends Seeder
                     'url' => 'https://example.com/ref-'.($index + 1),
                 ],
             ]);
+
+            $styleId = $venueStyles[$index % max($venueStyles->count(), 1)]?->id;
+            if ($styleId) {
+                $idea->styles()->sync([$styleId]);
+            }
         });
 
         $contents = collect([
@@ -56,7 +64,7 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Video making of', 'status' => 'published', 'offset' => -1],
             ['title' => 'Reel agenda de shows', 'status' => 'in_production', 'offset' => 2],
             ['title' => 'Story chamada para live', 'status' => 'queued', 'offset' => 4],
-        ])->map(function ($row, $index) use ($user, $ideas, $ideaTypes, $ideaCategories, $platforms) {
+        ])->map(function ($row, $index) use ($user, $ideas, $ideaTypes, $ideaCategories, $platforms, $venueStyles) {
             $planned = Carbon::now()->addDays($row['offset']);
             $publishedAt = $row['status'] === 'published' ? (clone $planned)->addHours(2) : null;
 
@@ -75,6 +83,11 @@ class DemoDataSeeder extends Seeder
             $platformId = $platforms[$index % max($platforms->count(), 1)]?->id;
             if ($platformId) {
                 $content->platforms()->sync([$platformId]);
+            }
+
+            $styleId = $venueStyles[$index % max($venueStyles->count(), 1)]?->id;
+            if ($styleId) {
+                $content->styles()->sync([$styleId]);
             }
 
             $content->links()->create([
@@ -116,6 +129,22 @@ class DemoDataSeeder extends Seeder
                 'phone' => '(11) 99999-000'.$index,
                 'contact_name' => 'Produtor '.$index,
                 'venue_size_id' => $sizes[$index % $sizes->count()]?->id,
+                'venue_type_id' => $venueTypes[$index % max($venueTypes->count(), 1)]?->id,
+                'venue_category_id' => $venueCategories[$index % max($venueCategories->count(), 1)]?->id,
+                'venue_style_id' => $venueStyles[$index % max($venueStyles->count(), 1)]?->id,
+                'address_line' => 'Rua Exemplo '.$index,
+                'address_number' => (string) (100 + $index),
+                'neighborhood' => 'Centro',
+                'city' => 'São Paulo',
+                'state' => 'SP',
+                'postal_code' => '01000-000',
+                'country' => 'Brasil',
+                'latitude' => -23.5505 + ($index / 1000),
+                'longitude' => -46.6333 - ($index / 1000),
+                'status' => 'contacted',
+                'performances_count' => $index,
+                'equipment_tags' => ['PA', 'Monitor', 'Luz básica'],
+                'rating' => min(5, 2 + $index),
                 'instagram_url' => 'https://instagram.com/casa'.$index,
                 'facebook_url' => 'https://facebook.com/casa'.$index,
                 'youtube_url' => 'https://youtube.com/@casa'.$index,
