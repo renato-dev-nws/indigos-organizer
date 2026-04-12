@@ -9,10 +9,15 @@ defineProps({ venue: Object });
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader :title="venue.name" subtitle="Ficha detalhada da casa de show">
+        <BoPageHeader :title="venue.name" subtitle="Ficha detalhada do local">
             <template #actions>
+                <Link :href="route('venues.index')">
+                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
                 <Link :href="route('venues.edit', venue.id)">
-                    <Button icon="pi pi-pencil" label="Editar" />
+                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -25,7 +30,10 @@ defineProps({ venue: Object });
                         <p><strong>Responsável:</strong> {{ venue.contact_name || '-' }}</p>
                         <p><strong>E-mail:</strong> {{ venue.email || '-' }}</p>
                         <p><strong>Telefone:</strong> {{ venue.phone || '-' }}</p>
-                        <p><strong>Porte:</strong> {{ venue.size?.name || '-' }}</p>
+                        <p><strong>Tipo:</strong> {{ venue.type?.name || '-' }}</p>
+                        <p><strong>Categoria:</strong> {{ venue.category?.name || '-' }}</p>
+                        <p><strong>Estilo:</strong> {{ venue.style?.name || '-' }}</p>
+                        <p><strong>Status:</strong> {{ venue.status || '-' }}</p>
                     </div>
                 </template>
             </Card>
@@ -43,10 +51,17 @@ defineProps({ venue: Object });
             </Card>
 
             <Card class="xl:col-span-1">
-                <template #title>Observações</template>
+                <template #title>Observações e localização</template>
                 <template #content>
                     <p class="mb-3 text-sm">{{ venue.description || 'Sem descrição cadastrada.' }}</p>
                     <p class="text-sm text-slate-500 dark:text-slate-400">{{ venue.notes || 'Sem observações cadastradas.' }}</p>
+                    <div class="mt-3 text-sm">
+                        <p><strong>Endereço:</strong> {{ venue.address_line || '-' }}, {{ venue.address_number || '-' }}</p>
+                        <p><strong>Bairro:</strong> {{ venue.neighborhood || '-' }}</p>
+                        <p><strong>Cidade/UF:</strong> {{ venue.city || '-' }} / {{ venue.state || '-' }}</p>
+                        <p><strong>País:</strong> {{ venue.country || '-' }}</p>
+                        <p><strong>CEP:</strong> {{ venue.postal_code || '-' }}</p>
+                    </div>
                 </template>
             </Card>
         </div>

@@ -20,24 +20,25 @@ const {
 
 const menuItems = computed(() => [
     { label: 'Dashboard', icon: 'ph:squares-four-bold', href: route('dashboard') },
+    { label: 'Tarefas', icon: 'ph:check-square-bold', href: route('tasks.index') },
     { label: 'Ideias', icon: 'ph:lightbulb-bold', href: route('ideas.index') },
     { label: 'Conteúdos', icon: 'ph:video-camera-bold', href: route('contents.index') },
-    { label: 'Tarefas', icon: 'ph:check-square-bold', href: route('tasks.index') },
-    { label: 'Planos', icon: 'ph:map-trifold-bold', href: route('plans.index') },
-    { label: 'Informações', icon: 'ph:info-bold', href: route('shared-infos.index') },
-    { label: 'Casas de Show', icon: 'ph:music-notes-bold', href: route('venues.index') },
-    { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
+    { label: 'Planejamentos', icon: 'ph:map-trifold-bold', href: route('plans.index') },
+    { label: 'Locais', icon: 'ph:music-notes-bold', href: route('venues.index') },
+    { label: 'Informações Úteis', icon: 'ph:info-bold', href: route('shared-infos.index') },
     {
         label: 'Configurações',
         icon: 'ph:gear-six-bold',
         items: [
             { label: 'Tipos', icon: 'ph:tag-bold', href: route('settings.pages.types') },
             { label: 'Categorias', icon: 'ph:bookmark-bold', href: route('settings.pages.categories') },
+            { label: 'Estilos', icon: 'ph:music-notes-simple-bold', href: route('settings.pages.styles') },
             { label: 'Plataformas', icon: 'ph:device-mobile-bold', href: route('settings.pages.content-platforms') },
             { label: 'Status de tarefas', icon: 'ph:sort-ascending-bold', href: route('settings.pages.task-statuses') },
             { label: 'Sistema', icon: 'ph:sliders-bold', href: route('settings.pages.system') },
         ],
     },
+    { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
 ]);
 
 watch(

@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 const props = defineProps({ ideaTypes: Array, ideaCategories: Array, plans: Array, contents: Array, users: Array });
 defineOptions({ layout: AppLayout });
@@ -33,7 +34,7 @@ watch(() => form.related_type, () => {
 });
 watch(() => form.plan_id, () => { form.plan_phase_id = null; });
 watch(() => form.status, (newStatus) => {
-    if (newStatus !== 'in_drawer') form.is_private = false;
+    if (!['in_drawer', 'trash'].includes(newStatus)) form.is_private = false;
     if (newStatus !== 'on_board') form.voter_users = [];
 });
 
@@ -94,6 +95,7 @@ const removeReference = (index) => form.references.splice(index, 1);
 
                 <div class="md:col-span-2 space-y-2">
                     <label>Descrição</label>
+                    <AppSpeechTextareaAssist v-model="form.description" />
                     <Textarea v-model="form.description" rows="4" fluid />
                 </div>
 
@@ -125,11 +127,11 @@ const removeReference = (index) => form.references.splice(index, 1);
                     />
                 </div>
 
-                <div v-if="form.status === 'in_drawer'" class="space-y-2">
+                <div v-if="['in_drawer', 'trash'].includes(form.status)" class="space-y-2">
                     <label>Ideia privada</label>
                     <div class="flex items-center gap-2">
                         <ToggleSwitch v-model="form.is_private" />
-                        <span class="text-sm text-slate-500">Apenas você poderá ver esta ideia</span>
+                        <span class="text-sm text-slate-500">Permitido quando o status for Na gaveta ou No lixo.</span>
                     </div>
                 </div>
 

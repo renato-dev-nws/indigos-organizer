@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -51,6 +52,13 @@ class TaskController extends Controller
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
+        ]);
+    }
+
+    public function show(Task $task): JsonResponse
+    {
+        return response()->json([
+            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase']),
         ]);
     }
 

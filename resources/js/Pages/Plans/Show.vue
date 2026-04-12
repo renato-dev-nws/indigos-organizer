@@ -12,7 +12,14 @@ defineProps({ plan: Object });
     <div class="space-y-6">
         <BoPageHeader :title="plan.title" subtitle="Detalhes do plano">
             <template #actions>
-                <Link :href="route('plans.edit', plan.id)"><Button icon="pi pi-pencil" label="Editar" /></Link>
+                <Link :href="route('plans.index')">
+                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
+                <Link :href="route('plans.edit', plan.id)">
+                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                </Link>
             </template>
         </BoPageHeader>
 

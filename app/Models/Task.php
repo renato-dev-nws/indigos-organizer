@@ -28,12 +28,20 @@ class Task extends Model
         'task_status_id',
         'priority',
         'due_date',
+        'reminder_at',
+        'assignment_notified_at',
+        'due_soon_notified_at',
+        'reminder_notified_at',
     ];
 
     protected function casts(): array
     {
         return [
             'due_date' => 'date',
+            'reminder_at' => 'datetime',
+            'assignment_notified_at' => 'datetime',
+            'due_soon_notified_at' => 'datetime',
+            'reminder_notified_at' => 'datetime',
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreIdeaRequest;
 use App\Http\Requests\UpdateIdeaRequest;
+use App\Jobs\DispatchIdeaVotedNotificationJob;
 use App\Models\Content;
 use App\Models\Idea;
 use App\Models\IdeaCategory;
@@ -31,7 +32,7 @@ class IdeaController extends Controller
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
             ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
-            ->latest()
+            ->orderByDesc('updated_at')
             ->paginate(15)
             ->withQueryString();
 
@@ -113,7 +114,7 @@ class IdeaController extends Controller
             $payload['plan_id'] = null;
             $payload['plan_phase_id'] = null;
         }
-        if (($payload['status'] ?? null) !== 'in_drawer') {
+        if (! in_array(($payload['status'] ?? null), ['in_drawer', 'trash'], true)) {
             $payload['is_private'] = false;
         }
 
@@ -151,6 +152,8 @@ class IdeaController extends Controller
             ['idea_id' => $idea->id, 'user_id' => (string) Auth::id()],
             ['vote' => $request->string('vote')->toString()],
         );
+
+        DispatchIdeaVotedNotificationJob::dispatch($idea->id, (string) Auth::id());
 
         return back()->with('success', 'Voto registrado.');
     }

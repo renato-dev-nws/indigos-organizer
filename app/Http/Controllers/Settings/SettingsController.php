@@ -7,6 +7,9 @@ use App\Models\ContentPlatform;
 use App\Models\IdeaCategory;
 use App\Models\IdeaType;
 use App\Models\TaskStatus;
+use App\Models\VenueCategory;
+use App\Models\VenueStyle;
+use App\Models\VenueType;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,6 +30,29 @@ class SettingsController extends Controller
             'withColor' => true,
             'disableDeleteWhen' => 'ideas_count',
             'disableDeleteMessage' => 'Não é permitido excluir tipo com ideias vinculadas.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'activeTab' => 'ideas_contents',
+        ]);
+    }
+
+    public function venueTypes(): Response
+    {
+        return Inertia::render('Settings/CrudPage', [
+            'title' => 'Tipos',
+            'description' => 'Tipos de locais.',
+            'items' => VenueType::query()->withCount('venues')->orderBy('name')->get(),
+            'routeBase' => 'settings.venue-types',
+            'withColor' => true,
+            'disableDeleteWhen' => 'venues_count',
+            'disableDeleteMessage' => 'Não é permitido excluir tipo com locais vinculados.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'activeTab' => 'venues',
         ]);
     }
 
@@ -39,6 +65,47 @@ class SettingsController extends Controller
             'routeBase' => 'settings.idea-categories',
             'disableDeleteWhen' => 'ideas_count',
             'disableDeleteMessage' => 'Não é permitido excluir categoria com ideias vinculadas.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'activeTab' => 'ideas_contents',
+        ]);
+    }
+
+    public function venueCategories(): Response
+    {
+        return Inertia::render('Settings/CrudPage', [
+            'title' => 'Categorias',
+            'description' => 'Categorias de locais.',
+            'items' => VenueCategory::query()->withCount('venues')->orderBy('name')->get(),
+            'routeBase' => 'settings.venue-categories',
+            'withColor' => true,
+            'disableDeleteWhen' => 'venues_count',
+            'disableDeleteMessage' => 'Não é permitido excluir categoria com locais vinculados.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'activeTab' => 'venues',
+        ]);
+    }
+
+    public function styles(): Response
+    {
+        return Inertia::render('Settings/CrudPage', [
+            'title' => 'Estilos',
+            'description' => 'Estilos de conteúdo e locais.',
+            'items' => VenueStyle::query()->withCount('venues')->orderBy('name')->get(),
+            'routeBase' => 'settings.venue-styles',
+            'withColor' => true,
+            'disableDeleteWhen' => 'venues_count',
+            'disableDeleteMessage' => 'Não é permitido excluir estilo com locais vinculados.',
+            'tabs' => [
+                ['label' => 'Conteúdo', 'value' => 'content'],
+                ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'activeTab' => 'venues',
         ]);
     }
 

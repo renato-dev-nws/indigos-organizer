@@ -24,6 +24,10 @@ return new class extends Migration
             $table->foreignUuid('task_status_id')->constrained('task_statuses')->restrictOnDelete();
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
             $table->date('due_date')->nullable();
+            $table->timestamp('reminder_at')->nullable();
+            $table->timestamp('assignment_notified_at')->nullable();
+            $table->timestamp('due_soon_notified_at')->nullable();
+            $table->timestamp('reminder_notified_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

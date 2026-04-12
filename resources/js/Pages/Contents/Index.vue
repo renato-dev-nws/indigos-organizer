@@ -1,6 +1,10 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -77,7 +81,7 @@ const paginate = (event) => {
 const removeContent = (id) => router.delete(route('contents.destroy', id), { preserveScroll: true });
 
 const calendarColumns = computed(() => {
-    const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+    const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const grouped = weekDays.map((label) => ({ label, items: [] }));
 
     for (const item of props.contents.data || []) {
@@ -87,12 +91,34 @@ const calendarColumns = computed(() => {
 
         const date = new Date(item.planned_publish_at);
         const day = date.getDay();
-        const index = day === 0 ? 6 : day - 1;
-        grouped[index].items.push(item);
+        grouped[day].items.push(item);
     }
 
     return grouped;
 });
+
+const fullCalendarOptions = computed(() => ({
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    firstDay: 0,
+    locale: 'pt-br',
+    headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek',
+    },
+    events: (props.contents.data || [])
+        .filter((item) => item.planned_publish_at)
+        .map((item) => ({
+            id: item.id,
+            title: item.title,
+            start: item.planned_publish_at,
+        })),
+    eventClick: (info) => {
+        info.jsEvent.preventDefault();
+        router.visit(route('contents.show', info.event.id));
+    },
+}));
 </script>
 
 <template>
@@ -105,7 +131,8 @@ const calendarColumns = computed(() => {
                         size="small"
                         :options="[
                             { label: 'Lista', value: 'list' },
-                            { label: 'Calendário', value: 'calendar' },
+                            { label: 'Programação da semana', value: 'calendar' },
+                            { label: 'Calendário completo', value: 'full_calendar' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -212,7 +239,7 @@ const calendarColumns = computed(() => {
                 </template>
             </Card>
 
-            <div v-else class="grid gap-4 lg:grid-cols-7">
+            <div v-else-if="viewMode === 'calendar'" class="grid gap-4 lg:grid-cols-7">
                 <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
                     <template #title>{{ column.label }}</template>
                     <template #content>
@@ -228,6 +255,12 @@ const calendarColumns = computed(() => {
                     </template>
                 </Card>
             </div>
+
+            <Card v-else>
+                <template #content>
+                    <FullCalendar :options="fullCalendarOptions" />
+                </template>
+            </Card>
         </div>
 
         <div class="block space-y-3 md:hidden">

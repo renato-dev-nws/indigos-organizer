@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -12,6 +12,7 @@ import BoDateText from '@/Components/ui/BoDateText.vue';
 defineOptions({ layout: AppLayout });
 
 const props = defineProps({ ideas: Object, filters: Object, ideaTypes: Array, ideaCategories: Array });
+const viewMode = ref('list');
 
 const statusLabels = {
     in_drawer: 'Na gaveta',
@@ -50,12 +51,33 @@ const removeChip = (key) => {
 };
 const paginate = (event) => router.get(route('ideas.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveScroll: true });
+
+const kanbanColumns = computed(() => {
+    const orderedStatus = ['in_drawer', 'on_table', 'on_board', 'executing', 'executed', 'trash'];
+    return orderedStatus.map((status) => ({
+        status,
+        label: statusLabels[status],
+        items: (props.ideas.data || []).filter((idea) => idea.status === status),
+    }));
+});
 </script>
 
 <template>
     <div class="space-y-4">
         <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda">
             <template #actions>
+                <div class="hidden md:block">
+                    <SelectButton
+                        v-model="viewMode"
+                        size="small"
+                        :options="[
+                            { label: 'Lista', value: 'list' },
+                            { label: 'Kanban', value: 'kanban' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                    />
+                </div>
                 <Link :href="route('ideas.create')"><Button icon="pi pi-plus" label="Nova ideia" /></Link>
             </template>
         </BoPageHeader>
@@ -86,7 +108,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
             </div>
         </BoFilterBar>
 
-        <div class="hidden md:block">
+        <div v-if="viewMode === 'list'" class="hidden md:block">
             <Card>
                 <template #content>
                     <DataTable :value="ideas.data" data-key="id" striped-rows>
@@ -115,7 +137,7 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
             </Card>
         </div>
 
-        <div class="block space-y-3 md:hidden">
+        <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
             <div v-for="idea in ideas.data" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ idea.title }}</h3>
@@ -130,6 +152,29 @@ const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveS
                     <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
                 </div>
             </div>
+        </div>
+
+        <div v-if="viewMode === 'kanban'" class="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-3">
+            <Card v-for="column in kanbanColumns" :key="column.status">
+                <template #title>{{ column.label }}</template>
+                <template #content>
+                    <div class="space-y-2">
+                        <Link
+                            v-for="idea in column.items"
+                            :key="idea.id"
+                            :href="route('ideas.show', idea.id)"
+                            class="block rounded-lg border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+                        >
+                            <p class="truncate text-sm font-semibold">{{ idea.title }}</p>
+                            <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
+                                <span class="truncate">{{ idea.category?.name || 'Sem categoria' }}</span>
+                                <span class="truncate">{{ idea.type?.name || 'Sem tipo' }}</span>
+                            </div>
+                        </Link>
+                        <p v-if="!column.items.length" class="text-xs text-slate-500">Sem ideias nesta coluna.</p>
+                    </div>
+                </template>
+            </Card>
         </div>
     </div>
 </template>

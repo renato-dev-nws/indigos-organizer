@@ -70,4 +70,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(SharedInfo::class);
     }
+
+    public function venueTypes(): HasMany
+    {
+        return $this->hasMany(VenueType::class);
+    }
+
+    public function venueCategories(): HasMany
+    {
+        return $this->hasMany(VenueCategory::class);
+    }
+
+    public function venueStyles(): HasMany
+    {
+        return $this->hasMany(VenueStyle::class);
+    }
+
+    public function taskNotificationLogs(): HasMany
+    {
+        return $this->hasMany(TaskUserNotificationLog::class);
+    }
 }

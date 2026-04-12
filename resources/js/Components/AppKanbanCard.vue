@@ -1,6 +1,5 @@
 <script setup>
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
-import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     task: {
@@ -8,6 +7,8 @@ const props = defineProps({
         required: true,
     },
 });
+
+const emit = defineEmits(['view', 'edit']);
 
 const completion = () => {
     const done = props.task.subtasks?.filter((s) => s.completed).length || 0;
@@ -22,9 +23,10 @@ const completion = () => {
     <div class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
         <div class="mb-2 flex items-start justify-between gap-2">
             <p class="font-semibold leading-snug">{{ task.title }}</p>
-            <Link :href="route('tasks.edit', task.id)">
-                <Button icon="pi pi-pencil" text rounded size="small" aria-label="Editar tarefa" />
-            </Link>
+            <div class="flex items-center gap-1">
+                <Button icon="pi pi-eye" text rounded size="small" aria-label="Visualizar tarefa" @click="emit('view', task)" />
+                <Button icon="pi pi-pencil" text rounded size="small" aria-label="Editar tarefa" @click="emit('edit', task)" />
+            </div>
         </div>
 
         <p v-if="task.content?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">

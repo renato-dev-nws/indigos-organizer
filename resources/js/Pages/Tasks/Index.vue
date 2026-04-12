@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import draggable from 'vuedraggable';
-import { Link, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -10,6 +10,8 @@ import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
 import AppKanbanCard from '@/Components/AppKanbanCard.vue';
+import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
+import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({ tasks: Object, statuses: Array, contents: Array, plans: Array, users: Array, filters: Object });
@@ -60,6 +62,24 @@ const paginate = (event) => {
 };
 
 const removeTask = (taskId) => router.delete(route('tasks.destroy', taskId), { preserveScroll: true });
+const showFormModal = ref(false);
+const showViewModal = ref(false);
+const selectedTask = ref(null);
+
+const openCreateModal = () => {
+    selectedTask.value = null;
+    showFormModal.value = true;
+};
+
+const openEditModal = (task) => {
+    selectedTask.value = task;
+    showFormModal.value = true;
+};
+
+const openViewModal = (task) => {
+    selectedTask.value = task;
+    showViewModal.value = true;
+};
 
 const kanbanColumns = ref(
     props.statuses.map((status) => ({
@@ -165,20 +185,20 @@ const swimlaneRows = computed(() =>
     <div class="space-y-6">
         <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda">
             <template #actions>
-                <SelectButton
-                    v-model="viewMode"
-                    size="small"
-                    :options="[
-                        { label: 'Lista', value: 'list' },
-                        { label: 'Kanban', value: 'kanban' },
-                        { label: 'Swimlane', value: 'swimlane' },
-                    ]"
-                    option-label="label"
-                    option-value="value"
-                />
-                <Link :href="route('tasks.create')">
-                    <Button icon="pi pi-plus" label="Nova tarefa" />
-                </Link>
+                <div class="hidden md:block">
+                    <SelectButton
+                        v-model="viewMode"
+                        size="small"
+                        :options="[
+                            { label: 'Lista', value: 'list' },
+                            { label: 'Kanban', value: 'kanban' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                    />
+                </div>
+                <Button class="hidden md:inline-flex" icon="pi pi-plus" label="Nova tarefa" @click="openCreateModal" />
+                <Button class="inline-flex md:hidden" icon="pi pi-plus" rounded aria-label="Nova tarefa" @click="openCreateModal" />
             </template>
         </BoPageHeader>
 
@@ -251,9 +271,8 @@ const swimlaneRows = computed(() =>
                         <Column header="Ações" class="bo-action-col w-24">
                             <template #body="{ data }">
                                 <div class="flex gap-1">
-                                    <Link :href="route('tasks.edit', data.id)">
-                                        <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" />
-                                    </Link>
+                                    <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(data)" />
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(data)" />
                                     <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(data.id)" />
                                 </div>
                             </template>
@@ -275,9 +294,8 @@ const swimlaneRows = computed(() =>
                         <p class="text-xs text-slate-500">Responsável: {{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</p>
                         <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
                         <div class="mt-3 flex justify-end gap-1">
-                            <Link :href="route('tasks.edit', task.id)">
-                                <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" />
-                            </Link>
+                            <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(task)" />
+                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(task)" />
                             <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(task.id)" />
                         </div>
                     </div>
@@ -293,7 +311,7 @@ const swimlaneRows = computed(() =>
             </template>
         </Card>
 
-        <div v-else-if="viewMode === 'kanban'" class="grid gap-4 xl:grid-cols-4">
+        <div v-else-if="viewMode === 'kanban'" class="hidden gap-4 md:grid xl:grid-cols-4">
             <Card v-for="column in kanbanColumns" :key="column.id" class="xl:col-span-1">
                 <template #title>
                     <div class="flex items-center justify-between gap-2">
@@ -333,65 +351,21 @@ const swimlaneRows = computed(() =>
                         @change="(event) => onKanbanChange(column.id, event)"
                     >
                         <template #item="{ element }">
-                            <AppKanbanCard :task="element" />
+                            <AppKanbanCard :task="element" @view="openViewModal" @edit="openEditModal" />
                         </template>
                     </draggable>
                 </template>
             </Card>
         </div>
 
-        <div v-else-if="viewMode === 'swimlane'" class="overflow-x-auto rounded-xl">
-            <div class="bo-swimlane-grid min-w-max gap-3" :style="{ display: 'grid', gridTemplateColumns: `180px repeat(${kanbanColumns.length}, minmax(200px, 1fr))` }">
-                <div class="rounded-lg bg-surface-100 px-3 py-2 text-xs font-bold uppercase tracking-wide text-surface-500 dark:bg-surface-800">Responsável</div>
-                <div
-                    v-for="col in kanbanColumns"
-                    :key="col.id"
-                    class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
-                    :class="isOverWip(col) ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300' : 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-200'"
-                >
-                    <span class="inline-block h-2.5 w-2.5 rounded-full shrink-0" :style="{ backgroundColor: col.color || '#64748b' }" />
-                    <span>{{ col.name }}</span>
-                    <Tag
-                        :value="col.tasks.length"
-                        :severity="isOverWip(col) ? 'danger' : 'secondary'"
-                        class="ml-auto cursor-pointer"
-                        v-tooltip.top="wipLimits[col.id] ? `WIP: ${col.tasks.length}/${wipLimits[col.id]}` : 'Definir limite WIP'"
-                        @click="openWipEdit(col)"
-                    />
-                </div>
-
-                <template v-for="row in swimlaneRows" :key="row.key">
-                    <div class="flex items-center rounded-lg border border-surface-200 bg-surface-50 px-3 py-2 text-sm font-medium text-surface-700 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-200">
-                        <i class="pi pi-user mr-2 text-surface-400" />
-                        <span class="truncate">{{ row.label }}</span>
-                        <Tag :value="row.columns.reduce((sum, c) => sum + c.tasks.length, 0)" severity="secondary" class="ml-auto" />
-                    </div>
-
-                    <div
-                        v-for="cell in row.columns"
-                        :key="cell.id"
-                        class="min-h-24 rounded-lg border border-surface-200 p-1 dark:border-surface-700"
-                        :class="cell.tasks.length === 0 ? 'bg-surface-50 dark:bg-surface-900' : 'bg-white dark:bg-surface-800'"
-                    >
-                        <draggable
-                            :list="cell.tasks"
-                            item-key="id"
-                            group="tasks"
-                            class="min-h-16 space-y-2"
-                            :animation="180"
-                            ghost-class="bo-kanban-ghost"
-                            chosen-class="bo-kanban-chosen"
-                            drag-class="bo-kanban-drag"
-                            @change="(event) => onKanbanChange(cell.id, event)"
-                        >
-                            <template #item="{ element }">
-                                <AppKanbanCard :task="element" />
-                            </template>
-                        </draggable>
-                        <div v-if="cell.tasks.length === 0" class="flex h-12 items-center justify-center text-xs text-surface-400">-</div>
-                    </div>
-                </template>
-            </div>
-        </div>
+        <TaskFormModal
+            v-model:visible="showFormModal"
+            :task="selectedTask"
+            :statuses="statuses"
+            :contents="contents"
+            :plans="plans"
+            :users="users"
+        />
+        <TaskViewModal v-model:visible="showViewModal" :task="selectedTask" />
     </div>
 </template>

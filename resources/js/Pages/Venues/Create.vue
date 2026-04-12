@@ -8,6 +8,9 @@ defineOptions({ layout: AppLayout });
 
 defineProps({
     sizes: Array,
+    types: Array,
+    categories: Array,
+    styles: Array,
 });
 
 const form = useForm({
@@ -16,6 +19,23 @@ const form = useForm({
     phone: '',
     contact_name: '',
     venue_size_id: null,
+    venue_type_id: null,
+    venue_category_id: null,
+    venue_style_id: null,
+    place_id: '',
+    address_line: '',
+    address_number: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: '',
+    latitude: null,
+    longitude: null,
+    status: 'undefined',
+    performances_count: 0,
+    equipment_tags: '',
+    rating: null,
     instagram_url: '',
     facebook_url: '',
     youtube_url: '',
@@ -29,10 +49,11 @@ const submit = () => form.post(route('venues.store'));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Nova casa de show" subtitle="Cadastre venue, contato e canais digitais">
+        <BoPageHeader title="Novo local" subtitle="Cadastre local, contato e dados de localização">
             <template #actions>
                 <Link :href="route('venues.index')">
-                    <Button label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="hidden md:inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
                 </Link>
             </template>
         </BoPageHeader>
@@ -46,8 +67,18 @@ const submit = () => form.post(route('venues.store'));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-size">Porte</label>
-                    <Select id="venue-size" v-model="form.venue_size_id" :options="sizes" option-label="name" option-value="id" show-clear fluid />
+                    <label for="venue-type">Tipo</label>
+                    <Select id="venue-type" v-model="form.venue_type_id" :options="types" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-category">Categoria</label>
+                    <Select id="venue-category" v-model="form.venue_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-style">Estilo</label>
+                    <Select id="venue-style" v-model="form.venue_style_id" :options="styles" option-label="name" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -68,6 +99,85 @@ const submit = () => form.post(route('venues.store'));
                 <div class="space-y-2">
                     <label for="venue-site">Website</label>
                     <InputText id="venue-site" v-model="form.website_url" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-status">Status</label>
+                    <Select
+                        id="venue-status"
+                        v-model="form.status"
+                        :options="[
+                            { label: 'Indefinido', value: 'undefined' },
+                            { label: 'Não relevante', value: 'not_relevant' },
+                            { label: 'Contatado', value: 'contacted' },
+                            { label: 'Vetado', value: 'vetoed' },
+                            { label: 'Em negociação', value: 'negotiating' },
+                            { label: 'Portas abertas', value: 'open_doors' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-performances">Vezes que já tocou</label>
+                    <InputNumber id="venue-performances" v-model="form.performances_count" :min="0" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-rating">Avaliação</label>
+                    <Rating id="venue-rating" v-model="form.rating" :cancel="true" />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-equipment">Equipamentos (csv)</label>
+                    <InputText id="venue-equipment" v-model="form.equipment_tags" fluid />
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                    <label for="venue-address">Endereço</label>
+                    <InputText id="venue-address" v-model="form.address_line" placeholder="Rua / avenida" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-address-number">Número</label>
+                    <InputText id="venue-address-number" v-model="form.address_number" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-neighborhood">Bairro</label>
+                    <InputText id="venue-neighborhood" v-model="form.neighborhood" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-city">Cidade</label>
+                    <InputText id="venue-city" v-model="form.city" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-state">Estado</label>
+                    <InputText id="venue-state" v-model="form.state" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-postal-code">CEP</label>
+                    <InputText id="venue-postal-code" v-model="form.postal_code" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-country">País</label>
+                    <InputText id="venue-country" v-model="form.country" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-lat">Latitude</label>
+                    <InputNumber id="venue-lat" v-model="form.latitude" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-lng">Longitude</label>
+                    <InputNumber id="venue-lng" v-model="form.longitude" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -100,7 +210,7 @@ const submit = () => form.post(route('venues.store'));
                 <Link :href="route('venues.index')">
                     <Button type="button" label="Cancelar" outlined severity="secondary" />
                 </Link>
-                <Button type="submit" :loading="form.processing" label="Salvar venue" icon="pi pi-save" />
+                <Button type="submit" :loading="form.processing" label="Salvar local" icon="pi pi-save" />
             </div>
         </form>
     </div>

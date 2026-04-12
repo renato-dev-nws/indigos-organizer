@@ -27,7 +27,14 @@ const vote = (value) => {
     <div class="space-y-6">
         <BoPageHeader :title="idea.title" subtitle="Detalhes completos da ideia">
             <template #actions>
-                <Link :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" label="Editar" /></Link>
+                <Link :href="route('ideas.index')">
+                    <Button class="hidden md:inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
+                </Link>
+                <Link :href="route('ideas.edit', idea.id)">
+                    <Button class="hidden md:inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button class="inline-flex md:hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                </Link>
             </template>
         </BoPageHeader>
 

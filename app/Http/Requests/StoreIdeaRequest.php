@@ -46,8 +46,8 @@ class StoreIdeaRequest extends FormRequest
                     $validator->errors()->add('plan_id', 'Plano é obrigatório para plano existente.');
                 }
 
-                if ($this->boolean('is_private') && $this->input('status') !== 'in_drawer') {
-                    $validator->errors()->add('is_private', 'Ideia privada só pode estar na gaveta.');
+                if ($this->boolean('is_private') && ! in_array($this->input('status'), ['in_drawer', 'trash'], true)) {
+                    $validator->errors()->add('is_private', 'Ideia privada só pode estar na gaveta ou no lixo.');
                 }
             },
         ];

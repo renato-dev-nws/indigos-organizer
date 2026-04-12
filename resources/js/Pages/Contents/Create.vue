@@ -4,6 +4,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppRichText from '@/Components/AppRichText.vue';
+import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -114,6 +115,7 @@ const removeLink = (index) => {
 
                 <div class="md:col-span-2 space-y-2">
                     <label for="content-script">Roteiro</label>
+                    <AppSpeechTextareaAssist v-model="form.script" />
                     <AppRichText id="content-script" v-model="form.script" :min-height="240" />
                 </div>
             </BoFormSection>

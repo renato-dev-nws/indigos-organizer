@@ -22,6 +22,23 @@ class Venue extends Model
         'phone',
         'contact_name',
         'venue_size_id',
+        'venue_type_id',
+        'venue_category_id',
+        'venue_style_id',
+        'place_id',
+        'address_line',
+        'address_number',
+        'neighborhood',
+        'city',
+        'state',
+        'postal_code',
+        'country',
+        'latitude',
+        'longitude',
+        'status',
+        'performances_count',
+        'equipment_tags',
+        'rating',
         'instagram_url',
         'facebook_url',
         'youtube_url',
@@ -29,6 +46,19 @@ class Venue extends Model
         'notes',
         'description',
     ];
+
+    protected $appends = ['has_performed'];
+
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'performances_count' => 'integer',
+            'rating' => 'integer',
+            'has_performed' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -38,5 +68,25 @@ class Venue extends Model
     public function size(): BelongsTo
     {
         return $this->belongsTo(VenueSize::class, 'venue_size_id');
+    }
+
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(VenueType::class, 'venue_type_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(VenueCategory::class, 'venue_category_id');
+    }
+
+    public function style(): BelongsTo
+    {
+        return $this->belongsTo(VenueStyle::class, 'venue_style_id');
+    }
+
+    public function getHasPerformedAttribute(): bool
+    {
+        return (int) ($this->performances_count ?? 0) > 0;
     }
 }

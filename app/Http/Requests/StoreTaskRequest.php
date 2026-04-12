@@ -25,6 +25,7 @@ class StoreTaskRequest extends FormRequest
             'task_status_id' => ['required', 'uuid', 'exists:task_statuses,id'],
             'priority' => ['required', 'in:low,medium,high,urgent'],
             'due_date' => ['nullable', 'date'],
+            'reminder_at' => ['nullable', 'date'],
             'subtasks' => ['nullable', 'array'],
             'subtasks.*.title' => ['required_with:subtasks', 'string', 'max:255'],
             'subtasks.*.completed' => ['boolean'],
