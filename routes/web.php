@@ -87,6 +87,19 @@ Route::get('/sw.js', function () {
     ]);
 });
 
+// Workbox precaches manifest.webmanifest from root scope.
+Route::get('/manifest.webmanifest', function () {
+    $path = public_path('build/manifest.webmanifest');
+    if (! file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/manifest+json',
+        'Cache-Control' => 'no-cache',
+    ]);
+});
+
 // Workbox runtime file is generated under /public/build, but sw.js imports it from root.
 Route::get('/{workbox}', function (string $workbox) {
     $path = public_path('build/'.$workbox);

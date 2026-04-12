@@ -14,7 +14,7 @@ class IdeaCategoryController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'icon' => ['nullable', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
         ]);
 
         IdeaCategory::create([
@@ -31,7 +31,7 @@ class IdeaCategoryController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'icon' => ['nullable', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
         ]);
 
         $item->update($data);

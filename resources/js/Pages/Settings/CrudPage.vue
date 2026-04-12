@@ -1,4 +1,5 @@
 <script setup>
+import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -19,27 +20,28 @@ const props = defineProps({
     disableDeleteMessage: String,
     reorderRoute: String,
     tabs: Array,
+    tabRoutes: Object,
     activeTab: String,
 });
 
-const switchTab = (tab) => {
-    if (!tab?.value) {
+const selectedTab = ref(props.activeTab);
+
+watch(() => props.activeTab, (value) => {
+    selectedTab.value = value;
+});
+
+const switchTab = (tabValue) => {
+    const value = typeof tabValue === 'string' ? tabValue : tabValue?.value;
+    if (!value || value === props.activeTab) {
         return;
     }
 
-    if (props.title === 'Tipos') {
-        router.get(tab.value === 'venues' ? route('settings.pages.types.venues') : route('settings.pages.types'));
+    const targetRoute = props.tabRoutes?.[value];
+    if (!targetRoute) {
         return;
     }
 
-    if (props.title === 'Categorias') {
-        router.get(tab.value === 'venues' ? route('settings.pages.categories.venues') : route('settings.pages.categories'));
-        return;
-    }
-
-    if (props.title === 'Estilos') {
-        router.get(route('settings.pages.styles'));
-    }
+    router.get(targetRoute, {}, { preserveScroll: true, preserveState: false, replace: true });
 };
 </script>
 
@@ -49,11 +51,11 @@ const switchTab = (tab) => {
 
         <div v-if="tabs?.length" class="max-w-md">
             <SelectButton
-                :model-value="activeTab"
+                v-model="selectedTab"
                 :options="tabs"
                 option-label="label"
                 option-value="value"
-                @change="switchTab($event.value)"
+                @update:model-value="switchTab"
             />
         </div>
 

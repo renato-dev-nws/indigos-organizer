@@ -41,14 +41,37 @@ class VenueController extends Controller
         $mapPoints = Venue::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->with('type:id,name,color')
-            ->get(['id', 'name', 'latitude', 'longitude', 'venue_type_id'])
+            ->with('type:id,name,color,icon')
+            ->get([
+                'id',
+                'name',
+                'latitude',
+                'longitude',
+                'venue_type_id',
+                'address_line',
+                'address_number',
+                'neighborhood',
+                'city',
+                'state',
+                'postal_code',
+                'country',
+                'rating',
+            ])
             ->map(fn ($venue) => [
                 'id' => $venue->id,
                 'name' => $venue->name,
                 'lat' => (float) $venue->latitude,
                 'lng' => (float) $venue->longitude,
                 'type' => $venue->type,
+                'rating' => $venue->rating,
+                'address' => collect([
+                    $venue->address_line,
+                    $venue->address_number,
+                    $venue->neighborhood,
+                    trim(implode(' - ', array_filter([$venue->city, $venue->state]))),
+                    $venue->postal_code,
+                    $venue->country,
+                ])->filter()->implode(', '),
             ]);
 
         return Inertia::render('Venues/Index', [

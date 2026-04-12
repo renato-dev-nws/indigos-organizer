@@ -92,6 +92,10 @@ const validate = () => {
         errors.icon = 'Ícone deve ter no máximo 100 caracteres.';
     }
 
+    if (props.withIcon && form.icon && !/^[a-z0-9-]+:[a-z0-9-]+$/i.test(form.icon.trim())) {
+        errors.icon = 'Use formato Iconify no padrão prefixo:nome. Exemplo: mdi:account.';
+    }
+
     if (props.withOrder && (!Number.isInteger(form.order) || form.order < 1)) {
         errors.order = 'Ordem deve ser um inteiro maior ou igual a 1.';
     }
@@ -213,7 +217,7 @@ const onPage = (event) => {
                     <Column v-if="withIcon" field="icon" header="Ícone" class="w-40">
                         <template #body="{ data }">
                             <div class="flex items-center gap-2">
-                                <i v-if="data.icon" :class="data.icon" />
+                                <iconify-icon v-if="data.icon" :icon="data.icon" width="18" height="18" />
                                 <span class="text-xs text-slate-500">{{ data.icon || '-' }}</span>
                             </div>
                         </template>
@@ -249,7 +253,6 @@ const onPage = (event) => {
                     :rows="rows"
                     :first="first"
                     :total-records="filteredItems.length"
-                    :rows-per-page-options="[5, 8, 12, 20]"
                     @page="onPage"
                 />
 
@@ -285,9 +288,15 @@ const onPage = (event) => {
                 <Message v-if="errors.color" severity="error" size="small" variant="simple">{{ errors.color }}</Message>
             </div>
             <div v-if="withIcon" class="space-y-2">
-                <label for="settings-icon">Ícone (classe CSS)</label>
-                <InputText id="settings-icon" v-model="form.icon" fluid placeholder="pi pi-star" :invalid="!!errors.icon" />
-                <small class="text-slate-500">Exemplo: pi pi-video, pi pi-hashtag, pi pi-map-marker.</small>
+                <label for="settings-icon">Ícone (Iconify)</label>
+                <InputGroup>
+                    <InputText id="settings-icon" v-model="form.icon" fluid placeholder="mdi:home" :invalid="!!errors.icon" />
+                    <InputGroupAddon class="min-w-12 justify-center">
+                        <iconify-icon v-if="form.icon && form.icon.trim()" :icon="form.icon.trim()" width="24" height="24" />
+                        <i v-else class="pi pi-question-circle text-slate-400" />
+                    </InputGroupAddon>
+                </InputGroup>
+                <small class="text-slate-500">Use formato prefixo:nome. Exemplo: mdi:account.</small>
                 <Message v-if="errors.icon" severity="error" size="small" variant="simple">{{ errors.icon }}</Message>
             </div>
             <div v-if="withOrder" class="space-y-2">

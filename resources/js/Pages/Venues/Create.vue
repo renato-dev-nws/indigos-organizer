@@ -95,7 +95,7 @@ const loadGooglePlaces = async () => {
 
     await new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
         script.async = true;
         script.defer = true;
         script.onload = resolve;

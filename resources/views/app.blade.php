@@ -22,8 +22,11 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- PWA -->
-        <link rel="manifest" href="/build/manifest.webmanifest">
+        <link rel="manifest" href="/manifest.webmanifest">
         <meta name="theme-color" content="#4f46e5">
+
+        <!-- Iconify Web Component -->
+        <script src="https://code.iconify.design/iconify-icon/3.0.0/iconify-icon.min.js"></script>
 
         <!-- Scripts -->
         @routes

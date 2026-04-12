@@ -19,6 +19,9 @@ export default defineConfig({
                     base: null,
                     includeAbsolute: false,
                 },
+                compilerOptions: {
+                    isCustomElement: (tag) => tag === 'iconify-icon',
+                },
             },
         }),
         Components({
@@ -37,6 +40,7 @@ export default defineConfig({
                 theme_color: '#4f46e5',
                 background_color: '#1e1b4b',
                 display: 'standalone',
+                scope: '/',
                 start_url: '/dashboard',
                 icons: [
                     {
@@ -54,6 +58,9 @@ export default defineConfig({
             },
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+                modifyURLPrefix: {
+                    '': '/build/',
+                },
                 // Don't navigate-fallback (server handles routing)
                 navigateFallback: null,
                 navigateFallbackDenylist: [/^\/api\//],

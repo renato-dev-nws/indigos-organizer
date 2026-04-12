@@ -45,6 +45,10 @@ class SettingsController extends Controller
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
             ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.types'),
+                'venues' => route('settings.pages.types.venues'),
+            ],
             'activeTab' => 'ideas_contents',
         ]);
     }
@@ -63,6 +67,10 @@ class SettingsController extends Controller
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
+            ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.types'),
+                'venues' => route('settings.pages.types.venues'),
             ],
             'activeTab' => 'venues',
         ]);
@@ -92,6 +100,10 @@ class SettingsController extends Controller
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
             ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.categories'),
+                'venues' => route('settings.pages.categories.venues'),
+            ],
             'activeTab' => 'ideas_contents',
         ]);
     }
@@ -111,12 +123,18 @@ class SettingsController extends Controller
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
             ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.categories'),
+                'venues' => route('settings.pages.categories.venues'),
+            ],
             'activeTab' => 'venues',
         ]);
     }
 
     public function styles(): Response
     {
+        $activeTab = request('tab') === 'venues' ? 'venues' : 'content';
+
         $items = VenueStyle::query()
             ->withCount(['venues', 'ideas', 'contents'])
             ->orderBy('name')
@@ -140,7 +158,11 @@ class SettingsController extends Controller
                 ['label' => 'Conteúdo', 'value' => 'content'],
                 ['label' => 'Locais', 'value' => 'venues'],
             ],
-            'activeTab' => 'venues',
+            'tabRoutes' => [
+                'content' => '/settings/styles?tab=content',
+                'venues' => '/settings/styles?tab=venues',
+            ],
+            'activeTab' => $activeTab,
         ]);
     }
 

@@ -15,7 +15,7 @@ class VenueStyleController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'icon' => ['nullable', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
         ]);
 
         VenueStyle::create([
@@ -33,7 +33,7 @@ class VenueStyleController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'icon' => ['nullable', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
         ]);
 
         $item->update($data);

@@ -24,14 +24,14 @@ class VenueAndStylesIntegrationTest extends TestCase
             ->post(route('settings.idea-types.store'), [
                 'name' => 'Documentário',
                 'color' => '#123abc',
-                'icon' => 'pi pi-video',
+                'icon' => 'mdi:video',
             ])
             ->assertRedirect();
 
         $this->assertDatabaseHas('idea_types', [
             'user_id' => $user->id,
             'name' => 'Documentário',
-            'icon' => 'pi pi-video',
+            'icon' => 'mdi:video',
         ]);
     }
 
