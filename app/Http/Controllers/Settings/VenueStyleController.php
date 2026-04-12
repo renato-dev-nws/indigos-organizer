@@ -16,6 +16,7 @@ class VenueStyleController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
+            'domain' => ['required', 'in:content,venues'],
         ]);
 
         VenueStyle::create([
@@ -34,6 +35,7 @@ class VenueStyleController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'icon' => ['nullable', 'string', 'max:100', 'regex:/^[a-z0-9-]+:[a-z0-9-]+$/i'],
+            'domain' => ['required', 'in:content,venues'],
         ]);
 
         $item->update($data);
@@ -43,10 +45,18 @@ class VenueStyleController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
-        $item = VenueStyle::withCount(['venues', 'ideas', 'contents'])->findOrFail($id);
+        $item = VenueStyle::findOrFail($id);
 
-        if ($item->venues_count > 0 || $item->ideas_count > 0 || $item->contents_count > 0) {
-            return back()->with('error', 'Não é permitido remover estilo com locais, ideias ou conteúdos vinculados.');
+        if ($item->domain === VenueStyle::DOMAIN_VENUES) {
+            $item->loadCount('venues');
+            if ($item->venues_count > 0) {
+                return back()->with('error', 'Não é permitido remover estilo com locais vinculados.');
+            }
+        } else {
+            $item->loadCount(['ideas', 'contents']);
+            if ($item->ideas_count > 0 || $item->contents_count > 0) {
+                return back()->with('error', 'Não é permitido remover estilo com ideias ou conteúdos vinculados.');
+            }
         }
 
         $item->delete();

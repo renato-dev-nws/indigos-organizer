@@ -135,25 +135,55 @@ class SettingsController extends Controller
     {
         $activeTab = request('tab') === 'venues' ? 'venues' : 'content';
 
+        if ($activeTab === 'venues') {
+            $items = VenueStyle::query()
+                ->where('domain', VenueStyle::DOMAIN_VENUES)
+                ->withCount('venues')
+                ->orderBy('name')
+                ->get();
+
+            return Inertia::render('Settings/CrudPage', [
+                'title' => 'Estilos',
+                'description' => 'Estilos de locais.',
+                'items' => $items,
+                'routeBase' => 'settings.venue-styles',
+                'withColor' => true,
+                'withIcon' => true,
+                'disableDeleteWhen' => 'venues_count',
+                'disableDeleteMessage' => 'Não é permitido excluir estilo com locais vinculados.',
+                'tabs' => [
+                    ['label' => 'Conteúdo', 'value' => 'content'],
+                    ['label' => 'Locais', 'value' => 'venues'],
+                ],
+                'tabRoutes' => [
+                    'content' => '/settings/styles?tab=content',
+                    'venues' => '/settings/styles?tab=venues',
+                ],
+                'activeTab' => 'venues',
+                'extraPayload' => ['domain' => VenueStyle::DOMAIN_VENUES],
+            ]);
+        }
+
         $items = VenueStyle::query()
-            ->withCount(['venues', 'ideas', 'contents'])
+            ->where('domain', VenueStyle::DOMAIN_CONTENT)
+            ->withCount(['ideas', 'contents'])
             ->orderBy('name')
             ->get()
             ->map(function (VenueStyle $style) {
-                $style->setAttribute('links_count', (int) $style->venues_count + (int) $style->ideas_count + (int) $style->contents_count);
+                $style->setAttribute('links_count', (int) $style->ideas_count + (int) $style->contents_count);
 
                 return $style;
             });
 
         return Inertia::render('Settings/CrudPage', [
             'title' => 'Estilos',
-            'description' => 'Estilos de conteúdo e locais.',
+            'description' => 'Estilos de conteúdo.',
             'items' => $items,
-            'routeBase' => 'settings.venue-styles',
+            'routeBase' => 'settings.content-styles',
             'withColor' => true,
             'withIcon' => true,
             'disableDeleteWhen' => 'links_count',
-            'disableDeleteMessage' => 'Não é permitido excluir estilo vinculado a locais, ideias ou conteúdos.',
+            'disableDeleteMessage' => 'Não é permitido excluir estilo com ideias ou conteúdos vinculados.',
             'tabs' => [
                 ['label' => 'Conteúdo', 'value' => 'content'],
                 ['label' => 'Locais', 'value' => 'venues'],
@@ -162,7 +192,8 @@ class SettingsController extends Controller
                 'content' => '/settings/styles?tab=content',
                 'venues' => '/settings/styles?tab=venues',
             ],
-            'activeTab' => $activeTab,
+            'activeTab' => 'content',
+            'extraPayload' => ['domain' => VenueStyle::DOMAIN_CONTENT],
         ]);
     }
 

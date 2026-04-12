@@ -43,7 +43,7 @@ class IdeaController extends Controller
             'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'venue_style_id', 'search']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
-            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
         ]);
     }
 
@@ -52,7 +52,7 @@ class IdeaController extends Controller
         return Inertia::render('Ideas/Create', [
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
-            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
@@ -102,7 +102,7 @@ class IdeaController extends Controller
             'idea' => $idea->load(['references', 'voterUsers', 'styles']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
-            'venueStyles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),

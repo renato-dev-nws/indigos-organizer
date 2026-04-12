@@ -22,6 +22,7 @@ const props = defineProps({
     tabs: Array,
     tabRoutes: Object,
     activeTab: String,
+    extraPayload: Object,
 });
 
 const selectedTab = ref(props.activeTab);
@@ -71,6 +72,7 @@ const switchTab = (tabValue) => {
             :disable-delete-when="disableDeleteWhen"
             :disable-delete-message="disableDeleteMessage"
             :reorder-route="reorderRoute"
+            :extra-payload="extraPayload"
         />
     </div>
 </template>

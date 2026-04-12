@@ -17,6 +17,7 @@ const props = defineProps({
     disableDeleteWhen: { type: String, default: '' },
     disableDeleteMessage: { type: String, default: 'Este registro nao pode ser removido.' },
     reorderRoute: { type: String, default: '' },
+    extraPayload: { type: Object, default: () => ({}) },
 });
 
 const toast = useToast();
@@ -113,6 +114,7 @@ const save = () => {
         ...(props.withColor ? { color: form.color } : {}),
         ...(props.withIcon ? { icon: (form.icon || '').trim() || null } : {}),
         ...(props.withOrder ? { order: form.order } : {}),
+        ...props.extraPayload,
     };
 
     if (editing.value) {

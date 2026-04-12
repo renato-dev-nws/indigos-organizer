@@ -175,10 +175,7 @@ const loadGoogleMaps = async () => {
             const onReady = async () => {
                 try {
                     await waitForGoogleMaps();
-                    await Promise.all([
-                        window.google.maps.importLibrary('maps'),
-                        window.google.maps.importLibrary('marker'),
-                    ]);
+                    await window.google.maps.importLibrary('maps');
                     resolve(true);
                 } catch (error) {
                     reject(error);
@@ -231,7 +228,7 @@ const initMap = async () => {
             return;
         }
 
-        const { Map, InfoWindow, LatLngBounds } = await window.google.maps.importLibrary('maps');
+        await window.google.maps.importLibrary('maps');
 
         let AdvancedMarkerElement = null;
         try {
@@ -242,12 +239,12 @@ const initMap = async () => {
 
         const configuredMapId = String(import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '').trim();
 
-        mapInstance = new Map(mapEl.value, {
+        mapInstance = new window.google.maps.Map(mapEl.value, {
             center: { lat: -14.235, lng: -51.9253 },
             zoom: 4,
             ...(configuredMapId ? { mapId: configuredMapId } : {}),
         });
-        activeInfoWindow = new InfoWindow();
+        activeInfoWindow = new window.google.maps.InfoWindow();
         mapReady.value = true;
         mapError.value = '';
 
@@ -273,7 +270,7 @@ const initMap = async () => {
         }).filter((point) => point.isValid);
 
         const renderLegacyMarkers = () => {
-            const bounds = new LatLngBounds();
+            const bounds = new window.google.maps.LatLngBounds();
             let rendered = 0;
 
             points.forEach((point) => {
@@ -296,7 +293,7 @@ const initMap = async () => {
         };
 
         const renderAdvancedMarkers = () => {
-            const bounds = new LatLngBounds();
+            const bounds = new window.google.maps.LatLngBounds();
             let rendered = 0;
 
             points.forEach((point) => {
@@ -319,7 +316,7 @@ const initMap = async () => {
             return { bounds, rendered };
         };
 
-        let bounds = new LatLngBounds();
+        let bounds = new window.google.maps.LatLngBounds();
         let markersRendered = 0;
 
         try {

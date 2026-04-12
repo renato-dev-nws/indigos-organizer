@@ -79,7 +79,7 @@ class VenueController extends Controller
             'sizes' => VenueSize::orderBy('name')->get(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'color']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'color']),
-            'styles' => VenueStyle::orderBy('name')->get(['id', 'name', 'color']),
+            'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'color']),
             'mapPoints' => $mapPoints,
             'filters' => request()->only(['venue_type_id', 'status', 'city', 'has_performed', 'rating', 'search']),
         ]);
@@ -91,7 +91,7 @@ class VenueController extends Controller
             'sizes' => VenueSize::orderBy('name')->get(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
-            'styles' => VenueStyle::orderBy('name')->get(['id', 'name', 'icon']),
+            'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'icon']),
         ]);
     }
 
@@ -122,7 +122,7 @@ class VenueController extends Controller
             'sizes' => VenueSize::orderBy('name')->get(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
-            'styles' => VenueStyle::orderBy('name')->get(['id', 'name', 'icon']),
+            'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'icon']),
         ]);
     }
 

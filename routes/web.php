@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
     Route::resource('/settings/venue-types', VenueTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-types');
     Route::resource('/settings/venue-categories', VenueCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-categories');
+    Route::resource('/settings/content-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.content-styles');
     Route::resource('/settings/venue-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-styles');
     Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');
     Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');

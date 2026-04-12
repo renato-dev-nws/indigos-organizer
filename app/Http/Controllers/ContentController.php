@@ -44,7 +44,7 @@ class ContentController extends Controller
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
-            'styles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
         ]);
     }
 
@@ -54,7 +54,7 @@ class ContentController extends Controller
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
-            'styles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
         ]);
     }
@@ -90,7 +90,7 @@ class ContentController extends Controller
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
-            'styles' => VenueStyle::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
+            'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
             'venueStyleIds' => $content->styles()->pluck('venue_styles.id')->all(),
         ]);

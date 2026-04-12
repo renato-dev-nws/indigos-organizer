@@ -12,11 +12,15 @@ class VenueStyle extends Model
 {
     use HasUuids;
 
+    public const DOMAIN_CONTENT = 'content';
+
+    public const DOMAIN_VENUES = 'venues';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
 
-    protected $fillable = ['user_id', 'name', 'color', 'icon'];
+    protected $fillable = ['user_id', 'name', 'color', 'icon', 'domain'];
 
     public function user(): BelongsTo
     {
