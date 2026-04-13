@@ -1,6 +1,8 @@
 <script setup>
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import { importLibrary as importGoogleLibrary, setOptions } from '@googlemaps/js-api-loader';
+import 'iconify-icon';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -18,10 +20,22 @@ const mapNotice = ref('');
 let googleMapsLoaderPromise = null;
 let mapInstance = null;
 let activeInfoWindow = null;
+const legacyMarkerIconCache = new Map();
 
 const DEFAULT_MARKER_ICON = 'mdi:map-marker';
 const DEFAULT_MARKER_COLOR = '#4f46e5';
-const MAP_READY_TIMEOUT = 15000;
+const DARK_MAP_STYLES = [
+    { elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
+    { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+    { elementType: 'labels.text.stroke', stylers: [{ color: '#0b1220' }] },
+    { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#334155' }] },
+    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#64748b' }] },
+    { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+    { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0f172a' }] },
+    { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+    { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+    { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0a2536' }] },
+];
 
 const localFilters = reactive({
     venue_type_id: props.filters?.venue_type_id ?? null,
@@ -89,6 +103,7 @@ const escapeHtml = (value = '') => String(value)
 
 const sanitizeIcon = (icon) => (/^[a-z0-9-]+:[a-z0-9-]+$/i.test(icon || '') ? icon : DEFAULT_MARKER_ICON);
 const sanitizeColor = (color) => (/^#[0-9a-fA-F]{6}$/.test(color || '') ? color : DEFAULT_MARKER_COLOR);
+const isDarkMode = () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
 
 const toIconSvgUrl = (icon, color = '#ffffff') => {
     const safeIcon = sanitizeIcon(icon);
@@ -126,36 +141,106 @@ const buildInfoWindowContent = (point) => {
     `;
 };
 
-const buildMarkerElement = (point) => {
-    const markerRoot = document.createElement('div');
-    markerRoot.innerHTML = `
-        <div style="display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9999px;background:${sanitizeColor(point?.type?.color)};color:#fff;border:2px solid #ffffff;box-shadow:0 6px 14px rgba(15,23,42,0.25);">
-            <img src="${toIconSvgUrl(point?.type?.icon)}" alt="ícone" width="22" height="22" style="display:block;" />
-        </div>
-    `;
+const buildPinElement = (point, PinElement) => {
+    const iconify = document.createElement('iconify-icon');
+    iconify.setAttribute('icon', sanitizeIcon(point?.type?.icon));
+    iconify.style.fontSize = '22px';
+    iconify.style.color = '#ffffff';
+    iconify.style.display = 'block';
 
-    return markerRoot.firstElementChild;
+    const pin = new PinElement({
+        background: sanitizeColor(point?.type?.color),
+        borderColor: '#ffffff',
+        glyph: iconify,
+        scale: 1.1,
+    });
+
+    pin.element.style.filter = 'drop-shadow(0 4px 8px rgba(15, 23, 42, 0.35))';
+    return pin;
 };
 
-const waitForGoogleMaps = (timeoutMs = MAP_READY_TIMEOUT) => new Promise((resolve, reject) => {
-    const startedAt = Date.now();
+const parseViewBox = (value = '') => {
+    const parts = value.trim().split(/\s+/).map(Number);
+    if (parts.length !== 4 || parts.some((item) => Number.isNaN(item))) {
+        return [0, 0, 24, 24];
+    }
 
-    const tick = () => {
-        if (window.google?.maps?.importLibrary) {
-            resolve(true);
-            return;
+    return parts;
+};
+
+const getIconSvgPayload = async (icon) => {
+    const safeIcon = sanitizeIcon(icon);
+    const cacheKey = `payload:${safeIcon}`;
+    if (legacyMarkerIconCache.has(cacheKey)) {
+        return legacyMarkerIconCache.get(cacheKey);
+    }
+
+    try {
+        const response = await fetch(toIconSvgUrl(safeIcon));
+        if (!response.ok) {
+            throw new Error(`Iconify status ${response.status}`);
         }
 
-        if (Date.now() - startedAt > timeoutMs) {
-            reject(new Error('Tempo esgotado aguardando Google Maps.'));
-            return;
-        }
+        const svgText = await response.text();
+        const viewBoxMatch = svgText.match(/viewBox=["']([^"']+)["']/i);
+        const viewBox = parseViewBox(viewBoxMatch?.[1]);
+        const body = svgText
+            .replace(/^<svg[^>]*>/i, '')
+            .replace(/<\/svg>\s*$/i, '');
+        const payload = { body, viewBox };
+        legacyMarkerIconCache.set(cacheKey, payload);
+        return payload;
+    } catch (error) {
+        console.warn('Falha ao carregar ícone do marcador legado:', error);
+        const fallback = { body: '', viewBox: [0, 0, 24, 24] };
+        legacyMarkerIconCache.set(cacheKey, fallback);
+        return fallback;
+    }
+};
 
-        window.requestAnimationFrame(tick);
+const buildLegacyMarkerSvg = (color, iconPayload) => {
+    const [, , iconWidth, iconHeight] = iconPayload.viewBox;
+    const targetSize = 14;
+    const iconX = 20 - (targetSize / 2);
+    const iconY = 15 - (targetSize / 2);
+    const scaleX = targetSize / (iconWidth || 24);
+    const scaleY = targetSize / (iconHeight || 24);
+
+    return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="52" viewBox="0 0 40 52">
+            <defs>
+                <filter id="pinShadow" x="-30%" y="-20%" width="160%" height="180%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.35"/>
+                </filter>
+            </defs>
+            <path d="M20 2C12.82 2 7 7.82 7 15c0 8.25 10.18 18.73 12.06 20.59a1.33 1.33 0 0 0 1.88 0C22.82 33.73 33 23.25 33 15 33 7.82 27.18 2 20 2z" fill="${color}" stroke="#ffffff" stroke-width="2" filter="url(#pinShadow)"/>
+            <circle cx="20" cy="15" r="9" fill="rgba(255,255,255,0.15)"/>
+            <g transform="translate(${iconX} ${iconY}) scale(${scaleX} ${scaleY})" fill="#ffffff" color="#ffffff">
+                ${iconPayload.body}
+            </g>
+        </svg>
+    `.trim();
+};
+
+const buildLegacyMarkerIcon = async (point) => {
+    const icon = sanitizeIcon(point?.type?.icon);
+    const color = sanitizeColor(point?.type?.color);
+    const cacheKey = `marker:${icon}:${color}`;
+
+    if (legacyMarkerIconCache.has(cacheKey)) {
+        return legacyMarkerIconCache.get(cacheKey);
+    }
+
+    const payload = await getIconSvgPayload(icon);
+    const svg = buildLegacyMarkerSvg(color, payload);
+    const markerIcon = {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        scaledSize: new window.google.maps.Size(40, 52),
+        anchor: new window.google.maps.Point(20, 38),
     };
-
-    tick();
-});
+    legacyMarkerIconCache.set(cacheKey, markerIcon);
+    return markerIcon;
+};
 
 const loadGoogleMaps = async () => {
     if (window.google?.maps?.importLibrary) {
@@ -169,44 +254,20 @@ const loadGoogleMaps = async () => {
     }
 
     if (!googleMapsLoaderPromise) {
-        googleMapsLoaderPromise = new Promise((resolve, reject) => {
-            let script = document.getElementById('google-maps-api');
-
-            const onReady = async () => {
-                try {
-                    await waitForGoogleMaps();
-                    await window.google.maps.importLibrary('maps');
-                    resolve(true);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-
-            if (window.google?.maps?.importLibrary) {
-                onReady();
-                return;
-            }
-
-            if (!script) {
-                script = document.createElement('script');
-                script.id = 'google-maps-api';
-                script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async`;
-                script.async = true;
-                script.defer = true;
-                script.addEventListener('load', onReady, { once: true });
-                script.addEventListener('error', () => reject(new Error('Erro ao baixar o script do Google Maps.')), { once: true });
-                document.head.appendChild(script);
-                return;
-            }
-
-            script.addEventListener('load', onReady, { once: true });
-            script.addEventListener('error', () => reject(new Error('Falha ao carregar script existente do Google Maps.')), { once: true });
-
-            onReady();
-        }).catch((error) => {
-            googleMapsLoaderPromise = null;
-            throw error;
+        setOptions({
+            key,
+            v: 'weekly',
         });
+
+        googleMapsLoaderPromise = Promise.all([
+            importGoogleLibrary('maps'),
+            importGoogleLibrary('marker'),
+        ])
+            .then(() => true)
+            .catch((error) => {
+                googleMapsLoaderPromise = null;
+                throw error;
+            });
     }
 
     await googleMapsLoaderPromise;
@@ -231,8 +292,9 @@ const initMap = async () => {
         await window.google.maps.importLibrary('maps');
 
         let AdvancedMarkerElement = null;
+        let PinElement = null;
         try {
-            ({ AdvancedMarkerElement } = await window.google.maps.importLibrary('marker'));
+            ({ AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary('marker'));
         } catch {
             mapNotice.value = 'Marcadores avançados indisponíveis neste ambiente. Exibindo marcadores padrão.';
         }
@@ -243,14 +305,15 @@ const initMap = async () => {
             center: { lat: -14.235, lng: -51.9253 },
             zoom: 4,
             ...(configuredMapId ? { mapId: configuredMapId } : {}),
+            ...(isDarkMode() ? { styles: DARK_MAP_STYLES, backgroundColor: '#0b1220' } : {}),
         });
         activeInfoWindow = new window.google.maps.InfoWindow();
         mapReady.value = true;
         mapError.value = '';
 
-        const useAdvancedMarkers = Boolean(AdvancedMarkerElement && configuredMapId);
+        const useAdvancedMarkers = Boolean(AdvancedMarkerElement && PinElement && configuredMapId);
         if (!useAdvancedMarkers && AdvancedMarkerElement) {
-            mapNotice.value = 'Marcadores em modo de compatibilidade. Defina VITE_GOOGLE_MAPS_MAP_ID para habilitar o modo avançado.';
+            mapNotice.value = 'Marcadores em modo de compatibilidade (customizados).';
         }
 
         if (!(props.mapPoints || []).length) {
@@ -269,15 +332,17 @@ const initMap = async () => {
             };
         }).filter((point) => point.isValid);
 
-        const renderLegacyMarkers = () => {
+        const renderLegacyMarkers = async () => {
             const bounds = new window.google.maps.LatLngBounds();
             let rendered = 0;
 
-            points.forEach((point) => {
+            for (const point of points) {
+                const markerIcon = await buildLegacyMarkerIcon(point);
                 const marker = new window.google.maps.Marker({
                     position: { lat: point.lat, lng: point.lng },
                     map: mapInstance,
                     title: point.name,
+                    icon: markerIcon,
                 });
 
                 marker.addListener('click', () => {
@@ -287,7 +352,7 @@ const initMap = async () => {
 
                 bounds.extend({ lat: point.lat, lng: point.lng });
                 rendered += 1;
-            });
+            }
 
             return { bounds, rendered };
         };
@@ -301,7 +366,7 @@ const initMap = async () => {
                     position: { lat: point.lat, lng: point.lng },
                     map: mapInstance,
                     title: point.name,
-                    content: buildMarkerElement(point),
+                    content: buildPinElement(point, PinElement).element,
                 });
 
                 marker.addListener('gmp-click', () => {
@@ -323,11 +388,11 @@ const initMap = async () => {
             if (useAdvancedMarkers) {
                 ({ bounds, rendered: markersRendered } = renderAdvancedMarkers());
             } else {
-                ({ bounds, rendered: markersRendered } = renderLegacyMarkers());
+                ({ bounds, rendered: markersRendered } = await renderLegacyMarkers());
             }
         } catch (markerError) {
             console.error('Erro ao renderizar markers avançados. Aplicando fallback para markers padrão.', markerError);
-            ({ bounds, rendered: markersRendered } = renderLegacyMarkers());
+            ({ bounds, rendered: markersRendered } = await renderLegacyMarkers());
             mapNotice.value = 'Alguns marcadores foram renderizados em modo de compatibilidade.';
         }
 
@@ -336,10 +401,10 @@ const initMap = async () => {
             return;
         }
 
-        if ((props.mapPoints || []).length > 1) {
+        if (points.length > 1) {
             mapInstance.fitBounds(bounds);
-        } else if ((props.mapPoints || []).length === 1) {
-            mapInstance.setCenter({ lat: props.mapPoints[0].lat, lng: props.mapPoints[0].lng });
+        } else if (points.length === 1) {
+            mapInstance.setCenter({ lat: points[0].lat, lng: points[0].lng });
             mapInstance.setZoom(14);
         }
 
@@ -358,6 +423,20 @@ watch(viewMode, async (value) => {
         initMap();
     }
 });
+
+watch(
+    () => props.mapPoints,
+    async () => {
+        if (viewMode.value !== 'map') {
+            return;
+        }
+
+        await nextTick();
+        await new Promise((resolve) => window.requestAnimationFrame(resolve));
+        initMap();
+    },
+    { deep: true }
+);
 
 onMounted(() => {
     if (viewMode.value === 'map') {
