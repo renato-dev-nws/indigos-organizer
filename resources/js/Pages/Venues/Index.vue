@@ -21,6 +21,8 @@ let googleMapsLoaderPromise = null;
 let mapInstance = null;
 let activeInfoWindow = null;
 const legacyMarkerIconCache = new Map();
+const renderedMarkerHandles = new Map();
+const hoveredVenueId = ref(null);
 
 const DEFAULT_MARKER_ICON = 'mdi:map-marker';
 const DEFAULT_MARKER_COLOR = '#4f46e5';
@@ -135,6 +137,23 @@ const formatRating = (rating) => {
     return `${'★'.repeat(normalized)}${'☆'.repeat(5 - normalized)} (${normalized}/5)`;
 };
 
+const formatRatingStars = (rating) => {
+    const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
+    return `${'★'.repeat(normalized)}${'☆'.repeat(5 - normalized)}`;
+};
+
+const normalizedMapPoints = computed(() => (props.mapPoints || []).map((point) => {
+    const lat = Number(point?.lat);
+    const lng = Number(point?.lng);
+
+    return {
+        ...point,
+        lat,
+        lng,
+        isValid: Number.isFinite(lat) && Number.isFinite(lng),
+    };
+}).filter((point) => point.isValid));
+
 const buildInfoWindowContent = (point) => {
     const icon = sanitizeIcon(point?.type?.icon);
     const color = sanitizeColor(point?.type?.color);
@@ -237,10 +256,16 @@ const buildLegacyMarkerSvg = (color, iconPayload) => {
     `.trim();
 };
 
-const buildLegacyMarkerIcon = async (point) => {
+const buildLegacyMarkerIcon = async (point, variant = 'default') => {
     const icon = sanitizeIcon(point?.type?.icon);
     const color = sanitizeColor(point?.type?.color);
-    const cacheKey = `marker:${icon}:${color}`;
+    const cacheKey = `marker:${icon}:${color}:${variant}`;
+
+    const isHovered = variant === 'hover';
+    const markerWidth = isHovered ? 44 : 40;
+    const markerHeight = isHovered ? 57 : 52;
+    const markerAnchorX = isHovered ? 22 : 20;
+    const markerAnchorY = isHovered ? 42 : 38;
 
     if (legacyMarkerIconCache.has(cacheKey)) {
         return legacyMarkerIconCache.get(cacheKey);
@@ -250,11 +275,80 @@ const buildLegacyMarkerIcon = async (point) => {
     const svg = buildLegacyMarkerSvg(color, payload);
     const markerIcon = {
         url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        scaledSize: new window.google.maps.Size(40, 52),
-        anchor: new window.google.maps.Point(20, 38),
+        scaledSize: new window.google.maps.Size(markerWidth, markerHeight),
+        anchor: new window.google.maps.Point(markerAnchorX, markerAnchorY),
     };
     legacyMarkerIconCache.set(cacheKey, markerIcon);
     return markerIcon;
+};
+
+const setAdvancedMarkerHovered = (handle, isHovered) => {
+    if (!handle?.element) {
+        return;
+    }
+
+    handle.element.style.transformOrigin = 'center bottom';
+    handle.element.style.willChange = 'transform';
+
+    if (isHovered) {
+        handle.element.style.transform = 'scale(1.12)';
+        handle.element.style.animation = 'bo-marker-bounce 720ms ease-in-out infinite';
+        handle.marker.zIndex = 9999;
+        return;
+    }
+
+    handle.element.style.transform = '';
+    handle.element.style.animation = '';
+    handle.marker.zIndex = null;
+};
+
+const setLegacyMarkerHovered = (handle, isHovered) => {
+    if (!handle?.marker) {
+        return;
+    }
+
+    if (isHovered) {
+        handle.marker.setIcon(handle.hoverIcon);
+        handle.marker.setAnimation(window.google.maps.Animation.BOUNCE);
+        handle.marker.setZIndex(9999);
+        return;
+    }
+
+    handle.marker.setIcon(handle.baseIcon);
+    handle.marker.setAnimation(null);
+    handle.marker.setZIndex(null);
+};
+
+const setMarkerHovered = (venueId, isHovered) => {
+    const handle = renderedMarkerHandles.get(venueId);
+    if (!handle) {
+        return;
+    }
+
+    if (handle.kind === 'advanced') {
+        setAdvancedMarkerHovered(handle, isHovered);
+        return;
+    }
+
+    setLegacyMarkerHovered(handle, isHovered);
+};
+
+const onVenueCardHover = (venueId) => {
+    if (hoveredVenueId.value && hoveredVenueId.value !== venueId) {
+        setMarkerHovered(hoveredVenueId.value, false);
+    }
+
+    hoveredVenueId.value = venueId;
+    setMarkerHovered(venueId, true);
+};
+
+const onVenueCardLeave = (venueId) => {
+    if (hoveredVenueId.value !== venueId) {
+        return;
+    }
+
+    setMarkerHovered(venueId, false);
+    hoveredVenueId.value = null;
 };
 
 const loadGoogleMaps = async () => {
@@ -315,6 +409,8 @@ const initMap = async () => {
         }
 
         const configuredMapId = String(import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || '').trim();
+        renderedMarkerHandles.clear();
+        hoveredVenueId.value = null;
 
         mapInstance = new window.google.maps.Map(mapEl.value, {
             center: { lat: -14.235, lng: -51.9253 },
@@ -336,28 +432,27 @@ const initMap = async () => {
             return;
         }
 
-        const points = (props.mapPoints || []).map((point) => {
-            const lat = Number(point?.lat);
-            const lng = Number(point?.lng);
-            return {
-                ...point,
-                lat,
-                lng,
-                isValid: Number.isFinite(lat) && Number.isFinite(lng),
-            };
-        }).filter((point) => point.isValid);
+        const points = normalizedMapPoints.value;
 
         const renderLegacyMarkers = async () => {
             const bounds = new window.google.maps.LatLngBounds();
             let rendered = 0;
 
             for (const point of points) {
-                const markerIcon = await buildLegacyMarkerIcon(point);
+                const markerIcon = await buildLegacyMarkerIcon(point, 'default');
+                const hoverMarkerIcon = await buildLegacyMarkerIcon(point, 'hover');
                 const marker = new window.google.maps.Marker({
                     position: { lat: point.lat, lng: point.lng },
                     map: mapInstance,
                     title: point.name,
                     icon: markerIcon,
+                });
+
+                renderedMarkerHandles.set(point.id, {
+                    kind: 'legacy',
+                    marker,
+                    baseIcon: markerIcon,
+                    hoverIcon: hoverMarkerIcon,
                 });
 
                 marker.addListener('click', () => {
@@ -377,11 +472,18 @@ const initMap = async () => {
             let rendered = 0;
 
             points.forEach((point) => {
+                const pin = buildPinElement(point, PinElement);
                 const marker = new AdvancedMarkerElement({
                     position: { lat: point.lat, lng: point.lng },
                     map: mapInstance,
                     title: point.name,
-                    content: buildPinElement(point, PinElement).element,
+                    content: pin.element,
+                });
+
+                renderedMarkerHandles.set(point.id, {
+                    kind: 'advanced',
+                    marker,
+                    element: pin.element,
                 });
 
                 marker.addListener('gmp-click', () => {
@@ -407,6 +509,7 @@ const initMap = async () => {
             }
         } catch (markerError) {
             console.error('Erro ao renderizar markers avançados. Aplicando fallback para markers padrão.', markerError);
+            renderedMarkerHandles.clear();
             ({ bounds, rendered: markersRendered } = await renderLegacyMarkers());
             mapNotice.value = 'Alguns marcadores foram renderizados em modo de compatibilidade.';
         }
@@ -564,12 +667,68 @@ onMounted(() => {
 
             <Card v-else>
                 <template #content>
-                    <div ref="mapEl" class="h-[34rem] w-full rounded-xl border border-slate-200 dark:border-slate-800" />
-                    <p v-if="mapError" class="mt-3 text-sm text-amber-600">{{ mapError }}</p>
-                    <p v-else-if="!mapReady" class="mt-3 text-sm text-slate-500">Carregando mapa...</p>
-                    <p v-else-if="mapNotice" class="mt-3 text-sm text-slate-500">{{ mapNotice }}</p>
+                    <div class="lg:grid lg:grid-cols-3 lg:gap-4 xl:grid-cols-4">
+                        <div class="lg:col-span-2 xl:col-span-3">
+                            <div ref="mapEl" class="h-[34rem] w-full rounded-xl border border-slate-200 dark:border-slate-800" />
+                            <p v-if="mapError" class="mt-3 text-sm text-amber-600">{{ mapError }}</p>
+                            <p v-else-if="!mapReady" class="mt-3 text-sm text-slate-500">Carregando mapa...</p>
+                            <p v-else-if="mapNotice" class="mt-3 text-sm text-slate-500">{{ mapNotice }}</p>
+                        </div>
+
+                        <aside class="mt-4 hidden max-h-[34rem] min-h-[34rem] flex-col lg:mt-0 lg:flex">
+                            <div class="mb-2 flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Locais no mapa</h3>
+                                <span class="text-xs text-slate-500">{{ normalizedMapPoints.length }}</span>
+                            </div>
+
+                            <div class="flex-1 space-y-2 overflow-y-auto pr-1">
+                                <button
+                                    v-for="point in normalizedMapPoints"
+                                    :key="point.id"
+                                    type="button"
+                                    class="group flex w-full items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition hover:border-slate-300 hover:shadow dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                                    @mouseenter="onVenueCardHover(point.id)"
+                                    @mouseleave="onVenueCardLeave(point.id)"
+                                >
+                                    <div class="flex w-14 items-center justify-center" :style="{ background: sanitizeColor(point?.type?.color) }">
+                                        <iconify-icon
+                                            :icon="sanitizeIcon(point?.type?.icon)"
+                                            class="text-[20px] text-white drop-shadow"
+                                        />
+                                    </div>
+
+                                    <div class="min-w-0 flex-1 p-2.5">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <p class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{{ point.name }}</p>
+                                            <p class="shrink-0 text-xs text-amber-500">{{ formatRatingStars(point.rating) }}</p>
+                                        </div>
+                                        <p class="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{{ point.address || 'Endereço não informado' }}</p>
+                                    </div>
+                                </button>
+
+                                <p v-if="!normalizedMapPoints.length" class="rounded-lg border border-dashed border-slate-300 px-3 py-4 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                    Nenhum local para os filtros atuais.
+                                </p>
+                            </div>
+                        </aside>
+                    </div>
                 </template>
             </Card>
     </div>
 </template>
+
+<style>
+@keyframes bo-marker-bounce {
+    0%,
+    100% {
+        transform: translateY(0) scale(1.12);
+    }
+    40% {
+        transform: translateY(-6px) scale(1.12);
+    }
+    65% {
+        transform: translateY(-2px) scale(1.12);
+    }
+}
+</style>
 
