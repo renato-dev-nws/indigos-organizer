@@ -4,6 +4,7 @@ import { router } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import draggable from 'vuedraggable';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import BoIconifyPickerField from '@/Components/ui/BoIconifyPickerField.vue';
 
 const props = defineProps({
     title: { type: String, required: true },
@@ -218,9 +219,9 @@ const onPage = (event) => {
                     <Column field="name" header="Nome" sortable />
                     <Column v-if="withIcon" field="icon" header="Ícone" class="w-40">
                         <template #body="{ data }">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center justify-center">
                                 <iconify-icon v-if="data.icon" :icon="data.icon" width="18" height="18" />
-                                <span class="text-xs text-slate-500">{{ data.icon || '-' }}</span>
+                                <span v-else class="text-xs text-slate-400">-</span>
                             </div>
                         </template>
                     </Column>
@@ -291,13 +292,12 @@ const onPage = (event) => {
             </div>
             <div v-if="withIcon" class="space-y-2">
                 <label for="settings-icon">Ícone (Iconify)</label>
-                <InputGroup>
-                    <InputText id="settings-icon" v-model="form.icon" fluid placeholder="mdi:home" :invalid="!!errors.icon" />
-                    <InputGroupAddon class="min-w-12 justify-center">
-                        <iconify-icon v-if="form.icon && form.icon.trim()" :icon="form.icon.trim()" width="24" height="24" />
-                        <i v-else class="pi pi-question-circle text-slate-400" />
-                    </InputGroupAddon>
-                </InputGroup>
+                <BoIconifyPickerField
+                    input-id="settings-icon"
+                    v-model="form.icon"
+                    :invalid="!!errors.icon"
+                    placeholder="mdi:account"
+                />
                 <small class="text-slate-500">Use formato prefixo:nome. Exemplo: mdi:account.</small>
                 <Message v-if="errors.icon" severity="error" size="small" variant="simple">{{ errors.icon }}</Message>
             </div>
