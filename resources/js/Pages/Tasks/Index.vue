@@ -27,6 +27,14 @@ const localFilters = reactive({
     search: props.filters?.search ?? '',
 });
 
+const syncLocalFiltersFromProps = () => {
+    localFilters.assigned_user_id = props.filters?.assigned_user_id ?? null;
+    localFilters.priority = props.filters?.priority ?? null;
+    localFilters.related_type = props.filters?.related_type ?? null;
+    localFilters.content_id = props.filters?.content_id ?? null;
+    localFilters.search = props.filters?.search ?? '';
+};
+
 const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
@@ -56,6 +64,12 @@ const removeChip = (key) => {
     localFilters[key] = key === 'search' ? '' : null;
     submitFilters();
 };
+
+const cancelFilters = () => {
+    syncLocalFiltersFromProps();
+};
+
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 
 const paginate = (event) => {
     router.get(route('tasks.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
@@ -215,7 +229,7 @@ const swimlaneRows = computed(() =>
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Título da tarefa" />

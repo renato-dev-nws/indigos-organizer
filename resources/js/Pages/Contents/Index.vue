@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -35,6 +35,16 @@ const localFilters = reactive({
     planned_week: props.filters?.planned_week ?? '',
     search: props.filters?.search ?? '',
 });
+
+const syncLocalFiltersFromProps = () => {
+    localFilters.status = props.filters?.status ?? null;
+    localFilters.content_platform_id = props.filters?.content_platform_id ?? null;
+    localFilters.idea_type_id = props.filters?.idea_type_id ?? null;
+    localFilters.idea_category_id = props.filters?.idea_category_id ?? null;
+    localFilters.venue_style_id = props.filters?.venue_style_id ?? null;
+    localFilters.planned_week = props.filters?.planned_week ?? '';
+    localFilters.search = props.filters?.search ?? '';
+};
 
 const filterChips = computed(() => {
     const chips = [];
@@ -79,6 +89,12 @@ const removeChip = (key) => {
     localFilters[key] = ['search', 'planned_week'].includes(key) ? '' : null;
     submitFilters();
 };
+
+const cancelFilters = () => {
+    syncLocalFiltersFromProps();
+};
+
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 
 const paginate = (event) => {
     router.get(route('contents.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
@@ -151,7 +167,7 @@ const fullCalendarOptions = computed(() => ({
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <IconField>

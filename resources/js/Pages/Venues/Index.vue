@@ -46,6 +46,15 @@ const localFilters = reactive({
     search: props.filters?.search ?? '',
 });
 
+const syncLocalFiltersFromProps = () => {
+    localFilters.venue_type_id = props.filters?.venue_type_id ?? null;
+    localFilters.status = props.filters?.status ?? null;
+    localFilters.city = props.filters?.city ?? '';
+    localFilters.has_performed = props.filters?.has_performed ?? null;
+    localFilters.rating = props.filters?.rating ?? null;
+    localFilters.search = props.filters?.search ?? '';
+};
+
 const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
@@ -78,6 +87,12 @@ const removeChip = (key) => {
     localFilters[key] = ['search', 'city'].includes(key) ? '' : null;
     submitFilters();
 };
+
+const cancelFilters = () => {
+    syncLocalFiltersFromProps();
+};
+
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 
 const paginate = (event) => {
     router.get(route('venues.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
@@ -468,7 +483,7 @@ onMounted(() => {
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <IconField>

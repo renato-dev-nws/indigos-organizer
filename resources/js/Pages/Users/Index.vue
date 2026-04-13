@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -18,6 +18,10 @@ const props = defineProps({
 const localFilters = reactive({
     search: props.filters?.search ?? '',
 });
+
+const syncLocalFiltersFromProps = () => {
+    localFilters.search = props.filters?.search ?? '';
+};
 
 const filterChips = computed(() => {
     const chips = [];
@@ -39,6 +43,12 @@ const removeChip = (key) => {
     submitFilters();
 };
 
+const cancelFilters = () => {
+    syncLocalFiltersFromProps();
+};
+
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
+
 const paginate = (event) => {
     router.get(route('users.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 };
@@ -59,7 +69,7 @@ const removeUser = (id) => {
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <IconField>

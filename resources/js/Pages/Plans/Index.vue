@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -12,6 +12,10 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ plans: Object, filters: Object });
 
 const localFilters = reactive({ status: props.filters?.status ?? null, search: props.filters?.search ?? '' });
+const syncLocalFiltersFromProps = () => {
+    localFilters.status = props.filters?.status ?? null;
+    localFilters.search = props.filters?.search ?? '';
+};
 const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
@@ -22,6 +26,8 @@ const filterChips = computed(() => {
 const submitFilters = () => router.get(route('plans.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
 const resetFilters = () => { localFilters.status = null; localFilters.search = ''; submitFilters(); };
 const removeChip = (key) => { localFilters[key] = key === 'search' ? '' : null; submitFilters(); };
+const cancelFilters = () => { syncLocalFiltersFromProps(); };
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const paginate = (event) => router.get(route('plans.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveScroll: true });
 </script>
@@ -37,7 +43,7 @@ const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveS
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Título do plano" />

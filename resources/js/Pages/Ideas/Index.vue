@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -31,6 +31,14 @@ const localFilters = reactive({
     search: props.filters?.search ?? '',
 });
 
+const syncLocalFiltersFromProps = () => {
+    localFilters.status = props.filters?.status ?? null;
+    localFilters.idea_type_id = props.filters?.idea_type_id ?? null;
+    localFilters.idea_category_id = props.filters?.idea_category_id ?? null;
+    localFilters.venue_style_id = props.filters?.venue_style_id ?? null;
+    localFilters.search = props.filters?.search ?? '';
+};
+
 const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
@@ -55,6 +63,12 @@ const removeChip = (key) => {
     localFilters[key] = key === 'search' ? '' : null;
     submitFilters();
 };
+
+const cancelFilters = () => {
+    syncLocalFiltersFromProps();
+};
+
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const paginate = (event) => router.get(route('ideas.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveScroll: true });
 
@@ -91,7 +105,7 @@ const kanbanColumns = computed(() => {
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Buscar por título" />

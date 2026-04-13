@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -10,11 +10,16 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ sharedInfos: Object, filters: Object });
 
 const localFilters = reactive({ search: props.filters?.search ?? '' });
+const syncLocalFiltersFromProps = () => {
+    localFilters.search = props.filters?.search ?? '';
+};
 const filterChips = computed(() => (localFilters.search ? [{ key: 'search', label: localFilters.search }] : []));
 
 const submitFilters = () => router.get(route('shared-infos.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
 const resetFilters = () => { localFilters.search = ''; submitFilters(); };
 const removeChip = () => { localFilters.search = ''; submitFilters(); };
+const cancelFilters = () => { syncLocalFiltersFromProps(); };
+watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const paginate = (event) => router.get(route('shared-infos.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { preserveScroll: true });
 </script>
@@ -30,7 +35,7 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
             </template>
         </BoPageHeader>
 
-        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip">
+        <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Título" />

@@ -8,18 +8,33 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['submit', 'reset', 'remove-chip']);
+const emit = defineEmits(['submit', 'reset', 'remove-chip', 'cancel']);
 
 const visible = ref(false);
+const committedAction = ref(false);
+
+const openFilters = () => {
+    committedAction.value = false;
+    visible.value = true;
+};
 
 const applyAndClose = () => {
+    committedAction.value = true;
     emit('submit');
     visible.value = false;
 };
 
 const resetAndClose = () => {
+    committedAction.value = true;
     emit('reset');
     visible.value = false;
+};
+
+const onDialogHide = () => {
+    if (!committedAction.value) {
+        emit('cancel');
+    }
+    committedAction.value = false;
 };
 </script>
 
@@ -31,7 +46,7 @@ const resetAndClose = () => {
             :severity="chips.length ? undefined : 'secondary'"
             :outlined="!chips.length"
             size="small"
-            @click="visible = true"
+            @click="openFilters"
         />
 
         <Chip
@@ -61,6 +76,7 @@ const resetAndClose = () => {
         :draggable="false"
         :style="{ width: '480px' }"
         :breakpoints="{ '640px': '95vw' }"
+        @hide="onDialogHide"
     >
         <form class="space-y-4 pt-1" @submit.prevent="applyAndClose">
             <slot />
