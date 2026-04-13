@@ -78,8 +78,17 @@ class TaskController extends Controller
             'user_id' => (string) Auth::id(),
         ]);
 
-        foreach ($request->input('subtasks', []) as $subtask) {
-            $task->subtasks()->create($subtask);
+        $subtasks = collect($request->input('subtasks', []))
+            ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))
+            ->values()
+            ->map(fn (array $subtask, int $index) => [
+                'title' => trim((string) ($subtask['title'] ?? '')),
+                'completed' => (bool) ($subtask['completed'] ?? false),
+                'order' => $index + 1,
+            ]);
+
+        if ($subtasks->isNotEmpty()) {
+            $task->subtasks()->createMany($subtasks->all());
         }
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa criada com sucesso.');
@@ -108,6 +117,20 @@ class TaskController extends Controller
         }
 
         $task->update($payload);
+
+        $subtasks = collect($request->input('subtasks', []))
+            ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))
+            ->values()
+            ->map(fn (array $subtask, int $index) => [
+                'title' => trim((string) ($subtask['title'] ?? '')),
+                'completed' => (bool) ($subtask['completed'] ?? false),
+                'order' => $index + 1,
+            ]);
+
+        $task->subtasks()->delete();
+        if ($subtasks->isNotEmpty()) {
+            $task->subtasks()->createMany($subtasks->all());
+        }
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa atualizada com sucesso.');
     }

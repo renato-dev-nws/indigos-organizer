@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -81,14 +81,27 @@ const openViewModal = (task) => {
     showViewModal.value = true;
 };
 
-const kanbanColumns = ref(
+const buildKanbanColumns = () =>
     props.statuses.map((status) => ({
         id: status.id,
         name: status.name,
         color: status.color,
-        tasks: props.tasks.data.filter((task) => task.task_status_id === status.id),
-    })),
+        tasks: (props.tasks?.data || []).filter((task) => task.task_status_id === status.id),
+    }));
+
+const kanbanColumns = ref(buildKanbanColumns());
+
+watch(
+    () => [props.statuses, props.tasks?.data],
+    () => {
+        kanbanColumns.value = buildKanbanColumns();
+    },
+    { deep: true },
 );
+
+const refreshTasks = () => {
+    router.reload({ only: ['tasks'], preserveScroll: true });
+};
 
 const laneMetrics = (column) => {
     const total = column.tasks.length;
@@ -365,6 +378,7 @@ const swimlaneRows = computed(() =>
             :contents="contents"
             :plans="plans"
             :users="users"
+            @saved="refreshTasks"
         />
         <TaskViewModal v-model:visible="showViewModal" :task="selectedTask" />
     </div>
