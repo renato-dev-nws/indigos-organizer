@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('contents', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignUuid('idea_id')->nullable()->constrained('ideas')->nullOnDelete();
+            $table->uuid('idea_id')->nullable();
             $table->string('title');
             $table->longText('script')->nullable();
             $table->foreignUuid('idea_type_id')->nullable()->constrained('idea_types')->nullOnDelete();

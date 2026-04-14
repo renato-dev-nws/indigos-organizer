@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('color')->nullable();
             $table->string('icon')->nullable();
+            $table->string('domain', 20)->default('venues');
+            $table->index('domain');
             $table->timestamps();
         });
     }
