@@ -92,6 +92,11 @@ class Venue extends Model
         return $this->hasMany(Event::class);
     }
 
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class);
+    }
+
     public function getHasPerformedAttribute(): bool
     {
         return (int) ($this->performances_count ?? 0) > 0;

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentFileController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\GeneralCalendarController;
@@ -51,6 +52,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('venues', VenueController::class);
     Route::post('/venues/quick-store', [VenueController::class, 'quickStore'])->name('venues.quick-store');
+    Route::resource('contacts', ContactController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('plans', PlanController::class);
     Route::resource('events', EventController::class);
     Route::resource('shared-infos', SharedInfoController::class);

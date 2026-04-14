@@ -62,6 +62,11 @@ class User extends Authenticatable
         return $this->hasMany(Venue::class);
     }
 
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class);
+    }
+
     public function plans(): HasMany
     {
         return $this->hasMany(Plan::class);

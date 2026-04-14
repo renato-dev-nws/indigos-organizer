@@ -31,6 +31,7 @@ const menuItems = computed(() => [
     { label: 'Planejamentos', icon: 'ph:map-trifold-bold', href: route('plans.index') },
     { label: 'Eventos', icon: 'ph:ticket-bold', href: route('events.index') },
     { label: 'Locais', icon: 'ph:music-notes-bold', href: route('venues.index') },
+    { label: 'Contatos', icon: 'ph:address-book-bold', href: route('contacts.index') },
     { label: 'Informações Úteis', icon: 'ph:info-bold', href: route('shared-infos.index') },
     {
         label: 'Configurações',

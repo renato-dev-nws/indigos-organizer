@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreVenueRequest;
 use App\Http\Requests\UpdateVenueRequest;
+use App\Models\Contact;
 use App\Models\Venue;
 use App\Models\VenueCategory;
 use App\Models\VenueSize;
@@ -107,10 +108,12 @@ class VenueController extends Controller
         $payload = $request->validated();
         $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
 
-        Venue::create([
+        $venue = Venue::create([
             ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
+
+        $this->syncContactFromVenue($venue);
 
         return redirect()->route('venues.index')->with('success', 'Local criado com sucesso.');
     }
@@ -124,6 +127,8 @@ class VenueController extends Controller
             ...$payload,
             'user_id' => (string) Auth::id(),
         ])->load(['type:id,name,icon,color', 'category:id,name', 'style:id,name']);
+
+        $this->syncContactFromVenue($venue);
 
         return response()->json([
             'venue' => [
@@ -169,8 +174,44 @@ class VenueController extends Controller
         $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
 
         $venue->update($payload);
+        $venue->refresh();
+
+        $this->syncContactFromVenue($venue);
 
         return redirect()->route('venues.index')->with('success', 'Local atualizado com sucesso.');
+    }
+
+    private function syncContactFromVenue(Venue $venue): void
+    {
+        $existingContact = Contact::query()->where('venue_id', $venue->id)->first();
+
+        $hasReachabilityData = filled($venue->phone) || filled($venue->email);
+
+        if (! $existingContact && ! $hasReachabilityData) {
+            return;
+        }
+
+        $contactName = filled($venue->contact_name)
+            ? sprintf('%s (%s)', trim((string) $venue->contact_name), $venue->name)
+            : $venue->name;
+
+        if ($existingContact) {
+            $existingContact->update([
+                'name' => $contactName,
+                'email' => $venue->email,
+                'phone' => $venue->phone,
+            ]);
+
+            return;
+        }
+
+        Contact::create([
+            'user_id' => $venue->user_id,
+            'venue_id' => $venue->id,
+            'name' => $contactName,
+            'email' => $venue->email,
+            'phone' => $venue->phone,
+        ]);
     }
 
     public function destroy(Venue $venue): RedirectResponse
