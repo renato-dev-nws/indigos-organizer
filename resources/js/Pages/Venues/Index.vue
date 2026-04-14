@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import { importLibrary as importGoogleLibrary, setOptions } from '@googlemaps/js-api-loader';
 import 'iconify-icon';
@@ -20,6 +20,7 @@ const mapNotice = ref('');
 let googleMapsLoaderPromise = null;
 let mapInstance = null;
 let activeInfoWindow = null;
+let themeObserver = null;
 const legacyMarkerIconCache = new Map();
 const renderedMarkerHandles = new Map();
 const hoveredVenueId = ref(null);
@@ -120,7 +121,43 @@ const escapeHtml = (value = '') => String(value)
 
 const sanitizeIcon = (icon) => (/^[a-z0-9-]+:[a-z0-9-]+$/i.test(icon || '') ? icon : DEFAULT_MARKER_ICON);
 const sanitizeColor = (color) => (/^#[0-9a-fA-F]{6}$/.test(color || '') ? color : DEFAULT_MARKER_COLOR);
-const isDarkMode = () => typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+const isDarkMode = () => typeof document !== 'undefined'
+    && (
+        document.documentElement.classList.contains('app-dark')
+        || document.documentElement.classList.contains('dark')
+    );
+
+const getMapThemeOptions = () => {
+    const dark = isDarkMode();
+    const colorSchemeApi = window.google?.maps?.ColorScheme;
+
+    if (colorSchemeApi) {
+        return {
+            colorScheme: dark ? colorSchemeApi.DARK : colorSchemeApi.LIGHT,
+            ...(dark ? { backgroundColor: '#0b1220' } : {}),
+        };
+    }
+
+    if (dark) {
+        return {
+            styles: DARK_MAP_STYLES,
+            backgroundColor: '#0b1220',
+        };
+    }
+
+    return {
+        styles: null,
+        backgroundColor: null,
+    };
+};
+
+const applyMapTheme = () => {
+    if (!mapInstance || !window.google?.maps) {
+        return;
+    }
+
+    mapInstance.setOptions(getMapThemeOptions());
+};
 
 const toIconSvgUrl = (icon, color = '#ffffff') => {
     const safeIcon = sanitizeIcon(icon);
@@ -416,7 +453,7 @@ const initMap = async () => {
             center: { lat: -14.235, lng: -51.9253 },
             zoom: 4,
             ...(configuredMapId ? { mapId: configuredMapId } : {}),
-            ...(isDarkMode() ? { styles: DARK_MAP_STYLES, backgroundColor: '#0b1220' } : {}),
+            ...getMapThemeOptions(),
         });
         activeInfoWindow = new window.google.maps.InfoWindow();
         mapReady.value = true;
@@ -557,8 +594,28 @@ watch(
 );
 
 onMounted(() => {
+    if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+        themeObserver = new MutationObserver(() => {
+            if (viewMode.value === 'map') {
+                applyMapTheme();
+            }
+        });
+
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
+    }
+
     if (viewMode.value === 'map') {
         initMap();
+    }
+});
+
+onUnmounted(() => {
+    if (themeObserver) {
+        themeObserver.disconnect();
+        themeObserver = null;
     }
 });
 </script>
