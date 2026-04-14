@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Models\Idea;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class IdeaOnBoardNotification extends Notification
 {
@@ -16,7 +18,7 @@ class IdeaOnBoardNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WebPushChannel::class];
     }
 
     public function toArray(object $notifiable): array
@@ -27,5 +29,14 @@ class IdeaOnBoardNotification extends Notification
             'title' => $this->idea->title,
             'message' => 'Uma ideia elegível para você entrou no quadro de votação.',
         ];
+    }
+
+    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('Nova ideia no quadro')
+            ->body('"' . $this->idea->title . '" entrou no quadro de votação.')
+            ->icon('/icons/icon-192x192.png')
+            ->data(['url' => '/ideas']);
     }
 }

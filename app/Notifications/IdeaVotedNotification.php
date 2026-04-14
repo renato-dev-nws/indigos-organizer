@@ -6,6 +6,8 @@ use App\Models\Idea;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class IdeaVotedNotification extends Notification
 {
@@ -17,7 +19,7 @@ class IdeaVotedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WebPushChannel::class];
     }
 
     public function toArray(object $notifiable): array
@@ -29,5 +31,14 @@ class IdeaVotedNotification extends Notification
             'voter_name' => $this->voter->name,
             'message' => 'Sua ideia recebeu um novo voto.',
         ];
+    }
+
+    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('Voto recebido')
+            ->body($this->voter->name . ' votou na sua ideia "' . $this->idea->title . '".')
+            ->icon('/icons/icon-192x192.png')
+            ->data(['url' => '/ideas']);
     }
 }

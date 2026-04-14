@@ -5,6 +5,8 @@ namespace App\Notifications;
 use App\Models\Task;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use NotificationChannels\WebPush\WebPushChannel;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class TaskAssignedNotification extends Notification
 {
@@ -16,7 +18,7 @@ class TaskAssignedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', WebPushChannel::class];
     }
 
     public function toArray(object $notifiable): array
@@ -27,5 +29,14 @@ class TaskAssignedNotification extends Notification
             'title' => $this->task->title,
             'message' => 'Uma tarefa foi atribuída para você.',
         ];
+    }
+
+    public function toWebPush(object $notifiable, $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title('Tarefa atribuída')
+            ->body('"' . $this->task->title . '" foi atribuída para você.')
+            ->icon('/icons/icon-192x192.png')
+            ->data(['url' => '/tasks/' . $this->task->id]);
     }
 }

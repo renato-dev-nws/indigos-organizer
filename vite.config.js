@@ -32,6 +32,9 @@ export default defineConfig({
             registerType: 'autoUpdate',
             // Don't auto-inject into HTML (we handle it in app.blade.php)
             injectRegister: false,
+            strategies: 'injectManifest',
+            srcDir: 'resources/js',
+            filename: 'sw.js',
             includeAssets: ['icons/icon-192x192.png', 'icons/icon-512x512.png'],
             manifest: {
                 name: 'Band Organizer',
@@ -56,17 +59,16 @@ export default defineConfig({
                     },
                 ],
             },
-            workbox: {
+            injectManifest: {
+                injectionPoint: 'self.__WB_MANIFEST',
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
                 modifyURLPrefix: {
                     '': '/build/',
                 },
-                // Don't navigate-fallback (server handles routing)
-                navigateFallback: null,
-                navigateFallbackDenylist: [/^\/api\//],
             },
             devOptions: {
                 enabled: true,
+                type: 'module',
             },
         }),
     ],

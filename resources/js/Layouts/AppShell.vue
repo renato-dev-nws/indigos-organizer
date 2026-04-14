@@ -1,11 +1,12 @@
 <script setup>
-import { computed, watch, watchEffect } from 'vue';
+import { computed, onMounted, watch, watchEffect } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import AppTopbar from './partials/AppTopbar.vue';
 import AppSidebar from './partials/AppSidebar.vue';
 import { useLayoutState } from './composables/useLayoutState';
+import { usePushSubscription } from './composables/usePushSubscription';
 
 const page = usePage();
 const toast = useToast();
@@ -17,6 +18,9 @@ const {
     openMobileSidebar,
     closeMobileSidebar,
 } = useLayoutState();
+
+const { subscribe } = usePushSubscription();
+onMounted(() => subscribe());
 
 const menuItems = computed(() => [
     { label: 'Dashboard', icon: 'ph:squares-four-bold', href: route('dashboard') },

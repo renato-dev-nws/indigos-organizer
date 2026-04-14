@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\SystemSetting;
-use Illuminate\Support\Facades\Storage;
 use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
@@ -32,10 +32,13 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        /** @var User|null $user */
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user()?->only(['id', 'name', 'email', 'theme']),
+                'user' => $user?->only(['id', 'name', 'email', 'theme']),
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -47,12 +50,14 @@ class HandleInertiaRequests extends Middleware
             ],
             'systemSettings' => fn () => [
                 'logo_url' => ($logoPath = SystemSetting::get('logo_path'))
-                    ? Storage::disk('public')->url($logoPath)
+                    ? asset('storage/'.$logoPath)
                     : null,
                 'icon_url' => ($iconPath = SystemSetting::get('icon_path'))
-                    ? Storage::disk('public')->url($iconPath)
+                    ? asset('storage/'.$iconPath)
                     : null,
             ],
+            'vapidPublicKey' => fn () => config('webpush.vapid.public_key'),
+            'unreadNotificationsCount' => fn () => $user?->unreadNotifications()->count() ?? 0,
         ];
     }
 }

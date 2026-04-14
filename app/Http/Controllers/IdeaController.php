@@ -161,7 +161,7 @@ class IdeaController extends Controller
             ['vote' => $request->string('vote')->toString()],
         );
 
-        DispatchIdeaVotedNotificationJob::dispatch($idea->id, (string) Auth::id());
+        DispatchIdeaVotedNotificationJob::dispatchSync($idea->id, (string) Auth::id());
 
         return back()->with('success', 'Voto registrado.');
     }

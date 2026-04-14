@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new DispatchDueSoonTasksNotificationsJob())->everyFifteenMinutes();
-Schedule::job(new DispatchTaskReminderNotificationsJob())->everyFiveMinutes();
+Schedule::call(fn () => DispatchDueSoonTasksNotificationsJob::dispatchSync())->everyFifteenMinutes();
+Schedule::call(fn () => DispatchTaskReminderNotificationsJob::dispatchSync())->everyFiveMinutes();

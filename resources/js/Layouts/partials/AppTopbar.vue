@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 import AppThemeSwitcher from '@/Components/AppThemeSwitcher.vue';
+import AppNotificationBell from '@/Components/AppNotificationBell.vue';
 
 defineProps({
     collapsed: {
@@ -55,6 +56,7 @@ const handleMenuClick = () => {
 
             <div class="flex items-center gap-2">
                 <AppThemeSwitcher />
+                <AppNotificationBell />
                 <div class="hidden text-right sm:block">
                     <p class="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-200">{{ page.props.auth?.user?.name }}</p>
                     <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ page.props.auth?.user?.email }}</p>

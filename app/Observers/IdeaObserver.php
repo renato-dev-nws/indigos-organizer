@@ -10,7 +10,7 @@ class IdeaObserver
     public function updated(Idea $idea): void
     {
         if ($idea->wasChanged('status') && $idea->status === 'on_board') {
-            DispatchIdeaOnBoardNotificationsJob::dispatch($idea->id);
+            DispatchIdeaOnBoardNotificationsJob::dispatchSync($idea->id);
         }
     }
 }
