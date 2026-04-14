@@ -15,6 +15,8 @@ class StoreSharedInfoRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
+            'shared_info_category_ids' => ['nullable', 'array'],
+            'shared_info_category_ids.*' => ['uuid', 'exists:shared_info_categories,id'],
             'description' => ['nullable', 'string'],
             'links' => ['nullable', 'array'],
             'links.*.id' => ['nullable', 'uuid', 'exists:shared_info_links,id'],

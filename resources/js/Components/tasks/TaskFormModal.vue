@@ -9,6 +9,7 @@ const props = defineProps({
     statuses: { type: Array, default: () => [] },
     contents: { type: Array, default: () => [] },
     plans: { type: Array, default: () => [] },
+    events: { type: Array, default: () => [] },
     users: { type: Array, default: () => [] },
 });
 
@@ -19,6 +20,7 @@ const form = useForm({
     content_id: null,
     plan_id: null,
     plan_phase_id: null,
+    event_id: null,
     title: '',
     description: '',
     assigned_user_id: null,
@@ -44,6 +46,7 @@ const hydrateForm = () => {
             content_id: null,
             plan_id: null,
             plan_phase_id: null,
+            event_id: null,
             title: '',
             description: '',
             assigned_user_id: null,
@@ -63,6 +66,7 @@ const hydrateForm = () => {
         content_id: props.task.content_id,
         plan_id: props.task.plan_id,
         plan_phase_id: props.task.plan_phase_id,
+        event_id: props.task.event_id,
         title: props.task.title,
         description: props.task.description,
         assigned_user_id: props.task.assigned_user_id,
@@ -90,6 +94,7 @@ watch(() => form.related_type, () => {
     form.content_id = null;
     form.plan_id = null;
     form.plan_phase_id = null;
+    form.event_id = null;
 });
 
 watch(() => form.plan_id, () => {
@@ -140,6 +145,7 @@ const submit = () => {
                         :options="[
                             { label: 'Conteúdo', value: 'content' },
                             { label: 'Plano', value: 'plan' },
+                            { label: 'Evento', value: 'event' },
                             { label: 'Administrativo', value: 'administrative' },
                         ]"
                         option-label="label"
@@ -166,6 +172,12 @@ const submit = () => {
                     <label>Fase do plano</label>
                     <Select v-model="form.plan_phase_id" :options="phaseOptions" option-label="title" option-value="id" show-clear :invalid="!!form.errors.plan_phase_id" fluid />
                     <Message v-if="form.errors.plan_phase_id" severity="error" size="small" variant="simple">{{ form.errors.plan_phase_id }}</Message>
+                </div>
+
+                <div v-if="form.related_type === 'event'" class="space-y-2">
+                    <label>Evento</label>
+                    <Select v-model="form.event_id" :options="events" option-label="title" option-value="id" show-clear :invalid="!!form.errors.event_id" fluid />
+                    <Message v-if="form.errors.event_id" severity="error" size="small" variant="simple">{{ form.errors.event_id }}</Message>
                 </div>
 
                 <div class="space-y-2 md:col-span-2">

@@ -46,6 +46,14 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
             <template #content>
                 <DataTable :value="sharedInfos.data" data-key="id" striped-rows>
                     <Column field="title" header="Título" />
+                    <Column header="Categorias">
+                        <template #body="{ data }">
+                            <div class="flex flex-wrap gap-1">
+                                <Tag v-for="category in data.categories || []" :key="category.id" :value="category.name" severity="secondary" />
+                                <span v-if="!(data.categories || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </template>
+                    </Column>
                     <Column field="user.name" header="Autor" />
                     <Column header="Links"><template #body="{ data }">{{ data.links?.length || 0 }}</template></Column>
                     <Column header="Documentos"><template #body="{ data }">{{ data.documents?.length || 0 }}</template></Column>

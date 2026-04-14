@@ -2,24 +2,24 @@
 
 namespace Database\Seeders;
 
-use App\Models\ContentPlatform;
+use App\Models\SharedInfoCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
-class ContentPlatformSeeder extends Seeder
+class SharedInfoCategorySeeder extends Seeder
 {
     public function run(): void
     {
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
-            ['name' => 'TikTok', 'icon' => 'mdi:music-note-eighth'],
-            ['name' => 'Instagram', 'icon' => 'mdi:instagram'],
-            ['name' => 'YouTube', 'icon' => 'mdi:youtube'],
+            ['name' => 'Documentação', 'icon' => 'mdi:file-document-outline'],
+            ['name' => 'Editais', 'icon' => 'mdi:stamp-text-outline'],
+            ['name' => 'Produção', 'icon' => 'mdi:clipboard-text-outline'],
         ];
 
         foreach ($data as $item) {
-            ContentPlatform::updateOrCreate(
+            SharedInfoCategory::updateOrCreate(
                 ['user_id' => $user->id, 'name' => $item['name']],
                 ['icon' => $item['icon']],
             );

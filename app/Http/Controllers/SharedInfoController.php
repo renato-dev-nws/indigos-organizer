@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSharedInfoRequest;
 use App\Http\Requests\UpdateSharedInfoRequest;
+use App\Models\SharedInfoCategory;
 use App\Models\SharedInfo;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class SharedInfoController extends Controller
     public function index(): Response
     {
         $infos = SharedInfo::query()
-            ->with(['user', 'documents', 'links'])
+            ->with(['user', 'documents', 'links', 'categories'])
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
             ->latest()
             ->paginate(15)
@@ -30,16 +31,20 @@ class SharedInfoController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('SharedInfos/Create');
+        return Inertia::render('SharedInfos/Create', [
+            'categories' => SharedInfoCategory::query()->orderBy('name')->get(['id', 'name', 'icon']),
+        ]);
     }
 
     public function store(StoreSharedInfoRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request): void {
             $info = SharedInfo::create([
-                ...$request->safe()->except(['links', 'documents']),
+                ...$request->safe()->except(['links', 'documents', 'shared_info_category_ids']),
                 'user_id' => (string) Auth::id(),
             ]);
+
+            $info->categories()->sync($request->input('shared_info_category_ids', []));
 
             foreach ($request->input('links', []) as $link) {
                 $info->links()->create($link);
@@ -62,21 +67,23 @@ class SharedInfoController extends Controller
     public function show(SharedInfo $sharedInfo): Response
     {
         return Inertia::render('SharedInfos/Show', [
-            'sharedInfo' => $sharedInfo->load(['user', 'links', 'documents']),
+            'sharedInfo' => $sharedInfo->load(['user', 'links', 'documents', 'categories']),
         ]);
     }
 
     public function edit(SharedInfo $sharedInfo): Response
     {
         return Inertia::render('SharedInfos/Edit', [
-            'sharedInfo' => $sharedInfo->load(['links', 'documents']),
+            'sharedInfo' => $sharedInfo->load(['links', 'documents', 'categories']),
+            'categories' => SharedInfoCategory::query()->orderBy('name')->get(['id', 'name', 'icon']),
         ]);
     }
 
     public function update(UpdateSharedInfoRequest $request, SharedInfo $sharedInfo): RedirectResponse
     {
         DB::transaction(function () use ($request, $sharedInfo): void {
-            $sharedInfo->update($request->safe()->except(['links', 'documents']));
+            $sharedInfo->update($request->safe()->except(['links', 'documents', 'shared_info_category_ids']));
+            $sharedInfo->categories()->sync($request->input('shared_info_category_ids', []));
 
             $incomingLinks = collect($request->input('links', []));
             $incomingIds = $incomingLinks->pluck('id')->filter()->values();

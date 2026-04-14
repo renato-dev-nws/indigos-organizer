@@ -5,11 +5,12 @@ import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppFileUpload from '@/Components/AppFileUpload.vue';
 
-const props = defineProps({ sharedInfo: Object });
+const props = defineProps({ sharedInfo: Object, categories: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
     title: props.sharedInfo.title,
+    shared_info_category_ids: props.sharedInfo.categories?.map((item) => item.id) ?? [],
     description: props.sharedInfo.description,
     links: props.sharedInfo.links ?? [],
     documents: [],
@@ -37,6 +38,10 @@ const removeDocument = (id) => router.delete(route('shared-infos.documents.destr
         <form class="space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados principais" description="Título e descrição da informação">
                 <div class="md:col-span-2 space-y-2"><label>Título</label><InputText v-model="form.title" fluid /></div>
+                <div class="md:col-span-2 space-y-2">
+                    <label>Categorias</label>
+                    <MultiSelect v-model="form.shared_info_category_ids" :options="categories" option-label="name" option-value="id" display="chip" placeholder="Selecione categorias" fluid />
+                </div>
                 <div class="md:col-span-2 space-y-2"><label>Descrição</label><Textarea v-model="form.description" rows="4" fluid /></div>
             </BoFormSection>
 

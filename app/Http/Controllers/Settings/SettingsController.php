@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContentPlatform;
+use App\Models\EventType;
 use App\Models\IdeaCategory;
 use App\Models\IdeaType;
+use App\Models\SharedInfoCategory;
 use App\Models\TaskStatus;
 use App\Models\VenueCategory;
 use App\Models\VenueStyle;
@@ -44,10 +46,12 @@ class SettingsController extends Controller
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Eventos', 'value' => 'events'],
             ],
             'tabRoutes' => [
                 'ideas_contents' => route('settings.pages.types'),
                 'venues' => route('settings.pages.types.venues'),
+                'events' => route('settings.pages.types.events'),
             ],
             'activeTab' => 'ideas_contents',
         ]);
@@ -67,12 +71,39 @@ class SettingsController extends Controller
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Eventos', 'value' => 'events'],
             ],
             'tabRoutes' => [
                 'ideas_contents' => route('settings.pages.types'),
                 'venues' => route('settings.pages.types.venues'),
+                'events' => route('settings.pages.types.events'),
             ],
             'activeTab' => 'venues',
+        ]);
+    }
+
+    public function eventTypes(): Response
+    {
+        return Inertia::render('Settings/CrudPage', [
+            'title' => 'Tipos',
+            'description' => 'Tipos utilizados em eventos.',
+            'items' => EventType::query()->withCount('events')->orderBy('name')->get(),
+            'routeBase' => 'settings.event-types',
+            'withColor' => true,
+            'withIcon' => true,
+            'disableDeleteWhen' => 'events_count',
+            'disableDeleteMessage' => 'Não é permitido excluir tipo com eventos vinculados.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Eventos', 'value' => 'events'],
+            ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.types'),
+                'venues' => route('settings.pages.types.venues'),
+                'events' => route('settings.pages.types.events'),
+            ],
+            'activeTab' => 'events',
         ]);
     }
 
@@ -99,10 +130,12 @@ class SettingsController extends Controller
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Informações', 'value' => 'shared_infos'],
             ],
             'tabRoutes' => [
                 'ideas_contents' => route('settings.pages.categories'),
                 'venues' => route('settings.pages.categories.venues'),
+                'shared_infos' => route('settings.pages.categories.shared-infos'),
             ],
             'activeTab' => 'ideas_contents',
         ]);
@@ -122,12 +155,38 @@ class SettingsController extends Controller
             'tabs' => [
                 ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
                 ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Informações', 'value' => 'shared_infos'],
             ],
             'tabRoutes' => [
                 'ideas_contents' => route('settings.pages.categories'),
                 'venues' => route('settings.pages.categories.venues'),
+                'shared_infos' => route('settings.pages.categories.shared-infos'),
             ],
             'activeTab' => 'venues',
+        ]);
+    }
+
+    public function sharedInfoCategories(): Response
+    {
+        return Inertia::render('Settings/CrudPage', [
+            'title' => 'Categorias',
+            'description' => 'Categorias utilizadas nas informações compartilhadas.',
+            'items' => SharedInfoCategory::query()->withCount('sharedInfos')->orderBy('name')->get(),
+            'routeBase' => 'settings.shared-info-categories',
+            'withIcon' => true,
+            'disableDeleteWhen' => 'shared_infos_count',
+            'disableDeleteMessage' => 'Não é permitido excluir categoria com informações vinculadas.',
+            'tabs' => [
+                ['label' => 'Ideias e Conteúdos', 'value' => 'ideas_contents'],
+                ['label' => 'Locais', 'value' => 'venues'],
+                ['label' => 'Informações', 'value' => 'shared_infos'],
+            ],
+            'tabRoutes' => [
+                'ideas_contents' => route('settings.pages.categories'),
+                'venues' => route('settings.pages.categories.venues'),
+                'shared_infos' => route('settings.pages.categories.shared-infos'),
+            ],
+            'activeTab' => 'shared_infos',
         ]);
     }
 

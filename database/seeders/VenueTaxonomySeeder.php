@@ -15,9 +15,9 @@ class VenueTaxonomySeeder extends Seeder
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $types = [
-            ['name' => 'Casa de show', 'color' => '#ef4444', 'icon' => 'pi pi-building'],
-            ['name' => 'Bar', 'color' => '#f59e0b', 'icon' => 'pi pi-glass'],
-            ['name' => 'Festival', 'color' => '#8b5cf6', 'icon' => 'pi pi-star'],
+            ['name' => 'Casa de show', 'color' => '#ef4444', 'icon' => 'mdi:storefront-outline'],
+            ['name' => 'Bar', 'color' => '#f59e0b', 'icon' => 'mdi:glass-cocktail'],
+            ['name' => 'Festival', 'color' => '#8b5cf6', 'icon' => 'mdi:star-outline'],
         ];
 
         foreach ($types as $item) {
@@ -28,9 +28,9 @@ class VenueTaxonomySeeder extends Seeder
         }
 
         $categories = [
-            ['name' => 'Indie', 'color' => '#22c55e', 'icon' => 'pi pi-heart'],
-            ['name' => 'Mainstream', 'color' => '#3b82f6', 'icon' => 'pi pi-bolt'],
-            ['name' => 'Alternativo', 'color' => '#f97316', 'icon' => 'pi pi-compass'],
+            ['name' => 'Indie', 'color' => '#22c55e', 'icon' => 'mdi:heart-outline'],
+            ['name' => 'Mainstream', 'color' => '#3b82f6', 'icon' => 'mdi:lightning-bolt-outline'],
+            ['name' => 'Alternativo', 'color' => '#f97316', 'icon' => 'mdi:compass-outline'],
         ];
 
         foreach ($categories as $item) {
@@ -40,15 +40,28 @@ class VenueTaxonomySeeder extends Seeder
             );
         }
 
-        $styles = [
-            ['name' => 'Acústico', 'color' => '#0ea5e9', 'icon' => 'pi pi-volume-up'],
-            ['name' => 'Eletrônico', 'color' => '#a855f7', 'icon' => 'pi pi-wave-pulse'],
-            ['name' => 'Vintage', 'color' => '#a16207', 'icon' => 'pi pi-camera'],
+        $venueStyles = [
+            ['name' => 'Acústico', 'color' => '#0ea5e9', 'icon' => 'mdi:music-clef-treble', 'domain' => VenueStyle::DOMAIN_VENUES],
+            ['name' => 'Eletrônico', 'color' => '#a855f7', 'icon' => 'mdi:waveform', 'domain' => VenueStyle::DOMAIN_VENUES],
+            ['name' => 'Vintage', 'color' => '#a16207', 'icon' => 'mdi:microphone-variant', 'domain' => VenueStyle::DOMAIN_VENUES],
         ];
 
-        foreach ($styles as $item) {
+        foreach ($venueStyles as $item) {
             VenueStyle::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => $user->id, 'name' => $item['name'], 'domain' => $item['domain']],
+                ['color' => $item['color'], 'icon' => $item['icon']],
+            );
+        }
+
+        $contentStyles = [
+            ['name' => 'Performance', 'color' => '#0f766e', 'icon' => 'mdi:guitar-electric', 'domain' => VenueStyle::DOMAIN_CONTENT],
+            ['name' => 'Bastidores', 'color' => '#dc2626', 'icon' => 'mdi:movie-open-outline', 'domain' => VenueStyle::DOMAIN_CONTENT],
+            ['name' => 'Lançamento', 'color' => '#1d4ed8', 'icon' => 'mdi:rocket-launch-outline', 'domain' => VenueStyle::DOMAIN_CONTENT],
+        ];
+
+        foreach ($contentStyles as $item) {
+            VenueStyle::updateOrCreate(
+                ['user_id' => $user->id, 'name' => $item['name'], 'domain' => $item['domain']],
                 ['color' => $item['color'], 'icon' => $item['icon']],
             );
         }

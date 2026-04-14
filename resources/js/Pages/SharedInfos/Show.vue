@@ -24,7 +24,10 @@ defineProps({ sharedInfo: Object });
 
         <Card>
             <template #content>
-                <p>{{ sharedInfo.description || '-' }}</p>
+                <div class="mb-3 flex flex-wrap gap-2">
+                    <Tag v-for="category in sharedInfo.categories || []" :key="category.id" :value="category.name" severity="secondary" />
+                </div>
+                <p class="text-sm text-slate-600 dark:text-slate-300">{{ sharedInfo.description || 'Sem descrição cadastrada.' }}</p>
             </template>
         </Card>
 

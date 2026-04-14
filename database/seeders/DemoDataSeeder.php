@@ -20,7 +20,8 @@ class DemoDataSeeder extends Seeder
 
         $ideaTypes = IdeaType::where('user_id', $user->id)->get();
         $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
-        $venueStyles = \App\Models\VenueStyle::where('user_id', $user->id)->get();
+        $contentStyles = \App\Models\VenueStyle::where('user_id', $user->id)->where('domain', \App\Models\VenueStyle::DOMAIN_CONTENT)->get();
+        $venueStyles = \App\Models\VenueStyle::where('user_id', $user->id)->where('domain', \App\Models\VenueStyle::DOMAIN_VENUES)->get();
         $venueTypes = \App\Models\VenueType::where('user_id', $user->id)->get();
         $venueCategories = \App\Models\VenueCategory::where('user_id', $user->id)->get();
         $platforms = \App\Models\ContentPlatform::where('user_id', $user->id)->get();
@@ -44,7 +45,7 @@ class DemoDataSeeder extends Seeder
             ]);
         });
 
-        $ideas->take(3)->each(function (Idea $idea, int $index) use ($venueStyles): void {
+        $ideas->take(3)->each(function (Idea $idea, int $index) use ($contentStyles): void {
             $idea->references()->createMany([
                 [
                     'title' => 'Referencia '.($index + 1),
@@ -53,7 +54,7 @@ class DemoDataSeeder extends Seeder
                 ],
             ]);
 
-            $styleId = $venueStyles[$index % max($venueStyles->count(), 1)]?->id;
+            $styleId = $contentStyles[$index % max($contentStyles->count(), 1)]?->id;
             if ($styleId) {
                 $idea->styles()->sync([$styleId]);
             }
@@ -64,7 +65,7 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Video making of', 'status' => 'published', 'offset' => -1],
             ['title' => 'Reel agenda de shows', 'status' => 'in_production', 'offset' => 2],
             ['title' => 'Story chamada para live', 'status' => 'queued', 'offset' => 4],
-        ])->map(function ($row, $index) use ($user, $ideas, $ideaTypes, $ideaCategories, $platforms, $venueStyles) {
+        ])->map(function ($row, $index) use ($user, $ideas, $ideaTypes, $ideaCategories, $platforms, $contentStyles) {
             $planned = Carbon::now()->addDays($row['offset']);
             $publishedAt = $row['status'] === 'published' ? (clone $planned)->addHours(2) : null;
 
@@ -85,7 +86,7 @@ class DemoDataSeeder extends Seeder
                 $content->platforms()->sync([$platformId]);
             }
 
-            $styleId = $venueStyles[$index % max($venueStyles->count(), 1)]?->id;
+            $styleId = $contentStyles[$index % max($contentStyles->count(), 1)]?->id;
             if ($styleId) {
                 $content->styles()->sync([$styleId]);
             }
@@ -153,5 +154,6 @@ class DemoDataSeeder extends Seeder
                 'description' => 'Local de show de exemplo',
             ]);
         }
+
     }
 }

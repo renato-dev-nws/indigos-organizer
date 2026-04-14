@@ -16,10 +16,11 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'assigned_user_id' => ['nullable', 'uuid', 'exists:users,id'],
-            'related_type' => ['required', 'in:content,plan,administrative'],
+            'related_type' => ['required', 'in:content,plan,event,administrative'],
             'content_id' => ['nullable', 'uuid', 'exists:contents,id'],
             'plan_id' => ['nullable', 'uuid', 'exists:plans,id'],
             'plan_phase_id' => ['nullable', 'uuid', 'exists:plan_phases,id'],
+            'event_id' => ['nullable', 'uuid', 'exists:events,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'task_status_id' => ['required', 'uuid', 'exists:task_statuses,id'],
@@ -42,6 +43,10 @@ class StoreTaskRequest extends FormRequest
 
                 if ($this->input('related_type') === 'plan' && ! $this->input('plan_id')) {
                     $validator->errors()->add('plan_id', 'Plano é obrigatório quando o tipo é plano.');
+                }
+
+                if ($this->input('related_type') === 'event' && ! $this->input('event_id')) {
+                    $validator->errors()->add('event_id', 'Evento é obrigatório quando o tipo é evento.');
                 }
             },
         ];

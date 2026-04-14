@@ -10,6 +10,7 @@ use App\Models\VenueSize;
 use App\Models\VenueStyle;
 use App\Models\VenueType;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -112,6 +113,36 @@ class VenueController extends Controller
         ]);
 
         return redirect()->route('venues.index')->with('success', 'Local criado com sucesso.');
+    }
+
+    public function quickStore(StoreVenueRequest $request): JsonResponse
+    {
+        $payload = $request->validated();
+        $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
+
+        $venue = Venue::create([
+            ...$payload,
+            'user_id' => (string) Auth::id(),
+        ])->load(['type:id,name,icon,color', 'category:id,name', 'style:id,name']);
+
+        return response()->json([
+            'venue' => [
+                'id' => $venue->id,
+                'name' => $venue->name,
+                'type' => $venue->type,
+                'category' => $venue->category,
+                'style' => $venue->style,
+                'latitude' => $venue->latitude,
+                'longitude' => $venue->longitude,
+                'address' => collect([
+                    trim(implode(', ', array_filter([$venue->address_line, $venue->address_number]))),
+                    $venue->neighborhood,
+                    trim(implode(' - ', array_filter([$venue->city, $venue->state]))),
+                    $venue->postal_code,
+                    $venue->country,
+                ])->filter()->implode(', '),
+            ],
+        ], 201);
     }
 
     public function show(Venue $venue): Response

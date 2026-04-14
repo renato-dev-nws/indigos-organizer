@@ -32,6 +32,9 @@ const completion = () => {
         <p v-if="task.content?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
             Conteúdo: {{ task.content.title }}
         </p>
+        <p v-else-if="task.event?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
+            Evento: {{ task.event.title }}
+        </p>
         <p v-else-if="task.planPhase?.title" class="mb-2 truncate text-xs text-slate-500 dark:text-slate-400">
             Fase: {{ task.planPhase.title }}
         </p>

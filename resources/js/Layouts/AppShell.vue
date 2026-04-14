@@ -25,9 +25,11 @@ onMounted(() => subscribe());
 const menuItems = computed(() => [
     { label: 'Dashboard', icon: 'ph:squares-four-bold', href: route('dashboard') },
     { label: 'Tarefas', icon: 'ph:check-square-bold', href: route('tasks.index') },
+    { label: 'Calendário', icon: 'ph:calendar-dots-bold', href: route('calendar.index') },
     { label: 'Ideias', icon: 'ph:lightbulb-bold', href: route('ideas.index') },
     { label: 'Conteúdos', icon: 'ph:video-camera-bold', href: route('contents.index') },
     { label: 'Planejamentos', icon: 'ph:map-trifold-bold', href: route('plans.index') },
+    { label: 'Eventos', icon: 'ph:ticket-bold', href: route('events.index') },
     { label: 'Locais', icon: 'ph:music-notes-bold', href: route('venues.index') },
     { label: 'Informações Úteis', icon: 'ph:info-bold', href: route('shared-infos.index') },
     {

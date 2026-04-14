@@ -4,9 +4,11 @@ namespace Tests\Feature\Modules;
 
 use App\Models\Content;
 use App\Models\ContentPlatform;
+use App\Models\EventType;
 use App\Models\Idea;
 use App\Models\IdeaCategory;
 use App\Models\IdeaType;
+use App\Models\SharedInfoCategory;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
@@ -119,6 +121,91 @@ class SettingsCrudTest extends TestCase
                 'color' => 'not-a-color',
             ])
             ->assertSessionHasErrors('color');
+    }
+
+    public function test_user_can_create_event_type(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $this->actingAs($user)
+            ->post(route('settings.event-types.store'), [
+                'name' => 'Pocket show',
+                'color' => '#2255aa',
+                'icon' => 'mdi:ticket-outline',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('event_types', [
+            'user_id' => $user->id,
+            'name' => 'Pocket show',
+            'color' => '#2255aa',
+            'icon' => 'mdi:ticket-outline',
+        ]);
+    }
+
+    public function test_user_can_create_shared_info_category(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $this->actingAs($user)
+            ->post(route('settings.shared-info-categories.store'), [
+                'name' => 'Backstage',
+                'icon' => 'mdi:file-document-outline',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('shared_info_categories', [
+            'user_id' => $user->id,
+            'name' => 'Backstage',
+            'icon' => 'mdi:file-document-outline',
+        ]);
+    }
+
+    public function test_user_cannot_delete_event_type_with_linked_events(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+        $type = EventType::create(['user_id' => $user->id, 'name' => 'Festival', 'color' => '#000000']);
+
+        $venue = \App\Models\Venue::create([
+            'user_id' => $user->id,
+            'name' => 'Arena teste',
+            'status' => 'undefined',
+        ]);
+
+        \App\Models\Event::create([
+            'user_id' => $user->id,
+            'event_type_id' => $type->id,
+            'venue_id' => $venue->id,
+            'title' => 'Evento vinculado',
+            'attendance_mode' => 'participant',
+            'event_date' => now()->toDateString(),
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('settings.event-types.destroy', $type))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('event_types', ['id' => $type->id]);
+    }
+
+    public function test_user_cannot_delete_shared_info_category_with_linked_infos(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+        $category = SharedInfoCategory::create(['user_id' => $user->id, 'name' => 'Docs']);
+        $info = \App\Models\SharedInfo::create(['user_id' => $user->id, 'title' => 'Checklist']);
+        $info->categories()->sync([$category->id]);
+
+        $this->actingAs($user)
+            ->delete(route('settings.shared-info-categories.destroy', $category))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('shared_info_categories', ['id' => $category->id]);
     }
 
     // -------------------------------------------------------------------------

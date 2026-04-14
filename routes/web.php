@@ -3,6 +3,8 @@
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentFileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\GeneralCalendarController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlanController;
@@ -11,9 +13,11 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\SharedInfoController;
 use App\Http\Controllers\SharedInfoDocumentController;
 use App\Http\Controllers\Settings\ContentPlatformController;
+use App\Http\Controllers\Settings\EventTypeController;
 use App\Http\Controllers\Settings\IdeaCategoryController;
 use App\Http\Controllers\Settings\IdeaTypeController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\SharedInfoCategoryController;
 use App\Http\Controllers\Settings\SystemSettingController;
 use App\Http\Controllers\Settings\TaskStatusController;
 use App\Http\Controllers\Settings\ThemeController;
@@ -30,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/', '/dashboard');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
+    Route::get('/calendar', GeneralCalendarController::class)->name('calendar.index');
+
     Route::resource('ideas', IdeaController::class);
     Route::post('/ideas/{idea}/vote', [IdeaController::class, 'vote'])->name('ideas.vote');
 
@@ -44,7 +50,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy');
 
     Route::resource('venues', VenueController::class);
+    Route::post('/venues/quick-store', [VenueController::class, 'quickStore'])->name('venues.quick-store');
     Route::resource('plans', PlanController::class);
+    Route::resource('events', EventController::class);
     Route::resource('shared-infos', SharedInfoController::class);
     Route::delete('/shared-infos/{sharedInfo}/documents/{document}', [SharedInfoDocumentController::class, 'destroy'])
         ->name('shared-infos.documents.destroy');
@@ -53,8 +61,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/types', [SettingsController::class, 'types'])->name('settings.pages.types');
     Route::get('/settings/types/venues', [SettingsController::class, 'venueTypes'])->name('settings.pages.types.venues');
+    Route::get('/settings/types/events', [SettingsController::class, 'eventTypes'])->name('settings.pages.types.events');
     Route::get('/settings/categories', [SettingsController::class, 'categories'])->name('settings.pages.categories');
     Route::get('/settings/categories/venues', [SettingsController::class, 'venueCategories'])->name('settings.pages.categories.venues');
+    Route::get('/settings/categories/shared-infos', [SettingsController::class, 'sharedInfoCategories'])->name('settings.pages.categories.shared-infos');
     Route::get('/settings/styles', [SettingsController::class, 'styles'])->name('settings.pages.styles');
     Route::get('/settings/content-platforms', [SettingsController::class, 'contentPlatforms'])->name('settings.pages.content-platforms');
     Route::get('/settings/task-statuses', [SettingsController::class, 'taskStatuses'])->name('settings.pages.task-statuses');
@@ -65,6 +75,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
     Route::resource('/settings/venue-types', VenueTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-types');
     Route::resource('/settings/venue-categories', VenueCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-categories');
+    Route::resource('/settings/event-types', EventTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.event-types');
+    Route::resource('/settings/shared-info-categories', SharedInfoCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.shared-info-categories');
     Route::resource('/settings/content-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.content-styles');
     Route::resource('/settings/venue-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-styles');
     Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');

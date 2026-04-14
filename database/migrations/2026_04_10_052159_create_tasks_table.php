@@ -15,10 +15,11 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignUuid('assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->enum('related_type', ['content', 'plan', 'administrative'])->default('administrative');
+            $table->enum('related_type', ['content', 'plan', 'event', 'administrative'])->default('administrative');
             $table->foreignUuid('content_id')->nullable()->constrained('contents')->nullOnDelete();
             $table->foreignUuid('plan_id')->nullable()->constrained('plans')->nullOnDelete();
             $table->foreignUuid('plan_phase_id')->nullable()->constrained('plan_phases')->nullOnDelete();
+            $table->uuid('event_id')->nullable()->index();
             $table->string('title');
             $table->text('description')->nullable();
             $table->foreignUuid('task_status_id')->constrained('task_statuses')->restrictOnDelete();

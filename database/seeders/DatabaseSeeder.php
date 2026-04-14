@@ -22,8 +22,12 @@ class DatabaseSeeder extends Seeder
             'Database\\Seeders\\ContentPlatformSeeder',
             'Database\\Seeders\\VenueTaxonomySeeder',
             'Database\\Seeders\\TaskStatusSeeder',
+            'Database\\Seeders\\EventTypeSeeder',
+            'Database\\Seeders\\SharedInfoCategorySeeder',
             'Database\\Seeders\\DemoDataSeeder',
             'Database\\Seeders\\PlanSeeder',
+            'Database\\Seeders\\EventSeeder',
+            'Database\\Seeders\\SharedInfoSeeder',
         ]);
     }
 }

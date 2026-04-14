@@ -14,10 +14,10 @@ import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ tasks: Object, statuses: Array, contents: Array, plans: Array, users: Array, filters: Object });
+const props = defineProps({ tasks: Object, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object });
 const viewMode = ref('list');
 
-const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', administrative: 'Administrativo' };
+const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
 const localFilters = reactive({
     assigned_user_id: props.filters?.assigned_user_id ?? null,
@@ -241,6 +241,7 @@ const swimlaneRows = computed(() =>
                     :options="[
                         { label: 'Conteúdo', value: 'content' },
                         { label: 'Plano', value: 'plan' },
+                        { label: 'Evento', value: 'event' },
                         { label: 'Administrativo', value: 'administrative' },
                     ]"
                     option-label="label"
@@ -391,6 +392,7 @@ const swimlaneRows = computed(() =>
             :statuses="statuses"
             :contents="contents"
             :plans="plans"
+            :events="events"
             :users="users"
             @saved="refreshTasks"
         />

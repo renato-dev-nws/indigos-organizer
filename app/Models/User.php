@@ -67,9 +67,24 @@ class User extends Authenticatable
         return $this->hasMany(Plan::class);
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
+
     public function sharedInfos(): HasMany
     {
         return $this->hasMany(SharedInfo::class);
+    }
+
+    public function eventTypes(): HasMany
+    {
+        return $this->hasMany(EventType::class);
+    }
+
+    public function sharedInfoCategories(): HasMany
+    {
+        return $this->hasMany(SharedInfoCategory::class);
     }
 
     public function venueTypes(): HasMany

@@ -7,7 +7,9 @@ import AppFileUpload from '@/Components/AppFileUpload.vue';
 
 defineOptions({ layout: AppLayout });
 
-const form = useForm({ title: '', description: '', links: [], documents: [] });
+defineProps({ categories: Array });
+
+const form = useForm({ title: '', shared_info_category_ids: [], description: '', links: [], documents: [] });
 
 const addLink = () => form.links.push({ title: '', url: '', description: '' });
 const removeLink = (index) => form.links.splice(index, 1);
@@ -29,6 +31,10 @@ const uploadFile = (files) => { form.documents = files; };
         <form class="space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados principais" description="Título e descrição da informação">
                 <div class="md:col-span-2 space-y-2"><label>Título</label><InputText v-model="form.title" fluid /></div>
+                <div class="md:col-span-2 space-y-2">
+                    <label>Categorias</label>
+                    <MultiSelect v-model="form.shared_info_category_ids" :options="categories" option-label="name" option-value="id" display="chip" placeholder="Selecione categorias" fluid />
+                </div>
                 <div class="md:col-span-2 space-y-2"><label>Descrição</label><Textarea v-model="form.description" rows="4" fluid /></div>
             </BoFormSection>
 

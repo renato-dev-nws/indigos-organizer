@@ -13,12 +13,12 @@ class IdeaTypeSeeder extends Seeder
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
-            ['name' => 'Video', 'color' => '#ef4444', 'icon' => 'pi pi-video'],
-            ['name' => 'Reel', 'color' => '#8b5cf6', 'icon' => 'pi pi-play-circle'],
-            ['name' => 'Story', 'color' => '#f59e0b', 'icon' => 'pi pi-clock'],
-            ['name' => 'Post', 'color' => '#3b82f6', 'icon' => 'pi pi-image'],
-            ['name' => 'Produção musical', 'color' => '#10b981', 'icon' => 'pi pi-microphone'],
-            ['name' => 'Identidade visual', 'color' => '#ec4899', 'icon' => 'pi pi-palette'],
+            ['name' => 'Video', 'color' => '#ef4444', 'icon' => 'mdi:video-outline'],
+            ['name' => 'Reel', 'color' => '#8b5cf6', 'icon' => 'mdi:play-circle-outline'],
+            ['name' => 'Story', 'color' => '#f59e0b', 'icon' => 'mdi:clock-outline'],
+            ['name' => 'Post', 'color' => '#3b82f6', 'icon' => 'mdi:image-outline'],
+            ['name' => 'Produção musical', 'color' => '#10b981', 'icon' => 'mdi:microphone-outline'],
+            ['name' => 'Identidade visual', 'color' => '#ec4899', 'icon' => 'mdi:palette-outline'],
         ];
 
         foreach ($data as $item) {

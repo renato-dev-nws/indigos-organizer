@@ -5,7 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
-const props = defineProps({ statuses: Array, contents: Array, plans: Array, users: Array });
+const props = defineProps({ statuses: Array, contents: Array, plans: Array, events: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
 const form = useForm({
@@ -13,6 +13,7 @@ const form = useForm({
     content_id: null,
     plan_id: null,
     plan_phase_id: null,
+    event_id: null,
     title: '',
     description: '',
     assigned_user_id: null,
@@ -29,6 +30,7 @@ watch(() => form.related_type, () => {
     form.content_id = null;
     form.plan_id = null;
     form.plan_phase_id = null;
+    form.event_id = null;
 });
 
 watch(() => form.plan_id, () => {
@@ -60,6 +62,7 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
                         :options="[
                             { label: 'Conteúdo', value: 'content' },
                             { label: 'Plano', value: 'plan' },
+                            { label: 'Evento', value: 'event' },
                             { label: 'Administrativo', value: 'administrative' },
                         ]"
                         option-label="label"
@@ -83,6 +86,12 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
                 <div v-if="form.related_type === 'plan' && form.plan_id" class="space-y-2">
                     <label>Fase do plano (opcional)</label>
                     <Select v-model="form.plan_phase_id" :options="phaseOptions" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div v-if="form.related_type === 'event'" class="space-y-2">
+                    <label>Evento</label>
+                    <Select v-model="form.event_id" :options="events" option-label="title" option-value="id" show-clear fluid :invalid="!!form.errors.event_id" />
+                    <Message v-if="form.errors.event_id" severity="error" size="small" variant="simple">{{ form.errors.event_id }}</Message>
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

@@ -36,6 +36,10 @@ const emit = defineEmits(['update:visible']);
                     <p class="text-xs text-slate-500">Lembrete</p>
                     <p class="font-medium">{{ task.reminder_at || '-' }}</p>
                 </div>
+                <div>
+                    <p class="text-xs text-slate-500">Evento</p>
+                    <p class="font-medium">{{ task.event?.title || '-' }}</p>
+                </div>
             </div>
 
             <Card>

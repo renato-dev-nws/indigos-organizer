@@ -23,6 +23,7 @@ class Task extends Model
         'content_id',
         'plan_id',
         'plan_phase_id',
+        'event_id',
         'title',
         'description',
         'task_status_id',
@@ -68,6 +69,11 @@ class Task extends Model
     public function planPhase(): BelongsTo
     {
         return $this->belongsTo(PlanPhase::class);
+    }
+
+    public function event(): BelongsTo
+    {
+        return $this->belongsTo(Event::class);
     }
 
     public function status(): BelongsTo

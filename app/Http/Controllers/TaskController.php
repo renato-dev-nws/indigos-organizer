@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Requests\UpdateTaskStatusRequest;
@@ -21,7 +22,7 @@ class TaskController extends Controller
     public function index(): Response
     {
         $tasks = Task::query()
-            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase'])
+            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
             ->when(request('assigned_user_id'), fn ($q, $assignedUserId) => $q->where('assigned_user_id', $assignedUserId))
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
@@ -40,6 +41,7 @@ class TaskController extends Controller
                 ->with('phases')
                 ->orderBy('title')
                 ->get(['id', 'title', 'status']),
+            'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search']),
         ]);
@@ -51,6 +53,7 @@ class TaskController extends Controller
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -58,7 +61,7 @@ class TaskController extends Controller
     public function show(Task $task): JsonResponse
     {
         return response()->json([
-            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase']),
+            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event']),
         ]);
     }
 
@@ -71,6 +74,9 @@ class TaskController extends Controller
         if (($payload['related_type'] ?? null) !== 'plan') {
             $payload['plan_id'] = null;
             $payload['plan_phase_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'event') {
+            $payload['event_id'] = null;
         }
 
         $task = Task::create([
@@ -101,6 +107,7 @@ class TaskController extends Controller
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
+            'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -114,6 +121,9 @@ class TaskController extends Controller
         if (($payload['related_type'] ?? null) !== 'plan') {
             $payload['plan_id'] = null;
             $payload['plan_phase_id'] = null;
+        }
+        if (($payload['related_type'] ?? null) !== 'event') {
+            $payload['event_id'] = null;
         }
 
         $task->update($payload);

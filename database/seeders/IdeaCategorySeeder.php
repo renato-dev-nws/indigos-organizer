@@ -13,12 +13,12 @@ class IdeaCategorySeeder extends Seeder
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
-            ['name' => 'Divulgação', 'icon' => 'pi pi-megaphone'],
-            ['name' => 'Marketing', 'icon' => 'pi pi-chart-line'],
-            ['name' => 'Informativo', 'icon' => 'pi pi-info-circle'],
-            ['name' => 'Série', 'icon' => 'pi pi-list'],
-            ['name' => 'Humor', 'icon' => 'pi pi-face-smile'],
-            ['name' => 'História', 'icon' => 'pi pi-book'],
+            ['name' => 'Divulgação', 'icon' => 'mdi:bullhorn-variant-outline'],
+            ['name' => 'Marketing', 'icon' => 'mdi:chart-line'],
+            ['name' => 'Informativo', 'icon' => 'mdi:information-outline'],
+            ['name' => 'Série', 'icon' => 'mdi:format-list-bulleted'],
+            ['name' => 'Humor', 'icon' => 'mdi:emoticon-outline'],
+            ['name' => 'História', 'icon' => 'mdi:book-open-page-variant-outline'],
         ];
 
         foreach ($data as $item) {
