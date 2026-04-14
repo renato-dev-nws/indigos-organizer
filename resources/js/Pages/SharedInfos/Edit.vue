@@ -13,11 +13,12 @@ const form = useForm({
     description: props.sharedInfo.description,
     links: props.sharedInfo.links ?? [],
     documents: [],
+    _method: 'put',
 });
 
 const addLink = () => form.links.push({ title: '', url: '', description: '' });
 const removeLink = (index) => form.links.splice(index, 1);
-const submit = () => form.post(route('shared-infos.update', props.sharedInfo.id), { _method: 'put', forceFormData: true });
+const submit = () => form.post(route('shared-infos.update', props.sharedInfo.id), { forceFormData: true });
 const uploadFile = (files) => { form.documents = files; };
 const removeDocument = (id) => router.delete(route('shared-infos.documents.destroy', [props.sharedInfo.id, id]), { preserveScroll: true });
 </script>
