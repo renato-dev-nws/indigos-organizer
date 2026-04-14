@@ -1,6 +1,7 @@
 <script setup>
 import axios from 'axios';
 import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { importLibrary as importGoogleLibrary, setOptions } from '@googlemaps/js-api-loader';
 
 const props = defineProps({
     form: { type: Object, required: true },
@@ -24,6 +25,9 @@ const mapCanvas = ref(null);
 let googleMapsPromise = null;
 let previewMap = null;
 let previewMarker = null;
+let MapCtor = null;
+let MarkerCtor = null;
+let AdvancedMarkerCtor = null;
 
 const quickVenueForm = reactive({
     name: '',
@@ -117,7 +121,7 @@ const removeLink = (index) => {
 };
 
 const ensureGoogleMaps = async () => {
-    if (window.google?.maps) {
+    if (MapCtor) {
         return true;
     }
 
@@ -130,23 +134,22 @@ const ensureGoogleMaps = async () => {
         return false;
     }
 
-    googleMapsPromise = new Promise((resolve, reject) => {
-        const existingScript = document.querySelector('script[data-bo-google-maps="true"]');
-        if (existingScript) {
-            existingScript.addEventListener('load', () => resolve(true), { once: true });
-            existingScript.addEventListener('error', reject, { once: true });
-            return;
-        }
+    googleMapsPromise = (async () => {
+        setOptions({
+            key,
+            v: 'weekly',
+        });
 
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.dataset.boGoogleMaps = 'true';
-        script.onload = () => resolve(true);
-        script.onerror = reject;
-        document.head.appendChild(script);
-    }).catch(() => false);
+        const mapsLib = await importGoogleLibrary('maps');
+        const markerLib = await importGoogleLibrary('marker');
+        await importGoogleLibrary('places');
+
+        MapCtor = mapsLib.Map;
+        MarkerCtor = window.google?.maps?.Marker ?? null;
+        AdvancedMarkerCtor = markerLib.AdvancedMarkerElement ?? window.google?.maps?.marker?.AdvancedMarkerElement ?? null;
+
+        return !!MapCtor;
+    })().catch(() => false);
 
     return googleMapsPromise;
 };
@@ -226,14 +229,14 @@ const renderMap = async () => {
     }
 
     const ready = await ensureGoogleMaps();
-    if (!ready || !window.google?.maps) {
+    if (!ready || !MapCtor) {
         return;
     }
 
     const position = { lat, lng };
 
     if (!previewMap) {
-        previewMap = new window.google.maps.Map(mapCanvas.value, {
+        previewMap = new MapCtor(mapCanvas.value, {
             center: position,
             zoom: 15,
             styles: isDarkMode() ? mapStyles : null,
@@ -241,21 +244,34 @@ const renderMap = async () => {
             streetViewControl: false,
             fullscreenControl: false,
         });
-        previewMarker = new window.google.maps.Marker({
-            map: previewMap,
-            position,
-        });
+
+        if (MarkerCtor) {
+            previewMarker = new MarkerCtor({
+                map: previewMap,
+                position,
+            });
+        } else if (AdvancedMarkerCtor) {
+            previewMarker = new AdvancedMarkerCtor({
+                map: previewMap,
+                position,
+            });
+        }
         return;
     }
 
     previewMap.setOptions({ styles: isDarkMode() ? mapStyles : null });
     previewMap.setCenter(position);
     previewMarker?.setPosition(position);
-  };
+};
 
-watch(selectedVenue, () => {
-    renderMap();
-}, { deep: true, immediate: true });
+watch(
+    () => [selectedVenue.value?.id, selectedVenue.value?.latitude, selectedVenue.value?.longitude],
+    async () => {
+        await nextTick();
+        renderMap();
+    },
+    { immediate: true },
+);
 
 watch(venueDialogVisible, (value) => {
     if (value) {
@@ -288,7 +304,7 @@ const createVenue = async () => {
         quickVenueErrors.address = responseErrors.address_line?.[0] || '';
         quickVenueErrors.submit = error?.response?.data?.message || 'Não foi possível cadastrar o local.';
     }
-  };
+};
 </script>
 
 <template>

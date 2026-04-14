@@ -12,14 +12,21 @@ const form = useForm({
     description: props.plan.description,
     start_date: props.plan.start_date,
     end_date: props.plan.end_date,
-    progress: props.plan.progress,
+    completion_progress: props.plan.progress,
     status: props.plan.status,
     phases: props.plan.phases ?? [],
 });
 
 const addPhase = () => form.phases.push({ title: '', description: '', order: form.phases.length + 1 });
 const removePhase = (index) => form.phases.splice(index, 1);
-const submit = () => form.put(route('plans.update', props.plan.id));
+const submit = () => {
+    form
+        .transform((data) => ({
+            ...data,
+            progress: data.completion_progress,
+        }))
+        .put(route('plans.update', props.plan.id));
+};
 </script>
 
 <template>
@@ -39,7 +46,7 @@ const submit = () => form.put(route('plans.update', props.plan.id));
                 <div class="md:col-span-2 space-y-2"><label>Descrição</label><Textarea v-model="form.description" rows="4" fluid /></div>
                 <div class="space-y-2"><label>Início</label><DatePicker v-model="form.start_date" fluid /></div>
                 <div class="space-y-2"><label>Fim</label><DatePicker v-model="form.end_date" fluid /></div>
-                <div class="space-y-2"><label>Progresso</label><InputNumber v-model="form.progress" :min="0" :max="100" fluid /></div>
+                <div class="space-y-2"><label>Progresso</label><InputNumber v-model="form.completion_progress" :min="0" :max="100" fluid /></div>
                 <div class="space-y-2">
                     <label>Status</label>
                     <Select v-model="form.status" :options="[{label:'Na fila',value:'queued'},{label:'Em execução',value:'running'},{label:'Cancelado',value:'cancelled'},{label:'Concluído',value:'completed'}]" option-label="label" option-value="value" fluid />

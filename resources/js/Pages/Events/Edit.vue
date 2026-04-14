@@ -46,16 +46,20 @@ const submit = () => form.put(route('events.update', props.event.id));
             </template>
         </BoPageHeader>
 
-        <EventForm
-            :form="form"
-            :types="types"
-            :venues="venues"
-            :venue-types="venueTypes"
-            :venue-categories="venueCategories"
-            :venue-styles="venueStyles"
-            :cancel-href="route('events.show', event.id)"
-            submit-label="Atualizar evento"
-            @submit="submit"
-        />
+        <Card>
+            <template #content>
+                <EventForm
+                    :form="form"
+                    :types="types"
+                    :venues="venues"
+                    :venue-types="venueTypes"
+                    :venue-categories="venueCategories"
+                    :venue-styles="venueStyles"
+                    :cancel-href="route('events.show', event.id)"
+                    submit-label="Atualizar evento"
+                    @submit="submit"
+                />
+            </template>
+        </Card>
     </div>
 </template>

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
-import OverlayPanel from 'primevue/overlaypanel';
+import Popover from 'primevue/popover';
 
 const page = usePage();
 
@@ -143,8 +143,8 @@ onUnmounted(() => {
             </span>
         </button>
 
-        <!-- Overlay panel -->
-        <OverlayPanel ref="panel" class="w-80 max-w-[calc(100vw-1rem)]">
+        <!-- Notifications popover -->
+        <Popover ref="panel" class="w-80 max-w-[calc(100vw-1rem)]">
             <div class="flex items-center justify-between border-b border-slate-200 px-3 py-2 dark:border-slate-700">
                 <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Notificações</span>
                 <button
@@ -212,6 +212,6 @@ onUnmounted(() => {
                     <div v-if="!n.read_at" class="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
                 </li>
             </ul>
-        </OverlayPanel>
+        </Popover>
     </div>
 </template>

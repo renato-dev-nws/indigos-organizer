@@ -1,6 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
+import { importLibrary as importGoogleLibrary, setOptions } from '@googlemaps/js-api-loader';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -11,6 +12,14 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ event: Object });
 const activeTask = ref(null);
 const taskModalVisible = ref(false);
+const venueMapEl = ref(null);
+
+let googleMapsPromise = null;
+let venueMap = null;
+let venueMarker = null;
+let MapCtor = null;
+let MarkerCtor = null;
+let AdvancedMarkerCtor = null;
 
 const attendanceLabels = {
     participant: 'Como participante',
@@ -28,6 +37,97 @@ const openTask = (task) => {
     activeTask.value = task;
     taskModalVisible.value = true;
 };
+
+const hasVenueCoordinates = computed(() => {
+    const lat = Number(props.event?.venue?.latitude);
+    const lng = Number(props.event?.venue?.longitude);
+
+    return Number.isFinite(lat) && Number.isFinite(lng);
+});
+
+const ensureGoogleMaps = async () => {
+    if (MapCtor) {
+        return true;
+    }
+
+    if (googleMapsPromise) {
+        return googleMapsPromise;
+    }
+
+    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!key) {
+        return false;
+    }
+
+    googleMapsPromise = (async () => {
+        setOptions({
+            key,
+            v: 'weekly',
+        });
+
+        const mapsLib = await importGoogleLibrary('maps');
+        const markerLib = await importGoogleLibrary('marker');
+        MapCtor = mapsLib.Map;
+        MarkerCtor = window.google?.maps?.Marker ?? null;
+        AdvancedMarkerCtor = markerLib.AdvancedMarkerElement ?? window.google?.maps?.marker?.AdvancedMarkerElement ?? null;
+
+        return !!MapCtor;
+    })().catch(() => false);
+
+    return googleMapsPromise;
+};
+
+const renderVenueMap = async () => {
+    if (!venueMapEl.value || !hasVenueCoordinates.value) {
+        return;
+    }
+
+    const ready = await ensureGoogleMaps();
+    if (!ready || !MapCtor) {
+        return;
+    }
+
+    const position = {
+        lat: Number(props.event.venue.latitude),
+        lng: Number(props.event.venue.longitude),
+    };
+
+    if (!venueMap) {
+        venueMap = new MapCtor(venueMapEl.value, {
+            center: position,
+            zoom: 15,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+        });
+
+        if (MarkerCtor) {
+            venueMarker = new MarkerCtor({
+                map: venueMap,
+                position,
+            });
+        } else if (AdvancedMarkerCtor) {
+            venueMarker = new AdvancedMarkerCtor({
+                map: venueMap,
+                position,
+            });
+        }
+
+        return;
+    }
+
+    venueMap.setCenter(position);
+    venueMarker?.setPosition(position);
+};
+
+watch(
+    () => [props.event?.venue?.id, props.event?.venue?.latitude, props.event?.venue?.longitude],
+    async () => {
+        await nextTick();
+        renderVenueMap();
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -93,11 +193,23 @@ const openTask = (task) => {
             <Card>
                 <template #title>Local</template>
                 <template #content>
-                    <div class="space-y-2 text-sm">
-                        <p><strong>Nome:</strong> {{ event.venue?.name || '-' }}</p>
-                        <p><strong>Endereço:</strong> {{ event.venue?.address_line || '-' }}, {{ event.venue?.address_number || '-' }}</p>
-                        <p><strong>Bairro:</strong> {{ event.venue?.neighborhood || '-' }}</p>
-                        <p><strong>Cidade/UF:</strong> {{ event.venue?.city || '-' }} / {{ event.venue?.state || '-' }}</p>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="space-y-2 text-sm">
+                            <p><strong>Nome:</strong> {{ event.venue?.name || '-' }}</p>
+                            <p><strong>Endereço:</strong> {{ event.venue?.address_line || '-' }}, {{ event.venue?.address_number || '-' }}</p>
+                            <p><strong>Bairro:</strong> {{ event.venue?.neighborhood || '-' }}</p>
+                            <p><strong>Cidade/UF:</strong> {{ event.venue?.city || '-' }} / {{ event.venue?.state || '-' }}</p>
+                        </div>
+
+                        <div class="overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+                            <div v-if="hasVenueCoordinates" ref="venueMapEl" class="h-44 w-full" />
+                            <div v-else class="flex h-44 items-center justify-center text-slate-400 dark:text-slate-500">
+                                <div class="text-center">
+                                    <iconify-icon icon="ph:map-pin-area-bold" width="32" height="32" />
+                                    <p class="mt-2 text-xs">Sem coordenadas para exibir o mapa.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </template>
             </Card>
