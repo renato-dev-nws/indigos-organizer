@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +20,9 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne([
+            'email' => 'nao-gmail@empresa.com',
+        ]);
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -32,7 +35,9 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->createOne([
+            'email' => 'nao-gmail@empresa.com',
+        ]);
 
         $this->post('/login', [
             'email' => $user->email,
@@ -42,8 +47,16 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_google_auth_redirect_endpoint_is_available(): void
+    {
+        $response = $this->get(route('auth.google.redirect'));
+
+        $response->assertStatus(302);
+    }
+
     public function test_users_can_logout(): void
     {
+        /** @var Authenticatable $user */
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)->post('/logout');
