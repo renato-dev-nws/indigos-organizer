@@ -100,7 +100,7 @@ watchEffect(() => {
             />
 
             <main class="bo-shell-content p-4 md:p-6">
-                <div class="mx-auto max-w-[1400px]">
+                <div class="mx-auto max-w-[95%]">
                     <slot />
                 </div>
             </main>

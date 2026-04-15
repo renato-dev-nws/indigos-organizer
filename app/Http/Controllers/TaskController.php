@@ -11,9 +11,11 @@ use App\Models\Plan;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,19 +23,19 @@ class TaskController extends Controller
 {
     public function index(): Response
     {
-        $tasks = Task::query()
+        $tasks = $this->applyTaskFilters(Task::query())
             ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
-            ->when(request('assigned_user_id'), fn ($q, $assignedUserId) => $q->where('assigned_user_id', $assignedUserId))
-            ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
-            ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
-            ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
-            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
+        $calendarSourceTasks = $this->applyTaskFilters(Task::query())
+            ->with(['status:id,name,color'])
+            ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date']);
+
         return Inertia::render('Tasks/Index', [
             'tasks' => $tasks,
+            'taskCalendarItems' => $this->buildTaskCalendarItems($calendarSourceTasks),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()
@@ -43,8 +45,75 @@ class TaskController extends Controller
                 ->get(['id', 'title', 'status']),
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'currentUserId' => (string) Auth::id(),
             'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search']),
         ]);
+    }
+
+    private function applyTaskFilters(Builder $query): Builder
+    {
+        $assignedUserFilter = request('assigned_user_id');
+        if (blank($assignedUserFilter)) {
+            $assignedUserFilter = null;
+        }
+
+        $currentUserId = (string) Auth::id();
+
+        return $query
+            ->when(
+                $assignedUserFilter === null,
+                fn ($q) => $q->where(fn ($inner) => $inner
+                    ->where('assigned_user_id', $currentUserId)
+                    ->orWhereNull('assigned_user_id')
+                )
+            )
+            ->when(
+                $assignedUserFilter && $assignedUserFilter !== '__all__',
+                fn ($q) => $q->where('assigned_user_id', $assignedUserFilter)
+            )
+            ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
+            ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
+            ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
+            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
+    }
+
+    private function buildTaskCalendarItems($tasks)
+    {
+        $scheduledItems = $tasks
+            ->filter(fn (Task $task) => filled($task->scheduled_for))
+            ->map(fn (Task $task) => [
+                'id' => 'task-scheduled-'.$task->id,
+                'title' => $task->title,
+                'start' => optional($task->scheduled_for)->toIso8601String(),
+                'type' => 'task_scheduled',
+                'task_id' => $task->id,
+                'color' => '#0ea5e9',
+            ]);
+
+        $deadlineItems = $tasks
+            ->filter(fn (Task $task) => filled($task->due_date) && $this->isRunningTask($task))
+            ->map(fn (Task $task) => [
+                'id' => 'task-deadline-'.$task->id,
+                'title' => 'Deadline: '.$task->title,
+                'start' => optional($task->due_date)->toDateString(),
+                'allDay' => true,
+                'display' => 'list-item',
+                'type' => 'task_deadline',
+                'task_id' => $task->id,
+                'color' => '#ef4444',
+            ]);
+
+        return $scheduledItems->concat($deadlineItems)->values();
+    }
+
+    private function isRunningTask(Task $task): bool
+    {
+        $statusName = Str::of($task->status?->name ?? '')
+            ->ascii()
+            ->lower()
+            ->toString();
+
+        return Str::contains($statusName, ['execucao', 'executando', 'running']);
     }
 
     public function create(): Response

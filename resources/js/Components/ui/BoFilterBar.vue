@@ -49,6 +49,8 @@ const onDialogHide = () => {
             @click="openFilters"
         />
 
+        <slot name="after-filter-button" />
+
         <Chip
             v-for="chip in chips"
             :key="chip.key"

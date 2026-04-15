@@ -25,6 +25,7 @@ const form = useForm({
     description: '',
     assigned_user_id: null,
     priority: 'medium',
+    scheduled_for: '',
     due_date: '',
     reminder_at: '',
     task_status_id: null,
@@ -51,6 +52,7 @@ const hydrateForm = () => {
             description: '',
             assigned_user_id: null,
             priority: 'medium',
+            scheduled_for: '',
             due_date: '',
             reminder_at: '',
             task_status_id: props.statuses?.[0]?.id ?? null,
@@ -71,6 +73,7 @@ const hydrateForm = () => {
         description: props.task.description,
         assigned_user_id: props.task.assigned_user_id,
         priority: props.task.priority,
+        scheduled_for: props.task.scheduled_for,
         due_date: props.task.due_date,
         reminder_at: props.task.reminder_at,
         task_status_id: props.task.task_status_id,
@@ -103,6 +106,19 @@ watch(() => form.plan_id, () => {
     }
 
     form.plan_phase_id = null;
+});
+
+watch(() => form.scheduled_for, (value) => {
+    if (hydrating.value || !value) {
+        return;
+    }
+
+    const scheduledDate = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return;
+    }
+
+    form.reminder_at = new Date(scheduledDate.getTime() - (60 * 60 * 1000));
 });
 
 const addSubtask = () => form.subtasks.push({ title: '', completed: false, order: form.subtasks.length + 1 });
@@ -214,6 +230,12 @@ const submit = () => {
                         fluid
                     />
                     <Message v-if="form.errors.priority" severity="error" size="small" variant="simple">{{ form.errors.priority }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label>Agendado para</label>
+                    <DatePicker v-model="form.scheduled_for" show-time hour-format="24" show-clear fluid />
+                    <Message v-if="form.errors.scheduled_for" severity="error" size="small" variant="simple">{{ form.errors.scheduled_for }}</Message>
                 </div>
 
                 <div class="space-y-2">

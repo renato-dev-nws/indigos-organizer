@@ -18,7 +18,9 @@ const form = useForm({
     description: props.task.description,
     assigned_user_id: props.task.assigned_user_id,
     priority: props.task.priority,
+    scheduled_for: props.task.scheduled_for,
     due_date: props.task.due_date,
+    reminder_at: props.task.reminder_at,
     task_status_id: props.task.task_status_id,
 });
 
@@ -34,6 +36,19 @@ watch(() => form.related_type, () => {
 
 watch(() => form.plan_id, () => {
     form.plan_phase_id = null;
+});
+
+watch(() => form.scheduled_for, (value) => {
+    if (!value) {
+        return;
+    }
+
+    const scheduledDate = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return;
+    }
+
+    form.reminder_at = new Date(scheduledDate.getTime() - (60 * 60 * 1000));
 });
 
 const submit = () => form.put(route('tasks.update', props.task.id));
@@ -120,8 +135,18 @@ const submit = () => form.put(route('tasks.update', props.task.id));
                 </div>
 
                 <div class="space-y-2">
+                    <label>Agendado para</label>
+                    <DatePicker v-model="form.scheduled_for" show-time hour-format="24" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
                     <label>Prazo</label>
                     <DatePicker v-model="form.due_date" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label>Lembrete</label>
+                    <DatePicker v-model="form.reminder_at" show-time hour-format="24" fluid />
                 </div>
 
                 <div class="space-y-2">

@@ -2,6 +2,10 @@
 import { computed, reactive, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { router } from '@inertiajs/vue3';
+import FullCalendar from '@fullcalendar/vue3';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -14,13 +18,21 @@ import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ tasks: Object, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object });
+const props = defineProps({ tasks: Object, taskCalendarItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
 const viewMode = ref('list');
 
 const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
+const normalizeAssignedUserFilter = (value) => {
+    if (value === '__mine__' || value === '' || value === undefined || value === null) {
+        return null;
+    }
+
+    return value;
+};
+
 const localFilters = reactive({
-    assigned_user_id: props.filters?.assigned_user_id ?? null,
+    assigned_user_id: normalizeAssignedUserFilter(props.filters?.assigned_user_id),
     priority: props.filters?.priority ?? null,
     related_type: props.filters?.related_type ?? null,
     content_id: props.filters?.content_id ?? null,
@@ -28,7 +40,7 @@ const localFilters = reactive({
 });
 
 const syncLocalFiltersFromProps = () => {
-    localFilters.assigned_user_id = props.filters?.assigned_user_id ?? null;
+    localFilters.assigned_user_id = normalizeAssignedUserFilter(props.filters?.assigned_user_id);
     localFilters.priority = props.filters?.priority ?? null;
     localFilters.related_type = props.filters?.related_type ?? null;
     localFilters.content_id = props.filters?.content_id ?? null;
@@ -40,12 +52,16 @@ const filterChips = computed(() => {
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.related_type) chips.push({ key: 'related_type', label: relatedTypeLabels[localFilters.related_type] || localFilters.related_type });
     if (localFilters.priority) chips.push({ key: 'priority', label: localFilters.priority });
-    if (localFilters.assigned_user_id) {
+    if (localFilters.assigned_user_id === '__all__') {
+        chips.push({ key: 'assigned_user_id', label: 'Todos' });
+    } else if (localFilters.assigned_user_id) {
         const user = props.users.find((x) => x.id === localFilters.assigned_user_id);
         if (user) chips.push({ key: 'assigned_user_id', label: user.name });
     }
     return chips;
 });
+
+const showMyTasksTag = computed(() => !localFilters.assigned_user_id);
 
 const submitFilters = () => {
     router.get(route('tasks.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
@@ -93,6 +109,28 @@ const openEditModal = (task) => {
 const openViewModal = (task) => {
     selectedTask.value = task;
     showViewModal.value = true;
+};
+
+const openViewModalByTaskId = async (taskId) => {
+    if (!taskId) {
+        return;
+    }
+
+    const existingTask = (props.tasks?.data || []).find((task) => task.id === taskId);
+    if (existingTask) {
+        openViewModal(existingTask);
+        return;
+    }
+
+    const response = await fetch(route('tasks.show', taskId), {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+    const payload = await response.json();
+
+    if (payload?.task) {
+        openViewModal(payload.task);
+    }
 };
 
 const buildKanbanColumns = () =>
@@ -206,6 +244,29 @@ const swimlaneRows = computed(() =>
         })),
     })),
 );
+
+const fullCalendarOptions = computed(() => ({
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    firstDay: 0,
+    locale: 'pt-br',
+    height: 'auto',
+    headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek',
+    },
+    events: props.taskCalendarItems || [],
+    eventClick: async (info) => {
+        const taskId = info.event.extendedProps?.task_id;
+        if (!taskId) {
+            return;
+        }
+
+        info.jsEvent.preventDefault();
+        await openViewModalByTaskId(taskId);
+    },
+}));
 </script>
 
 <template>
@@ -219,6 +280,7 @@ const swimlaneRows = computed(() =>
                         :options="[
                             { label: 'Lista', value: 'list' },
                             { label: 'Kanban', value: 'kanban' },
+                            { label: 'Calendário completo', value: 'full_calendar' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -230,6 +292,9 @@ const swimlaneRows = computed(() =>
         </BoPageHeader>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
+            <template #after-filter-button>
+                <Tag v-if="showMyTasksTag" value="Minhas tarefas" severity="secondary" />
+            </template>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Título da tarefa" />
@@ -252,7 +317,14 @@ const swimlaneRows = computed(() =>
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Responsável</label>
-                <Select v-model="localFilters.assigned_user_id" :options="users" option-label="name" option-value="id" show-clear placeholder="Todos" />
+                <Select
+                    v-model="localFilters.assigned_user_id"
+                    :options="[{ id: '__all__', name: 'Todos' }, ...users]"
+                    option-label="name"
+                    option-value="id"
+                    show-clear
+                    placeholder="Minhas tarefas"
+                />
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Prioridade</label>
@@ -385,6 +457,12 @@ const swimlaneRows = computed(() =>
                 </template>
             </Card>
         </div>
+
+        <Card v-else>
+            <template #content>
+                <FullCalendar :options="fullCalendarOptions" />
+            </template>
+        </Card>
 
         <TaskFormModal
             v-model:visible="showFormModal"

@@ -18,7 +18,9 @@ const form = useForm({
     description: '',
     assigned_user_id: null,
     priority: 'medium',
+    scheduled_for: '',
     due_date: '',
+    reminder_at: '',
     task_status_id: props.statuses?.[0]?.id ?? null,
     subtasks: [],
 });
@@ -35,6 +37,19 @@ watch(() => form.related_type, () => {
 
 watch(() => form.plan_id, () => {
     form.plan_phase_id = null;
+});
+
+watch(() => form.scheduled_for, (value) => {
+    if (!value) {
+        return;
+    }
+
+    const scheduledDate = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(scheduledDate.getTime())) {
+        return;
+    }
+
+    form.reminder_at = new Date(scheduledDate.getTime() - (60 * 60 * 1000));
 });
 
 const submit = () => form.post(route('tasks.store'));
@@ -134,8 +149,18 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
                 </div>
 
                 <div class="space-y-2">
+                    <label>Agendado para</label>
+                    <DatePicker v-model="form.scheduled_for" show-time hour-format="24" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
                     <label>Prazo</label>
                     <DatePicker v-model="form.due_date" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label>Lembrete</label>
+                    <DatePicker v-model="form.reminder_at" show-time hour-format="24" fluid />
                 </div>
 
                 <div class="space-y-2">

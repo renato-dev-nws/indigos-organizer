@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -6,6 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -13,6 +15,26 @@ defineProps({
     calendarItems: Array,
     legend: Array,
 });
+
+const selectedTask = ref(null);
+const showTaskViewModal = ref(false);
+
+const openTaskModalById = async (taskId) => {
+    if (!taskId) {
+        return;
+    }
+
+    const response = await fetch(route('tasks.show', taskId), {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+    const payload = await response.json();
+
+    if (payload?.task) {
+        selectedTask.value = payload.task;
+        showTaskViewModal.value = true;
+    }
+};
 
 const calendarOptions = (items) => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -26,7 +48,14 @@ const calendarOptions = (items) => ({
         right: 'dayGridMonth,timeGridWeek',
     },
     events: items,
-    eventClick: (info) => {
+    eventClick: async (info) => {
+        const taskId = info.event.extendedProps?.task_id;
+        if (taskId) {
+            info.jsEvent.preventDefault();
+            await openTaskModalById(taskId);
+            return;
+        }
+
         const url = info.event.extendedProps?.url;
         if (!url) {
             return;
@@ -54,5 +83,7 @@ const calendarOptions = (items) => ({
                 <FullCalendar :options="calendarOptions(calendarItems || [])" />
             </template>
         </Card>
+
+        <TaskViewModal v-model:visible="showTaskViewModal" :task="selectedTask" />
     </div>
 </template>

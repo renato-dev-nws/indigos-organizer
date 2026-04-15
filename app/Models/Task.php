@@ -28,6 +28,7 @@ class Task extends Model
         'description',
         'task_status_id',
         'priority',
+        'scheduled_for',
         'due_date',
         'reminder_at',
         'assignment_notified_at',
@@ -38,6 +39,7 @@ class Task extends Model
     protected function casts(): array
     {
         return [
+            'scheduled_for' => 'datetime',
             'due_date' => 'date',
             'reminder_at' => 'datetime',
             'assignment_notified_at' => 'datetime',

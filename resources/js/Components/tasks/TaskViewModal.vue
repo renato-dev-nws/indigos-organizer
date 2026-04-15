@@ -29,6 +29,10 @@ const emit = defineEmits(['update:visible']);
                     <p class="font-medium">{{ task.priority }}</p>
                 </div>
                 <div>
+                    <p class="text-xs text-slate-500">Agendado para</p>
+                    <p class="font-medium">{{ task.scheduled_for || '-' }}</p>
+                </div>
+                <div>
                     <p class="text-xs text-slate-500">Prazo</p>
                     <p class="font-medium">{{ task.due_date || '-' }}</p>
                 </div>
