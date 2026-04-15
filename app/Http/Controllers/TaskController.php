@@ -23,18 +23,26 @@ class TaskController extends Controller
 {
     public function index(): Response
     {
-        $tasks = $this->applyTaskFilters(Task::query())
+        $baseQuery = $this->applyTaskFilters(Task::query());
+
+        $tasks = (clone $baseQuery)
             ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        $calendarSourceTasks = $this->applyTaskFilters(Task::query())
+        $boardTasks = (clone $baseQuery)
+            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
+            ->latest()
+            ->get();
+
+        $calendarSourceTasks = (clone $baseQuery)
             ->with(['status:id,name,color'])
             ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date']);
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $tasks,
+            'boardTasks' => $boardTasks,
             'taskCalendarItems' => $this->buildTaskCalendarItems($calendarSourceTasks),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
@@ -46,7 +54,7 @@ class TaskController extends Controller
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'currentUserId' => (string) Auth::id(),
-            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search']),
+            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_completed']),
         ]);
     }
 
@@ -74,6 +82,15 @@ class TaskController extends Controller
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
             ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
+            ->when(! request()->boolean('include_completed'), function ($q) {
+                $q->whereHas('status', function ($statusQuery) {
+                    $statusQuery
+                        ->where('name', 'not ilike', '%conclu%')
+                        ->where('name', 'not ilike', '%finaliz%')
+                        ->where('name', 'not ilike', '%done%')
+                        ->where('name', 'not ilike', '%completed%');
+                });
+            })
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
     }
 
@@ -120,7 +137,7 @@ class TaskController extends Controller
     {
         return Inertia::render('Tasks/Create', [
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
-            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
@@ -174,7 +191,7 @@ class TaskController extends Controller
         return Inertia::render('Tasks/Edit', [
             'task' => $task->load('subtasks'),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
-            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),

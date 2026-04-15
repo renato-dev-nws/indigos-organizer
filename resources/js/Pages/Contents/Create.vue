@@ -8,6 +8,12 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 defineProps({
     platforms: Array,
     types: Array,
@@ -43,12 +49,12 @@ const removeLink = (index) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Novo conteúdo" subtitle="Crie e planeje o conteúdo com metadados completos">
+        <BoPageHeader title="Novo conteúdo" supratitle="CONTEÚDOS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('contents.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 
@@ -73,6 +79,7 @@ const removeLink = (index) => {
                         :options="[
                             { label: 'Na fila', value: 'queued' },
                             { label: 'Em produção', value: 'in_production' },
+                            { label: 'Finalizado', value: 'finalized' },
                             { label: 'Cancelado', value: 'cancelled' },
                             { label: 'Pausado', value: 'paused' },
                             { label: 'Publicado', value: 'published' },
@@ -122,8 +129,10 @@ const removeLink = (index) => {
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label for="content-script">Roteiro</label>
-                    <AppSpeechTextareaAssist v-model="form.script" />
+                    <div class="flex items-center justify-between gap-2">
+                        <label for="content-script">Roteiro</label>
+                        <AppSpeechTextareaAssist v-model="form.script" />
+                    </div>
                     <AppRichText id="content-script" v-model="form.script" :min-height="240" />
                 </div>
             </BoFormSection>

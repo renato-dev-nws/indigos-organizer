@@ -23,28 +23,43 @@ class IdeaController extends Controller
 {
     public function index(): Response
     {
-        $ideas = Idea::query()
+        $baseQuery = $this->applyIdeaFilters(Idea::query())
             ->with(['type', 'category', 'styles', 'user', 'content', 'plan', 'planPhase'])
-            ->where(function ($q) {
-                $q->where('is_private', false)
-                    ->orWhere('user_id', Auth::id());
-            })
-            ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
-            ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
-            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
-            ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
-            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
-            ->orderByDesc('updated_at')
+            ->orderByDesc('updated_at');
+
+        $ideas = (clone $baseQuery)
             ->paginate(15)
             ->withQueryString();
 
+        $ideaBoardItems = (clone $baseQuery)
+            ->get();
+
         return Inertia::render('Ideas/Index', [
             'ideas' => $ideas,
+            'ideaBoardItems' => $ideaBoardItems,
             'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'venue_style_id', 'search']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
             'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
         ]);
+    }
+
+    private function applyIdeaFilters($query)
+    {
+        return $query
+            ->where(function ($q) {
+                $q->where('is_private', false)
+                    ->orWhere('user_id', Auth::id());
+            })
+            ->when(
+                request('status'),
+                fn ($q, $status) => $q->where('status', $status),
+                fn ($q) => $q->where('status', '!=', 'trash')
+            )
+            ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
+            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
+            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
     }
 
     public function create(): Response
@@ -54,7 +69,7 @@ class IdeaController extends Controller
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
             'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
-            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -104,7 +119,7 @@ class IdeaController extends Controller
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
             'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
-            'contents' => Content::query()->whereIn('status', ['queued', 'in_production'])->orderBy('title')->get(['id', 'title']),
+            'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'voterUsers' => $idea->voterUsers()->pluck('users.id')->all(),
             'venueStyleIds' => $idea->styles()->pluck('venue_styles.id')->all(),
@@ -164,5 +179,16 @@ class IdeaController extends Controller
         DispatchIdeaVotedNotificationJob::dispatchSync($idea->id, (string) Auth::id());
 
         return back()->with('success', 'Voto registrado.');
+    }
+
+    public function updateStatus(Request $request, Idea $idea): RedirectResponse
+    {
+        $payload = $request->validate([
+            'status' => ['required', 'in:in_drawer,on_table,on_board,executing,executed'],
+        ]);
+
+        $idea->update(['status' => $payload['status']]);
+
+        return back()->with('success', 'Status da ideia atualizado.');
     }
 }

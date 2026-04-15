@@ -141,7 +141,7 @@ const submit = () => form.put(route('venues.update', props.venue.id));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar local" subtitle="Atualize contatos, classificação e localização">
+        <BoPageHeader title="Editar local" supratitle="LOCAIS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
                 <Link :href="route('venues.show', venue.id)">
                     <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />

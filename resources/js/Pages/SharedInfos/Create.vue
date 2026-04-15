@@ -7,6 +7,12 @@ import AppFileUpload from '@/Components/AppFileUpload.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 defineProps({ categories: Array });
 
 const form = useForm({ title: '', shared_info_category_ids: [], description: '', links: [], documents: [] });
@@ -19,12 +25,12 @@ const uploadFile = (files) => { form.documents = files; };
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Nova informação" subtitle="Compartilhe links e documentos com a banda">
+        <BoPageHeader title="Nova informação" supratitle="INFORMAÇÕES" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('shared-infos.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 

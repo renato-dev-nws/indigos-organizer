@@ -28,7 +28,7 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
 
 <template>
     <aside
-        class="fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-950/95"
+        class="bo-sidebar fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-950/95"
         :class="collapsed ? 'w-[72px]' : 'w-64'"
     >
         <div class="mb-5 flex items-center gap-2.5 px-2">

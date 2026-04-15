@@ -23,7 +23,7 @@ class StoreContentRequest extends FormRequest
             'venue_style_ids.*' => ['uuid', 'exists:venue_styles,id'],
             'idea_type_id' => ['nullable', 'uuid', 'exists:idea_types,id'],
             'idea_category_id' => ['nullable', 'uuid', 'exists:idea_categories,id'],
-            'status' => ['required', 'in:queued,in_production,cancelled,paused,published'],
+            'status' => ['required', 'in:queued,in_production,finalized,cancelled,paused,published'],
             'planned_publish_at' => ['nullable', 'date', 'after:now'],
             'published_at' => ['nullable', 'date', 'after_or_equal:planned_publish_at'],
             'links' => ['nullable', 'array'],

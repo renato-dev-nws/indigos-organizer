@@ -13,7 +13,7 @@ const props = defineProps({
     users: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(['update:visible', 'saved']);
+const emit = defineEmits(['update:visible']);
 
 const form = useForm({
     related_type: 'administrative',
@@ -129,7 +129,6 @@ const submit = () => {
         form.put(route('tasks.update', props.task.id), {
             preserveScroll: true,
             onSuccess: () => {
-                emit('saved');
                 closeModal();
             },
         });
@@ -139,7 +138,6 @@ const submit = () => {
     form.post(route('tasks.store'), {
         preserveScroll: true,
         onSuccess: () => {
-            emit('saved');
             closeModal();
         },
     });

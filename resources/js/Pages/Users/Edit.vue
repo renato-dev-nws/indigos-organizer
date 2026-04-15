@@ -6,6 +6,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const props = defineProps({ user: Object });
 
 const form = useForm({
@@ -23,10 +29,8 @@ const submit = () => form.put(route('users.update', props.user.id));
     <div class="space-y-6">
         <BoPageHeader title="Editar usuário" subtitle="Atualize os dados do usuário">
             <template #actions>
-                <Link :href="route('users.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
             </template>
         </BoPageHeader>
 

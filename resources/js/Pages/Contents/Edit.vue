@@ -59,7 +59,7 @@ const removeFile = (fileId) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar conteúdo" subtitle="Atualize roteiro, links e anexos">
+        <BoPageHeader title="Editar conteúdo" supratitle="CONTEÚDOS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
                 <Link :href="route('contents.show', content.id)">
                     <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
@@ -89,6 +89,7 @@ const removeFile = (fileId) => {
                         :options="[
                             { label: 'Na fila', value: 'queued' },
                             { label: 'Em produção', value: 'in_production' },
+                            { label: 'Finalizado', value: 'finalized' },
                             { label: 'Cancelado', value: 'cancelled' },
                             { label: 'Pausado', value: 'paused' },
                             { label: 'Publicado', value: 'published' },
@@ -138,8 +139,10 @@ const removeFile = (fileId) => {
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label for="content-script">Roteiro</label>
-                    <AppSpeechTextareaAssist v-model="form.script" />
+                    <div class="flex items-center justify-between gap-2">
+                        <label for="content-script">Roteiro</label>
+                        <AppSpeechTextareaAssist v-model="form.script" />
+                    </div>
                     <AppRichText id="content-script" v-model="form.script" :min-height="240" />
                 </div>
             </BoFormSection>

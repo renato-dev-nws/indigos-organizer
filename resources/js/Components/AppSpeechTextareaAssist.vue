@@ -100,11 +100,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="mb-2 flex items-center justify-end gap-2">
+    <div class="flex items-center justify-end gap-2">
         <Button
             type="button"
             :icon="isRecording ? 'pi pi-stop-circle' : 'pi pi-microphone'"
-            :label="isRecording ? 'Parar gravação' : 'Transcrever por voz'"
+            :label="isRecording ? 'Parar' : 'Transcrever'"
             :severity="isRecording ? 'danger' : 'secondary'"
             size="small"
             outlined

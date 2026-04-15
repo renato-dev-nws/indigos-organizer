@@ -7,6 +7,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 defineProps({
     sizes: Array,
     types: Array,
@@ -139,12 +145,12 @@ const submit = () => form.post(route('venues.store'));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Novo local" subtitle="Cadastre local, contato e dados de localização">
+        <BoPageHeader title="Novo local" supratitle="LOCAIS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('venues.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 

@@ -6,6 +6,12 @@ import EventForm from '@/Components/events/EventForm.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 defineProps({
     types: Array,
     venues: Array,
@@ -36,12 +42,12 @@ const submit = () => form.post(route('events.store'));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Novo evento" subtitle="Cadastre agenda, ingressos e informações do evento">
+        <BoPageHeader title="Novo evento" supratitle="EVENTOS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('events.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 

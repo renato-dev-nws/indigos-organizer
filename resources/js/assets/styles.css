@@ -1,12 +1,14 @@
 @import 'primeicons/primeicons.css';
 
 :root {
-    --bo-surface-0: #f8fafc;
-    --bo-surface-1: #ffffff;
-    --bo-surface-2: #e2e8f0;
+    --bo-surface-0: #ffffff;
+    --bo-surface-1: #e2e8f0;
+    --bo-surface-2: #f1f5f9;
     --bo-text: #0f172a;
     --bo-muted: #64748b;
     --bo-primary: #4f46e5;
+    --bo-menu-light: #cbd5e1;
+    --bo-topbar-light: #94a3b8;
 }
 
 .app-dark {
@@ -19,13 +21,49 @@
 }
 
 body {
-    background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.07), transparent 42%), var(--bo-surface-0);
+    background: var(--bo-surface-0);
     color: var(--bo-text);
     min-height: 100vh;
 }
 
 .bo-shell-content {
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.02), transparent 200px);
+}
+
+html:not(.app-dark) body:not(.app-dark) .bo-sidebar {
+    background: color-mix(in srgb, var(--bo-menu-light), white 8%);
+    border-color: color-mix(in srgb, var(--bo-menu-light), black 28%);
+}
+
+html:not(.app-dark) body:not(.app-dark) .bo-topbar {
+    background: color-mix(in srgb, var(--bo-topbar-light), white 8%);
+    border-color: color-mix(in srgb, var(--bo-topbar-light), black 28%);
+}
+
+html:not(.app-dark) body:not(.app-dark) .bo-topbar,
+html:not(.app-dark) body:not(.app-dark) .bo-topbar p,
+html:not(.app-dark) body:not(.app-dark) .bo-topbar span,
+html:not(.app-dark) body:not(.app-dark) .bo-topbar button {
+    color: #f8fafc;
+}
+
+html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-800,
+html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-500,
+html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-400 {
+    color: #f8fafc !important;
+}
+
+html:not(.app-dark) body:not(.app-dark) .p-card {
+    background: var(--bo-surface-1);
+}
+
+html:not(.app-dark) body:not(.app-dark) .p-datatable,
+html:not(.app-dark) body:not(.app-dark) .p-datatable-table-container,
+html:not(.app-dark) body:not(.app-dark) .p-datatable-table,
+html:not(.app-dark) body:not(.app-dark) .p-datatable-thead > tr > th,
+html:not(.app-dark) body:not(.app-dark) .p-datatable-tbody > tr > td,
+html:not(.app-dark) body:not(.app-dark) .p-paginator {
+    background: var(--bo-surface-2);
 }
 
 .bo-status-dot {
@@ -94,4 +132,59 @@ body {
 .p-inputnumber-input,
 .p-multiselect {
     width: 100%;
+}
+
+.fc .fc-daygrid-event,
+.fc .fc-timegrid-event,
+.fc .fc-list-event {
+    cursor: pointer;
+}
+
+.app-dark .fc .fc-col-header-cell {
+    background: #1e293b;
+}
+
+.app-dark .fc .fc-col-header-cell-cushion {
+    color: #e2e8f0;
+}
+
+.fc .fc-event {
+    border-radius: 0.45rem;
+    border-width: 1px;
+    border-style: solid;
+    opacity: 0.95;
+}
+
+@media (max-width: 768px) {
+    .fc .fc-toolbar-title {
+        font-size: 1rem;
+    }
+
+    .fc .fc-daygrid-day-events .fc-event-title,
+    .fc .fc-daygrid-day-events .fc-event-time {
+        display: none;
+    }
+
+    .fc .fc-daygrid-day-events .fc-daygrid-event {
+        min-height: 0.55rem;
+        border-radius: 999px;
+        margin-top: 2px;
+        padding: 0;
+    }
+}
+
+.bo-page-header-actions {
+    align-self: flex-start;
+}
+
+@media (max-width: 768px) {
+    .bo-page-header-actions {
+        align-self: flex-start;
+    }
+
+    .bo-page-header-actions .p-button {
+        min-height: 1.8rem;
+        padding-inline: 0.5rem;
+        font-size: 0.72rem;
+    }
 }

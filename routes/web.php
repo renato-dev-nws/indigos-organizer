@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ideas', IdeaController::class);
     Route::post('/ideas/{idea}/vote', [IdeaController::class, 'vote'])->name('ideas.vote');
+    Route::patch('/ideas/{idea}/status', [IdeaController::class, 'updateStatus'])->name('ideas.status');
 
     Route::resource('contents', ContentController::class);
     Route::post('/contents/{content}/files', [ContentFileController::class, 'store'])->name('contents.files.store');

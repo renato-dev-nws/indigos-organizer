@@ -17,6 +17,7 @@ class DemoDataSeeder extends Seeder
     {
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
         $users = User::query()->orderBy('name')->get();
+        $assignableUsers = $users->isNotEmpty() ? $users : collect([$user]);
 
         $ideaTypes = IdeaType::where('user_id', $user->id)->get();
         $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
@@ -102,7 +103,7 @@ class DemoDataSeeder extends Seeder
         foreach (range(1, 8) as $index) {
             $task = Task::create([
                 'user_id' => $user->id,
-                'assigned_user_id' => $index % 2 === 0 ? null : ($users[$index % max($users->count(), 1)]?->id),
+                'assigned_user_id' => $assignableUsers[($index - 1) % $assignableUsers->count()]?->id,
                 'related_type' => $index % 3 === 0 ? 'administrative' : 'content',
                 'content_id' => $index <= 4 ? $contents[$index % $contents->count()]?->id : null,
                 'plan_id' => null,

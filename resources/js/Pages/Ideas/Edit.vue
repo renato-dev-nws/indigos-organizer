@@ -9,6 +9,12 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 const props = defineProps({ idea: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array, voterUsers: Array, venueStyleIds: Array });
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const form = useForm({
     related_type: props.idea.related_type,
     content_id: props.idea.content_id,
@@ -46,12 +52,12 @@ const removeReference = (index) => form.references.splice(index, 1);
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar ideia" subtitle="Atualize relacionamento, status e governança da ideia">
+        <BoPageHeader title="Editar ideia" supratitle="IDEIAS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
-                <Link :href="route('ideas.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 
@@ -96,8 +102,10 @@ const removeReference = (index) => form.references.splice(index, 1);
                 </div>
 
                 <div class="md:col-span-2 space-y-2">
-                    <label>Descrição</label>
-                    <AppSpeechTextareaAssist v-model="form.description" />
+                    <div class="flex items-center justify-between gap-2">
+                        <label>Descrição</label>
+                        <AppSpeechTextareaAssist v-model="form.description" />
+                    </div>
                     <Textarea v-model="form.description" rows="4" fluid />
                 </div>
 

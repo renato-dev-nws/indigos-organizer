@@ -6,11 +6,13 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
+import BoTaskStatusTag from '@/Components/ui/BoTaskStatusTag.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
 import AppKanbanCard from '@/Components/AppKanbanCard.vue';
@@ -18,8 +20,10 @@ import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ tasks: Object, taskCalendarItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
+const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
 const viewMode = ref('list');
+const tableRows = ref(15);
+const tablePage = ref(0);
 
 const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
@@ -36,6 +40,7 @@ const localFilters = reactive({
     priority: props.filters?.priority ?? null,
     related_type: props.filters?.related_type ?? null,
     content_id: props.filters?.content_id ?? null,
+    include_completed: props.filters?.include_completed === '1' || props.filters?.include_completed === 1 || props.filters?.include_completed === true,
     search: props.filters?.search ?? '',
 });
 
@@ -44,6 +49,7 @@ const syncLocalFiltersFromProps = () => {
     localFilters.priority = props.filters?.priority ?? null;
     localFilters.related_type = props.filters?.related_type ?? null;
     localFilters.content_id = props.filters?.content_id ?? null;
+    localFilters.include_completed = props.filters?.include_completed === '1' || props.filters?.include_completed === 1 || props.filters?.include_completed === true;
     localFilters.search = props.filters?.search ?? '';
 };
 
@@ -52,6 +58,7 @@ const filterChips = computed(() => {
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.related_type) chips.push({ key: 'related_type', label: relatedTypeLabels[localFilters.related_type] || localFilters.related_type });
     if (localFilters.priority) chips.push({ key: 'priority', label: localFilters.priority });
+    if (localFilters.include_completed) chips.push({ key: 'include_completed', label: 'Inclui concluídas' });
     if (localFilters.assigned_user_id === '__all__') {
         chips.push({ key: 'assigned_user_id', label: 'Todos' });
     } else if (localFilters.assigned_user_id) {
@@ -64,6 +71,7 @@ const filterChips = computed(() => {
 const showMyTasksTag = computed(() => !localFilters.assigned_user_id);
 
 const submitFilters = () => {
+    tablePage.value = 0;
     router.get(route('tasks.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
 };
 
@@ -72,12 +80,19 @@ const resetFilters = () => {
     localFilters.priority = null;
     localFilters.related_type = null;
     localFilters.content_id = null;
+    localFilters.include_completed = false;
     localFilters.search = '';
     submitFilters();
 };
 
 const removeChip = (key) => {
-    localFilters[key] = key === 'search' ? '' : null;
+    if (key === 'search') {
+        localFilters.search = '';
+    } else if (key === 'include_completed') {
+        localFilters.include_completed = false;
+    } else {
+        localFilters[key] = null;
+    }
     submitFilters();
 };
 
@@ -88,7 +103,8 @@ const cancelFilters = () => {
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 
 const paginate = (event) => {
-    router.get(route('tasks.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
+    tablePage.value = event.page;
+    tableRows.value = event.rows;
 };
 
 const removeTask = (taskId) => router.delete(route('tasks.destroy', taskId), { preserveScroll: true });
@@ -116,7 +132,7 @@ const openViewModalByTaskId = async (taskId) => {
         return;
     }
 
-    const existingTask = (props.tasks?.data || []).find((task) => task.id === taskId);
+    const existingTask = (props.boardTasks || props.tasks?.data || []).find((task) => task.id === taskId);
     if (existingTask) {
         openViewModal(existingTask);
         return;
@@ -133,27 +149,33 @@ const openViewModalByTaskId = async (taskId) => {
     }
 };
 
+const boardTasks = computed(() => props.boardTasks || props.tasks?.data || []);
+
+const paginatedTasks = computed(() => {
+    const first = tablePage.value * tableRows.value;
+    return boardTasks.value.slice(first, first + tableRows.value);
+});
+
 const buildKanbanColumns = () =>
     props.statuses.map((status) => ({
         id: status.id,
         name: status.name,
         color: status.color,
-        tasks: (props.tasks?.data || []).filter((task) => task.task_status_id === status.id),
+        tasks: boardTasks.value.filter((task) => task.task_status_id === status.id),
     }));
 
 const kanbanColumns = ref(buildKanbanColumns());
 
 watch(
-    () => [props.statuses, props.tasks?.data],
+    () => [props.statuses, boardTasks.value],
     () => {
         kanbanColumns.value = buildKanbanColumns();
+        if (tablePage.value > 0 && tablePage.value * tableRows.value >= boardTasks.value.length) {
+            tablePage.value = 0;
+        }
     },
     { deep: true },
 );
-
-const refreshTasks = () => {
-    router.reload({ only: ['tasks'], preserveScroll: true });
-};
 
 const laneMetrics = (column) => {
     const total = column.tasks.length;
@@ -216,7 +238,7 @@ const taskAssigneeLabel = (task) => task.assigned_user?.name ?? task.assignedUse
 
 const assignees = computed(() => {
     const map = new Map();
-    for (const task of props.tasks.data) {
+    for (const task of boardTasks.value) {
         const key = taskAssigneeKey(task);
         if (!map.has(key)) {
             map.set(key, taskAssigneeLabel(task));
@@ -250,11 +272,17 @@ const fullCalendarOptions = computed(() => ({
     initialView: 'dayGridMonth',
     firstDay: 0,
     locale: 'pt-br',
+    locales: [ptBrLocale],
     height: 'auto',
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek',
+    },
+    buttonText: {
+        today: 'Hoje',
+        month: 'Mês',
+        week: 'Semana',
     },
     events: props.taskCalendarItems || [],
     eventClick: async (info) => {
@@ -271,7 +299,7 @@ const fullCalendarOptions = computed(() => ({
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda">
+        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda" icon="ph:check-square-bold">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -342,31 +370,47 @@ const fullCalendarOptions = computed(() => ({
                     placeholder="Todas"
                 />
             </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Concluídas</label>
+                <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                    <Checkbox v-model="localFilters.include_completed" binary input-id="include-completed" />
+                    <label for="include-completed" class="text-sm">Incluir tarefas concluídas</label>
+                </div>
+            </div>
         </BoFilterBar>
 
         <Card v-if="viewMode === 'list'">
             <template #content>
                 <div class="hidden md:block">
-                    <DataTable :value="tasks.data" data-key="id" striped-rows>
-                        <Column field="title" header="Título" />
+                    <DataTable :value="paginatedTasks" data-key="id" striped-rows>
+                        <Column field="title" header="Título">
+                            <template #body="{ data }">
+                                <button type="button" class="font-medium text-left hover:underline" @click="openViewModal(data)">{{ data.title }}</button>
+                            </template>
+                        </Column>
                         <Column header="Relacionada a">
                             <template #body="{ data }">{{ relatedTypeLabels[data.related_type] || data.related_type }}</template>
+                        </Column>
+                        <Column header="Responsável">
+                            <template #body="{ data }">{{ data.assigned_user?.name || data.assignedUser?.name || 'Todos' }}</template>
                         </Column>
                         <Column header="Prioridade">
                             <template #body="{ data }">
                                 <BoPriorityTag :value="data.priority" />
                             </template>
                         </Column>
-                        <Column header="Status">
-                            <template #body="{ data }">{{ data.status?.name || '-' }}</template>
-                        </Column>
-                        <Column header="Responsável">
-                            <template #body="{ data }">{{ data.assigned_user?.name || data.assignedUser?.name || 'Todos' }}</template>
+                        <Column header="Agendado">
+                            <template #body="{ data }">
+                                <BoDateText :value="data.scheduled_for" mode="datetime" />
+                            </template>
                         </Column>
                         <Column header="Prazo">
                             <template #body="{ data }">
                                 <BoDateText :value="data.due_date" mode="date" />
                             </template>
+                        </Column>
+                        <Column header="Status">
+                            <template #body="{ data }"><BoTaskStatusTag :status="data.status" /></template>
                         </Column>
                         <Column header="Ações" class="bo-action-col w-24">
                             <template #body="{ data }">
@@ -384,14 +428,18 @@ const fullCalendarOptions = computed(() => ({
                 </div>
 
                 <div class="block space-y-3 md:hidden">
-                    <div v-for="task in tasks.data" :key="task.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div v-for="task in paginatedTasks" :key="task.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <div class="mb-2 flex items-start justify-between gap-2">
-                            <h3 class="font-semibold">{{ task.title }}</h3>
+                            <button type="button" class="font-semibold text-left hover:underline" @click="openViewModal(task)">{{ task.title }}</button>
                             <BoPriorityTag :value="task.priority" />
                         </div>
                         <p class="text-xs text-slate-500">{{ relatedTypeLabels[task.related_type] || task.related_type }}</p>
-                        <p class="text-xs text-slate-500">Status: {{ task.status?.name || '-' }}</p>
+                        <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                            <span>Status:</span>
+                            <BoTaskStatusTag :status="task.status" />
+                        </div>
                         <p class="text-xs text-slate-500">Responsável: {{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</p>
+                        <p class="text-xs text-slate-500">Agendado: <BoDateText :value="task.scheduled_for" mode="datetime" /></p>
                         <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
                         <div class="mt-3 flex justify-end gap-1">
                             <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(task)" />
@@ -403,9 +451,9 @@ const fullCalendarOptions = computed(() => ({
 
                 <Paginator
                     class="mt-4"
-                    :rows="tasks.per_page"
-                    :total-records="tasks.total"
-                    :first="(tasks.current_page - 1) * tasks.per_page"
+                    :rows="tableRows"
+                    :total-records="boardTasks.length"
+                    :first="tablePage * tableRows"
                     @page="paginate"
                 />
             </template>
@@ -472,7 +520,6 @@ const fullCalendarOptions = computed(() => ({
             :plans="plans"
             :events="events"
             :users="users"
-            @saved="refreshTasks"
         />
         <TaskViewModal v-model:visible="showViewModal" :task="selectedTask" />
     </div>

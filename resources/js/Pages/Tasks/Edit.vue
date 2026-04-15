@@ -8,6 +8,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 const props = defineProps({ task: Object, statuses: Array, contents: Array, plans: Array, events: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const form = useForm({
     related_type: props.task.related_type,
     content_id: props.task.content_id,
@@ -56,12 +62,12 @@ const submit = () => form.put(route('tasks.update', props.task.id));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar tarefa" subtitle="Atualize o vínculo e os metadados da tarefa">
+        <BoPageHeader title="Editar tarefa" supratitle="TAREFAS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
-                <Link :href="route('tasks.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 

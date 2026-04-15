@@ -37,7 +37,7 @@ const submit = () => form.put(route('events.update', props.event.id));
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar evento" subtitle="Atualize agenda, local e links do evento">
+        <BoPageHeader title="Editar evento" supratitle="EVENTOS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
                 <Link :href="route('events.show', event.id)">
                     <Button class="!hidden md:!inline-flex" label="Visualizar" outlined severity="secondary" icon="pi pi-eye" />

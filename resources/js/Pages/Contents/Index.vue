@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -21,9 +22,19 @@ const viewMode = ref('list');
 const statusLabels = {
     queued: 'Na fila',
     in_production: 'Em produção',
+    finalized: 'Finalizado',
     cancelled: 'Cancelado',
     paused: 'Pausado',
     published: 'Publicado',
+};
+
+const statusColors = {
+    queued: '#94a3b8',
+    in_production: '#3b82f6',
+    finalized: '#0ea5e9',
+    cancelled: '#ef4444',
+    paused: '#f59e0b',
+    published: '#10b981',
 };
 
 const localFilters = reactive({
@@ -124,10 +135,16 @@ const fullCalendarOptions = computed(() => ({
     initialView: 'dayGridMonth',
     firstDay: 0,
     locale: 'pt-br',
+    locales: [ptBrLocale],
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek',
+    },
+    buttonText: {
+        today: 'Hoje',
+        month: 'Mês',
+        week: 'Semana',
     },
     events: (props.contents.data || [])
         .filter((item) => item.planned_publish_at)
@@ -135,6 +152,8 @@ const fullCalendarOptions = computed(() => ({
             id: item.id,
             title: item.title,
             start: item.planned_publish_at,
+            backgroundColor: statusColors[item.status] || '#64748b',
+            borderColor: statusColors[item.status] || '#64748b',
         })),
     eventClick: (info) => {
         info.jsEvent.preventDefault();
@@ -145,7 +164,7 @@ const fullCalendarOptions = computed(() => ({
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial">
+        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial" icon="ph:video-camera-bold">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -182,6 +201,7 @@ const fullCalendarOptions = computed(() => ({
                     :options="[
                         { value: 'queued', label: 'Na fila' },
                         { value: 'in_production', label: 'Em produção' },
+                        { value: 'finalized', label: 'Finalizado' },
                         { value: 'cancelled', label: 'Cancelado' },
                         { value: 'paused', label: 'Pausado' },
                         { value: 'published', label: 'Publicado' },
@@ -218,7 +238,11 @@ const fullCalendarOptions = computed(() => ({
             <Card v-if="viewMode === 'list'">
                 <template #content>
                     <DataTable :value="contents.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
-                    <Column field="title" header="Título" sortable />
+                    <Column field="title" header="Título" sortable>
+                        <template #body="{ data }">
+                            <Link :href="route('contents.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                        </template>
+                    </Column>
                     <Column header="Plataformas">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-1">
@@ -282,10 +306,15 @@ const fullCalendarOptions = computed(() => ({
                             <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                 Sem publicações.
                             </div>
-                            <div v-for="content in column.items" :key="content.id" class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                            <Link
+                                v-for="content in column.items"
+                                :key="content.id"
+                                :href="route('contents.show', content.id)"
+                                class="block rounded-xl border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                            >
                                 <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
                                 <BoStatusTag :value="content.status" />
-                            </div>
+                            </Link>
                         </div>
                     </template>
                 </Card>

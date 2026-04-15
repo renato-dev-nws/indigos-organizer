@@ -90,7 +90,7 @@ const refreshContacts = () => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Contatos" subtitle="Base de contatos da banda e de locais">
+        <BoPageHeader title="Contatos" subtitle="Base de contatos da banda e de locais" icon="ph:address-book-bold">
             <template #actions>
                 <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo contato" @click="openCreateModal" />
                 <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo contato" @click="openCreateModal" />
@@ -105,7 +105,7 @@ const refreshContacts = () => {
 
             <div class="space-y-2">
                 <label class="text-sm font-medium">Local relacionado</label>
-                <Select v-model="localFilters.venue_id" :options="venues" option-label="name" option-value="id" show-clear placeholder="Todos" />
+                <Select v-model="localFilters.venue_id" :options="venues" option-label="name" option-value="id" show-clear filter placeholder="Todos" />
             </div>
         </BoFilterBar>
 
@@ -115,7 +115,12 @@ const refreshContacts = () => {
                     <DataTable :value="contacts.data" data-key="id" striped-rows>
                         <Column field="name" header="Nome" />
                         <Column field="phone" header="Telefone" />
-                        <Column field="whatsapp" header="WhatsApp" />
+                        <Column field="whatsapp" header="WhatsApp">
+                            <template #body="{ data }">
+                                <a v-if="data.whatsapp" :href="`https://wa.me/${String(data.whatsapp).replace(/\D/g, '')}`" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ data.whatsapp }}</a>
+                                <span v-else>-</span>
+                            </template>
+                        </Column>
                         <Column field="email" header="Email" />
                         <Column header="Local">
                             <template #body="{ data }">{{ data.venue?.name || '-' }}</template>
@@ -143,7 +148,11 @@ const refreshContacts = () => {
                     <div v-for="contact in contacts.data" :key="contact.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <h3 class="font-semibold">{{ contact.name }}</h3>
                         <p class="mt-1 text-xs text-slate-500">Telefone: {{ contact.phone || '-' }}</p>
-                        <p class="text-xs text-slate-500">WhatsApp: {{ contact.whatsapp || '-' }}</p>
+                        <p class="text-xs text-slate-500">
+                            WhatsApp:
+                            <a v-if="contact.whatsapp" :href="`https://wa.me/${String(contact.whatsapp).replace(/\D/g, '')}`" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ contact.whatsapp }}</a>
+                            <span v-else>-</span>
+                        </p>
                         <p class="text-xs text-slate-500">Email: {{ contact.email || '-' }}</p>
                         <p class="text-xs text-slate-500">Local: {{ contact.venue?.name || '-' }}</p>
                         <p class="mt-1 text-xs text-slate-500">{{ contact.description || 'Sem descrição.' }}</p>

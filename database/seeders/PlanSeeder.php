@@ -13,6 +13,8 @@ class PlanSeeder extends Seeder
     public function run(): void
     {
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
+        $users = User::query()->orderBy('name')->get();
+        $assignableUsers = $users->isNotEmpty() ? $users : collect([$user]);
         $taskStatusId = TaskStatus::query()->orderBy('order')->value('id');
 
         $plan = Plan::updateOrCreate(
@@ -77,12 +79,12 @@ class PlanSeeder extends Seeder
                 ]
             );
 
-            foreach ($phaseData['tasks'] as $title) {
+            foreach ($phaseData['tasks'] as $index => $title) {
                 Task::updateOrCreate(
                     ['plan_phase_id' => $phase->id, 'title' => $title],
                     [
                         'user_id' => $user->id,
-                        'assigned_user_id' => null,
+                        'assigned_user_id' => $assignableUsers[$index % $assignableUsers->count()]?->id,
                         'related_type' => 'plan',
                         'plan_id' => $plan->id,
                         'content_id' => null,

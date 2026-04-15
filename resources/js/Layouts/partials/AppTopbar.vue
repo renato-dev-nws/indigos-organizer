@@ -28,7 +28,7 @@ const handleMenuClick = () => {
 </script>
 
 <template>
-    <header class="sticky top-0 z-30 border-b border-slate-200/60 bg-white/90 backdrop-blur-md dark:border-slate-800/60 dark:bg-slate-950/90">
+    <header class="bo-topbar sticky top-0 z-30 border-b border-slate-200/60 bg-white/90 backdrop-blur-md dark:border-slate-800/60 dark:bg-slate-950/90">
         <div class="flex h-14 items-center justify-between gap-3 px-4 md:px-5">
             <div class="flex items-center gap-2.5">
                 <button

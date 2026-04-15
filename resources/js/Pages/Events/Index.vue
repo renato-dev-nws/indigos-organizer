@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
@@ -66,11 +67,17 @@ const fullCalendarOptions = computed(() => ({
     initialView: 'dayGridMonth',
     firstDay: 0,
     locale: 'pt-br',
+    locales: [ptBrLocale],
     height: 'auto',
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek',
+    },
+    buttonText: {
+        today: 'Hoje',
+        month: 'Mês',
+        week: 'Semana',
     },
     events: (props.events.data || []).map((item) => ({
         id: item.id,
@@ -88,7 +95,7 @@ const fullCalendarOptions = computed(() => ({
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Eventos" subtitle="Agenda da banda com locais, ingressos e participação">
+        <BoPageHeader title="Eventos" subtitle="Agenda da banda com locais, ingressos e participação" icon="ph:ticket-bold">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -136,8 +143,13 @@ const fullCalendarOptions = computed(() => ({
 
         <Card v-if="viewMode === 'list'">
             <template #content>
+                <div class="hidden md:block">
                 <DataTable :value="events.data" data-key="id" striped-rows>
-                    <Column field="title" header="Título" />
+                    <Column field="title" header="Título">
+                        <template #body="{ data }">
+                            <Link :href="route('events.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                        </template>
+                    </Column>
                     <Column field="type.name" header="Tipo" />
                     <Column header="Presença">
                         <template #body="{ data }">{{ attendanceLabels[data.attendance_mode] || data.attendance_mode }}</template>
@@ -158,6 +170,25 @@ const fullCalendarOptions = computed(() => ({
                         </template>
                     </Column>
                 </DataTable>
+                </div>
+
+                <div class="space-y-3 md:hidden">
+                    <div v-for="event in events.data" :key="event.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <div class="flex items-start justify-between gap-2">
+                            <Link :href="route('events.show', event.id)" class="font-semibold hover:underline">{{ event.title }}</Link>
+                            <Tag :value="event.type?.name || '-'"></Tag>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-500">Presença: {{ attendanceLabels[event.attendance_mode] || event.attendance_mode }}</p>
+                        <p class="text-xs text-slate-500">Data: <BoDateText :value="event.starts_at" mode="datetime" /></p>
+                        <p class="text-xs text-slate-500">Local: {{ event.venue?.name || '-' }}</p>
+                        <div class="mt-3 flex justify-end gap-1">
+                            <Link :href="route('events.show', event.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
+                            <Link :href="route('events.edit', event.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                            <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover este evento?" @confirm="removeEvent(event.id)" />
+                        </div>
+                    </div>
+                </div>
+
                 <Paginator class="mt-4" :rows="events.per_page" :total-records="events.total" :first="(events.current_page - 1) * events.per_page" @page="paginate" />
             </template>
         </Card>

@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
@@ -41,11 +42,17 @@ const calendarOptions = (items) => ({
     initialView: 'dayGridMonth',
     firstDay: 0,
     locale: 'pt-br',
+    locales: [ptBrLocale],
     height: 'auto',
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek',
+    },
+    buttonText: {
+        today: 'Hoje',
+        month: 'Mês',
+        week: 'Semana',
     },
     events: items,
     eventClick: async (info) => {

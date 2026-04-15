@@ -1,5 +1,6 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
+import draggable from 'vuedraggable';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -11,7 +12,7 @@ import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({ ideas: Object, filters: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array });
+const props = defineProps({ ideas: Object, ideaBoardItems: Array, filters: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array });
 const viewMode = ref('list');
 
 const statusLabels = {
@@ -72,19 +73,51 @@ watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const paginate = (event) => router.get(route('ideas.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeIdea = (id) => router.delete(route('ideas.destroy', id), { preserveScroll: true });
 
-const kanbanColumns = computed(() => {
-    const orderedStatus = ['in_drawer', 'on_table', 'on_board', 'executing', 'executed', 'trash'];
-    return orderedStatus.map((status) => ({
+const orderedKanbanStatus = ['in_drawer', 'on_table', 'on_board', 'executing', 'executed'];
+const buildKanbanColumns = () =>
+    orderedKanbanStatus.map((status) => ({
         status,
         label: statusLabels[status],
-        items: (props.ideas.data || []).filter((idea) => idea.status === status),
+        items: (props.ideaBoardItems || []).filter((idea) => idea.status === status),
     }));
-});
+
+const kanbanColumns = ref(buildKanbanColumns());
+
+watch(
+    () => props.ideaBoardItems,
+    () => {
+        kanbanColumns.value = buildKanbanColumns();
+    },
+    { deep: true },
+);
+
+const isDragging = ref(false);
+
+const onKanbanChange = (status, event) => {
+    const moved = event?.added?.element;
+    if (!moved) {
+        return;
+    }
+
+    const previousStatus = moved.status;
+    moved.status = status;
+
+    router.patch(
+        route('ideas.status', moved.id),
+        { status },
+        {
+            preserveScroll: true,
+            onError: () => {
+                moved.status = previousStatus;
+            },
+        },
+    );
+};
 </script>
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda">
+        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda" icon="ph:lightbulb-bold">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -139,7 +172,11 @@ const kanbanColumns = computed(() => {
             <Card>
                 <template #content>
                     <DataTable :value="ideas.data" data-key="id" striped-rows>
-                        <Column field="title" header="Título" />
+                        <Column field="title" header="Título">
+                            <template #body="{ data }">
+                                <Link :href="route('ideas.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                            </template>
+                        </Column>
                         <Column field="type.name" header="Tipo" />
                         <Column field="category.name" header="Categoria" />
                         <Column header="Estilos">
@@ -192,26 +229,41 @@ const kanbanColumns = computed(() => {
             </div>
         </div>
 
-        <div v-if="viewMode === 'kanban'" class="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-3">
+        <div v-if="viewMode === 'kanban'" class="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-5">
             <Card v-for="column in kanbanColumns" :key="column.status">
                 <template #title>{{ column.label }}</template>
                 <template #content>
-                    <div class="space-y-2">
-                        <Link
-                            v-for="idea in column.items"
-                            :key="idea.id"
-                            :href="route('ideas.show', idea.id)"
-                            class="block rounded-lg border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
-                        >
-                            <p class="truncate text-sm font-semibold">{{ idea.title }}</p>
-                            <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
-                                <span class="truncate">{{ idea.category?.name || 'Sem categoria' }}</span>
-                                <span class="truncate">{{ idea.type?.name || 'Sem tipo' }}</span>
-                            </div>
-                            <div class="mt-2 flex flex-wrap gap-1">
-                                <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
-                            </div>
-                        </Link>
+                    <draggable
+                        :list="column.items"
+                        item-key="id"
+                        group="ideas"
+                        class="space-y-2 rounded-lg border border-transparent p-1 transition-colors"
+                        :animation="180"
+                        ghost-class="bo-kanban-ghost"
+                        chosen-class="bo-kanban-chosen"
+                        drag-class="bo-kanban-drag"
+                        @start="isDragging = true"
+                        @end="isDragging = false"
+                        @change="(event) => onKanbanChange(column.status, event)"
+                    >
+                        <template #item="{ element: idea }">
+                            <Link
+                                :href="route('ideas.show', idea.id)"
+                                class="block rounded-lg border border-slate-200 bg-white px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900"
+                            >
+                                <p class="truncate text-sm font-semibold">{{ idea.title }}</p>
+                                <div class="mt-1 flex items-center justify-between text-xs text-slate-500">
+                                    <span class="truncate">{{ idea.category?.name || 'Sem categoria' }}</span>
+                                    <span class="truncate">{{ idea.type?.name || 'Sem tipo' }}</span>
+                                </div>
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                                </div>
+                            </Link>
+                        </template>
+                    </draggable>
+
+                    <div class="mt-2">
                         <p v-if="!column.items.length" class="text-xs text-slate-500">Sem ideias nesta coluna.</p>
                     </div>
                 </template>

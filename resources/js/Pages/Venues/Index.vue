@@ -112,6 +112,24 @@ const statusOptions = [
     { label: 'Portas abertas', value: 'open_doors' },
 ];
 
+const statusLabels = {
+    undefined: 'Indefinido',
+    not_relevant: 'Não relevante',
+    contacted: 'Contatado',
+    vetoed: 'Vetado',
+    negotiating: 'Em negociação',
+    open_doors: 'Portas abertas',
+};
+
+const statusColors = {
+    undefined: '#94a3b8',
+    not_relevant: '#6b7280',
+    contacted: '#3b82f6',
+    vetoed: '#dc2626',
+    negotiating: '#f59e0b',
+    open_doors: '#16a34a',
+};
+
 const escapeHtml = (value = '') => String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -622,7 +640,7 @@ onUnmounted(() => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Locais" subtitle="Gestão de locais, contatos e geolocalização">
+        <BoPageHeader title="Locais" subtitle="Gestão de locais, contatos e geolocalização" icon="mdi:map-marker-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -685,11 +703,20 @@ onUnmounted(() => {
 
         <Card v-if="viewMode === 'list'">
                 <template #content>
+                    <div class="hidden md:block">
                     <DataTable :value="venues.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
-                    <Column field="name" header="Nome" sortable />
+                    <Column field="name" header="Nome" sortable>
+                        <template #body="{ data }">
+                            <Link :href="route('venues.show', data.id)" class="font-medium hover:underline">{{ data.name }}</Link>
+                        </template>
+                    </Column>
                     <Column field="type.name" header="Tipo" sortable />
                     <Column field="city" header="Cidade" sortable />
-                    <Column field="status" header="Status" sortable />
+                    <Column field="status" header="Status" sortable>
+                        <template #body="{ data }">
+                            <Tag :value="statusLabels[data.status] || data.status || '-'" :style="{ backgroundColor: statusColors[data.status] || '#64748b', color: 'white' }" rounded />
+                        </template>
+                    </Column>
                     <Column field="rating" header="Avaliação" sortable />
                     <Column field="contact_name" header="Contato" sortable />
                     <Column field="phone" header="Telefone" />
@@ -710,7 +737,30 @@ onUnmounted(() => {
                     <template #empty>
                         <BoDataTableEmpty />
                     </template>
-                </DataTable>
+                    </DataTable>
+                    </div>
+
+                    <div class="space-y-3 md:hidden">
+                        <div v-for="venue in venues.data" :key="venue.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <div class="flex items-start justify-between gap-2">
+                                <Link :href="route('venues.show', venue.id)" class="font-semibold hover:underline">{{ venue.name }}</Link>
+                                <Tag :value="statusLabels[venue.status] || venue.status || '-'" :style="{ backgroundColor: statusColors[venue.status] || '#64748b', color: 'white' }" rounded />
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Tipo: {{ venue.type?.name || '-' }}</p>
+                            <p class="text-xs text-slate-500">Cidade: {{ venue.city || '-' }}</p>
+                            <p class="text-xs text-slate-500">Contato: {{ venue.contact_name || '-' }}</p>
+                            <p class="text-xs text-slate-500">Telefone: {{ venue.phone || '-' }}</p>
+                            <div class="mt-3 flex justify-end gap-1">
+                                <Link :href="route('venues.show', venue.id)">
+                                    <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" />
+                                </Link>
+                                <Link :href="route('venues.edit', venue.id)">
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" />
+                                </Link>
+                                <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este local?" :rounded="true" @confirm="removeVenue(venue.id)" />
+                            </div>
+                        </div>
+                    </div>
 
                     <Paginator
                         class="mt-4"

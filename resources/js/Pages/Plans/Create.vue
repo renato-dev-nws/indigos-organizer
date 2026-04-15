@@ -6,6 +6,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const form = useForm({
     title: '',
     description: '',
@@ -30,12 +36,12 @@ const submit = () => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Novo plano" subtitle="Cadastre um plano com fases de execução">
+        <BoPageHeader title="Novo planejamento" supratitle="PLANEJAMENTOS" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('plans.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 

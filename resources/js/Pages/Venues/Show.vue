@@ -4,6 +4,12 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 
 defineOptions({ layout: AppLayout });
+
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
 defineProps({ venue: Object });
 </script>
 
@@ -11,10 +17,10 @@ defineProps({ venue: Object });
     <div class="space-y-6">
         <BoPageHeader :title="venue.name" subtitle="Ficha detalhada do local">
             <template #actions>
-                <Link :href="route('venues.index')">
-                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
                 <Link :href="route('venues.edit', venue.id)">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
                     <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />

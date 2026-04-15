@@ -117,7 +117,7 @@ const submit = () => {
 
                 <div class="space-y-2">
                     <label>Local relacionado</label>
-                    <Select v-model="form.venue_id" :options="venues" option-label="name" option-value="id" show-clear placeholder="Sem local" :invalid="!!form.errors.venue_id" fluid />
+                    <Select v-model="form.venue_id" :options="venues" option-label="name" option-value="id" show-clear filter placeholder="Sem local" :invalid="!!form.errors.venue_id" fluid />
                     <Message v-if="form.errors.venue_id" severity="error" size="small" variant="simple">{{ form.errors.venue_id }}</Message>
                 </div>
 

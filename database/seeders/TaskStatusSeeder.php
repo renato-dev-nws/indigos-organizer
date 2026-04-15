@@ -13,10 +13,10 @@ class TaskStatusSeeder extends Seeder
         $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
 
         $data = [
-            ['name' => 'Pendente', 'color' => '#94a3b8', 'order' => 1],
+            ['name' => 'Pendente', 'color' => '#dc2626', 'order' => 1],
             ['name' => 'Em Execucao', 'color' => '#3b82f6', 'order' => 2],
-            ['name' => 'Aguardando Revisao', 'color' => '#f59e0b', 'order' => 3],
-            ['name' => 'Concluido', 'color' => '#10b981', 'order' => 4],
+            ['name' => 'Aguardando Revisao', 'color' => '#eab308', 'order' => 3],
+            ['name' => 'Concluido', 'color' => '#16a34a', 'order' => 4],
         ];
 
         foreach ($data as $item) {

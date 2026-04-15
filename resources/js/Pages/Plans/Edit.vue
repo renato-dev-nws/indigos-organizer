@@ -31,7 +31,7 @@ const submit = () => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Editar plano" subtitle="Atualize o plano e suas fases">
+        <BoPageHeader supratitle="PLANEJAMENTO" title="Editar planejamento" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
                 <Link :href="route('plans.show', plan.id)">
                     <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />

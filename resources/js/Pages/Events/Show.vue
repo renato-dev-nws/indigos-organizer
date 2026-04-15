@@ -9,6 +9,12 @@ import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const props = defineProps({ event: Object });
 const activeTask = ref(null);
 const taskModalVisible = ref(false);
@@ -134,10 +140,10 @@ watch(
     <div class="space-y-6">
         <BoPageHeader :title="event.title" subtitle="Visão completa do evento">
             <template #actions>
-                <Link :href="route('events.index')">
-                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
                 <Link :href="route('events.edit', event.id)">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
                     <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />

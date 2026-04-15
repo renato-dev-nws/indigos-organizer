@@ -8,6 +8,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 const props = defineProps({ statuses: Array, contents: Array, plans: Array, events: Array, users: Array });
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const form = useForm({
     related_type: 'administrative',
     content_id: null,
@@ -59,12 +65,12 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Nova tarefa" subtitle="Cadastre tarefas relacionadas a conteúdo, plano ou administrativo">
+        <BoPageHeader title="Nova tarefa" supratitle="TAREFAS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
-                <Link :href="route('tasks.index')">
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" />
-                </Link>
+                <div>
+                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
             </template>
         </BoPageHeader>
 
