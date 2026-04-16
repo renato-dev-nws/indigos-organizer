@@ -51,6 +51,10 @@ const onDialogHide = () => {
 
         <slot name="after-filter-button" />
 
+        <div class="ml-auto">
+            <slot name="right-actions" />
+        </div>
+
         <Chip
             v-for="chip in chips"
             :key="chip.key"

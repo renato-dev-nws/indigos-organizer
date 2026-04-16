@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('tasks', TaskController::class);
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status');
+    Route::patch('/tasks/{task}/quick-action', [TaskController::class, 'quickAction'])->name('tasks.quick-action');
     Route::post('/tasks/{task}/subtasks', [SubtaskController::class, 'store'])->name('tasks.subtasks.store');
     Route::patch('/tasks/{task}/subtasks/{subtask}', [SubtaskController::class, 'update'])->name('tasks.subtasks.update');
     Route::delete('/tasks/{task}/subtasks/{subtask}', [SubtaskController::class, 'destroy'])->name('tasks.subtasks.destroy');

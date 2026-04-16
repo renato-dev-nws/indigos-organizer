@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { router } from '@inertiajs/vue3';
+import { useConfirm } from 'primevue/useconfirm';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -20,10 +21,12 @@ import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
+const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, weeklyTaskItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
+const confirm = useConfirm();
 const viewMode = ref('list');
 const tableRows = ref(15);
 const tablePage = ref(0);
+const weekViewType = ref('all');
 
 const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
@@ -58,7 +61,7 @@ const filterChips = computed(() => {
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.related_type) chips.push({ key: 'related_type', label: relatedTypeLabels[localFilters.related_type] || localFilters.related_type });
     if (localFilters.priority) chips.push({ key: 'priority', label: localFilters.priority });
-    if (localFilters.include_completed) chips.push({ key: 'include_completed', label: 'Inclui concluídas' });
+    if (localFilters.include_completed) chips.push({ key: 'include_completed', label: 'Inclui concluídas e arquivadas' });
     if (localFilters.assigned_user_id === '__all__') {
         chips.push({ key: 'assigned_user_id', label: 'Todos' });
     } else if (localFilters.assigned_user_id) {
@@ -150,6 +153,54 @@ const openViewModalByTaskId = async (taskId) => {
 };
 
 const boardTasks = computed(() => props.boardTasks || props.tasks?.data || []);
+
+const taskIsCompleted = (task) => {
+    const statusName = String(task?.status?.name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    return ['conclu', 'finaliz', 'done', 'completed'].some((token) => statusName.includes(token));
+};
+
+const canShowTaskQuickAction = (task) => !(taskIsCompleted(task) && task.archived);
+
+const quickActionMeta = (task) => {
+    if (taskIsCompleted(task)) {
+        return {
+            action: 'archive',
+            icon: 'mdi:archive-outline',
+            severity: 'secondary',
+            message: 'Deseja arquivar esta tarefa concluída?',
+            tooltip: 'Arquivar tarefa',
+        };
+    }
+
+    return {
+        action: 'complete',
+        icon: 'mdi:check',
+        severity: 'success',
+        message: 'Confirma concluir esta tarefa?',
+        tooltip: 'Concluir tarefa',
+    };
+};
+
+const runQuickAction = (task) => {
+    const meta = quickActionMeta(task);
+
+    confirm.require({
+        header: 'Confirmar ação',
+        message: meta.message,
+        icon: 'pi pi-question-circle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Confirmar',
+        acceptClass: 'p-button-sm',
+        rejectClass: 'p-button-text p-button-sm',
+        accept: () => {
+            router.patch(route('tasks.quick-action', task.id), { action: meta.action }, { preserveScroll: true });
+        },
+    });
+};
 
 const paginatedTasks = computed(() => {
     const first = tablePage.value * tableRows.value;
@@ -267,6 +318,31 @@ const swimlaneRows = computed(() =>
     })),
 );
 
+const weekColumns = computed(() => {
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const grouped = labels.map((label, dayIndex) => ({ label, dayIndex, items: [] }));
+
+    for (const task of props.weeklyTaskItems || []) {
+        if (weekViewType.value !== 'all' && weekViewType.value !== 'tasks') {
+            continue;
+        }
+
+        const sourceDate = task.scheduled_for || task.due_date;
+        if (!sourceDate) {
+            continue;
+        }
+
+        const day = new Date(sourceDate).getDay();
+        grouped[day].items.push(task);
+    }
+
+    return grouped;
+});
+
+const weekColumnsCarousel = computed(() => weekColumns.value.map((column) => ({ ...column })));
+
+const taskWeekDate = (task) => task.scheduled_for || task.due_date;
+
 const fullCalendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -308,6 +384,7 @@ const fullCalendarOptions = computed(() => ({
                         :options="[
                             { label: 'Lista', value: 'list' },
                             { label: 'Kanban', value: 'kanban' },
+                            { label: 'Programação da semana', value: 'weekly' },
                             { label: 'Calendário completo', value: 'full_calendar' },
                         ]"
                         option-label="label"
@@ -374,7 +451,7 @@ const fullCalendarOptions = computed(() => ({
                 <label class="text-sm font-medium">Concluídas</label>
                 <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
                     <Checkbox v-model="localFilters.include_completed" binary input-id="include-completed" />
-                    <label for="include-completed" class="text-sm">Incluir tarefas concluídas</label>
+                    <label for="include-completed" class="text-sm">Incluir concluídas e arquivadas</label>
                 </div>
             </div>
         </BoFilterBar>
@@ -412,9 +489,23 @@ const fullCalendarOptions = computed(() => ({
                         <Column header="Status">
                             <template #body="{ data }"><BoTaskStatusTag :status="data.status" /></template>
                         </Column>
-                        <Column header="Ações" class="bo-action-col w-24">
+                        <Column header="Ações" class="bo-action-col w-36">
                             <template #body="{ data }">
                                 <div class="flex gap-1">
+                                    <Button
+                                        v-if="canShowTaskQuickAction(data)"
+                                        outlined
+                                        rounded
+                                        size="small"
+                                        :severity="quickActionMeta(data).severity"
+                                        :aria-label="quickActionMeta(data).tooltip"
+                                        v-tooltip.top="quickActionMeta(data).tooltip"
+                                        @click="runQuickAction(data)"
+                                    >
+                                        <template #icon>
+                                            <iconify-icon :icon="quickActionMeta(data).icon" width="14" height="14" />
+                                        </template>
+                                    </Button>
                                     <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(data)" />
                                     <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(data)" />
                                     <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(data.id)" />
@@ -442,6 +533,20 @@ const fullCalendarOptions = computed(() => ({
                         <p class="text-xs text-slate-500">Agendado: <BoDateText :value="task.scheduled_for" mode="datetime" /></p>
                         <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
                         <div class="mt-3 flex justify-end gap-1">
+                            <Button
+                                v-if="canShowTaskQuickAction(task)"
+                                outlined
+                                rounded
+                                size="small"
+                                :severity="quickActionMeta(task).severity"
+                                :aria-label="quickActionMeta(task).tooltip"
+                                v-tooltip.top="quickActionMeta(task).tooltip"
+                                @click="runQuickAction(task)"
+                            >
+                                <template #icon>
+                                    <iconify-icon :icon="quickActionMeta(task).icon" width="14" height="14" />
+                                </template>
+                            </Button>
                             <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(task)" />
                             <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(task)" />
                             <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(task.id)" />
@@ -506,11 +611,98 @@ const fullCalendarOptions = computed(() => ({
             </Card>
         </div>
 
-        <Card v-else>
-            <template #content>
-                <FullCalendar :options="fullCalendarOptions" />
-            </template>
-        </Card>
+        <template v-else-if="viewMode === 'weekly'">
+            <Card class="mb-4">
+                <template #title>
+                    <div class="flex items-center justify-between gap-3">
+                        <span>Programação da semana</span>
+                        <SelectButton
+                            v-model="weekViewType"
+                            size="small"
+                            :options="[
+                                { label: 'Todos', value: 'all' },
+                                { label: 'Tarefas', value: 'tasks' },
+                            ]"
+                            option-label="label"
+                            option-value="value"
+                        />
+                    </div>
+                </template>
+                <template #content>
+                    <div class="hidden gap-3 md:grid lg:grid-cols-7">
+                        <Card v-for="column in weekColumns" :key="column.label" class="lg:col-span-1">
+                            <template #title>{{ column.label }}</template>
+                            <template #content>
+                                <div class="space-y-2">
+                                    <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                        Sem tarefas.
+                                    </div>
+                                    <button
+                                        v-for="task in column.items"
+                                        :key="task.id"
+                                        type="button"
+                                        class="w-full rounded-lg border border-slate-200 p-2 text-left hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                        @click="openViewModal(task)"
+                                    >
+                                        <p class="truncate text-xs font-semibold">
+                                            <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                            {{ task.title }}
+                                        </p>
+                                        <div class="mt-1 flex items-center justify-between gap-1">
+                                            <BoTaskStatusTag :status="task.status" />
+                                            <span class="text-[10px] text-slate-500">
+                                                <BoDateText :value="taskWeekDate(task)" mode="datetime" />
+                                            </span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </template>
+                        </Card>
+                    </div>
+
+                    <div class="md:hidden">
+                        <Carousel :value="weekColumnsCarousel" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
+                            <template #item="{ data: column }">
+                                <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                                    <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
+                                    <div class="space-y-2">
+                                        <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                            Sem tarefas.
+                                        </div>
+                                        <button
+                                            v-for="task in column.items"
+                                            :key="task.id"
+                                            type="button"
+                                            class="w-full rounded-lg border border-slate-200 p-2 text-left dark:border-slate-700"
+                                            @click="openViewModal(task)"
+                                        >
+                                            <p class="truncate text-xs font-semibold">
+                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                                {{ task.title }}
+                                            </p>
+                                            <div class="mt-1 flex items-center justify-between gap-1">
+                                                <BoTaskStatusTag :status="task.status" />
+                                                <span class="text-[10px] text-slate-500">
+                                                    <BoDateText :value="taskWeekDate(task)" mode="datetime" />
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </Carousel>
+                    </div>
+                </template>
+            </Card>
+        </template>
+
+        <template v-else>
+            <Card>
+                <template #content>
+                    <FullCalendar :options="fullCalendarOptions" />
+                </template>
+            </Card>
+        </template>
 
         <TaskFormModal
             v-model:visible="showFormModal"

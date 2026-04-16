@@ -1,10 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
+import BoTaskStatusTag from '@/Components/ui/BoTaskStatusTag.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
@@ -16,8 +17,11 @@ const props = defineProps({
     nextEvents: Array,
     contentsInProduction: Array,
     plansQueue: Array,
+    weeklyProgramItems: Array,
 });
 const page = usePage();
+const programFilter = ref('all');
+const weeklyProgramPage = ref(0);
 
 const vote = (ideaId, voteValue) => {
     router.post(route('ideas.vote', ideaId), { vote: voteValue }, { preserveScroll: true });
@@ -83,6 +87,120 @@ const mobileShortcuts = [
     { title: 'Informações úteis', icon: 'pi pi-info-circle', href: route('shared-infos.index') },
     { title: 'Contatos', icon: 'pi pi-address-book', href: route('contacts.index') },
 ];
+
+const weeklyProgramColumns = computed(() => {
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const grouped = labels.map((label, dayIndex) => ({ label, dayIndex, items: [] }));
+
+    for (const item of props.weeklyProgramItems || []) {
+        if (programFilter.value === 'tasks' && item.kind !== 'task') {
+            continue;
+        }
+        if (programFilter.value === 'content' && item.kind !== 'content') {
+            continue;
+        }
+
+        const baseDate = item.kind === 'task'
+            ? (item.scheduled_for || item.due_date)
+            : item.planned_publish_at;
+
+        if (!baseDate) {
+            continue;
+        }
+
+        const day = new Date(baseDate).getDay();
+        grouped[day].items.push(item);
+    }
+
+    return grouped;
+});
+
+const weeklyProgramCarousel = computed(() => weeklyProgramColumns.value.map((column) => ({ ...column })));
+
+const initialWeeklyProgramPage = () => {
+    const day = new Date().getDay();
+    if (day === 0) return 0;
+    if (day === 1) return 1;
+    if (day === 2) return 2;
+    return 3;
+};
+
+const clampWeeklyProgramPage = (value) => {
+    const total = weeklyProgramCarousel.value.length;
+    if (!total) {
+        return 0;
+    }
+
+    return Math.min(Math.max(value, 0), total - 1);
+};
+
+const goWeeklyProgramPrev = () => {
+    const total = weeklyProgramCarousel.value.length;
+    if (!total) {
+        return;
+    }
+
+    weeklyProgramPage.value = weeklyProgramPage.value <= 0 ? total - 1 : weeklyProgramPage.value - 1;
+};
+
+const goWeeklyProgramNext = () => {
+    const total = weeklyProgramCarousel.value.length;
+    if (!total) {
+        return;
+    }
+
+    weeklyProgramPage.value = weeklyProgramPage.value >= total - 1 ? 0 : weeklyProgramPage.value + 1;
+};
+
+onMounted(() => {
+    weeklyProgramPage.value = clampWeeklyProgramPage(initialWeeklyProgramPage());
+});
+
+watch(weeklyProgramCarousel, () => {
+    weeklyProgramPage.value = clampWeeklyProgramPage(weeklyProgramPage.value);
+});
+
+const programItemDate = (item) => item.kind === 'task'
+    ? (item.scheduled_for || item.due_date)
+    : item.planned_publish_at;
+
+const programItemIcon = (item) => item.kind === 'task' ? 'ph:check-square-bold' : 'ph:video-camera-bold';
+
+const isTaskProgramItem = (item) => item.kind === 'task';
+
+const programFilterOptions = [
+    { label: 'Todos', value: 'all', icon: 'ph:circles-three-bold' },
+    { label: 'Tarefas', value: 'tasks', icon: 'ph:check-square-bold' },
+    { label: 'Conteúdo', value: 'content', icon: 'ph:video-camera-bold' },
+];
+
+// Indicators: 4 slots on desktop (numVisible=4), 7 on mobile (numVisible=1)
+// We compute how many visible slots exist based on viewport — use a JS-computed value
+// based on the current numVisible of the carousel (derived from window breakpoints).
+// Since we can't easily read that, we expose a computed indicator count reactively.
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1200);
+if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => { windowWidth.value = window.innerWidth; });
+}
+const numVisibleSlots = computed(() => {
+    if (windowWidth.value <= 768) return 1;
+    if (windowWidth.value <= 1024) return 2;
+    if (windowWidth.value <= 1400) return 3;
+    return 4;
+});
+const totalDays = computed(() => weeklyProgramCarousel.value.length);
+// Number of "pages" = total - numVisible + 1 (carousel wraps)
+const indicatorCount = computed(() => Math.max(1, totalDays.value - numVisibleSlots.value + 1));
+const weeklyProgramPageIndicator = computed(() => Math.min(weeklyProgramPage.value, indicatorCount.value - 1));
+const visibleIndicators = computed(() =>
+    Array.from({ length: indicatorCount.value }, (_, i) => ({
+        ariaLabel: weeklyProgramCarousel.value[i]?.label ?? `Página ${i + 1}`,
+    }))
+);
+
+const goWeeklyProgramToIndicator = (index) => {
+    weeklyProgramPage.value = Math.min(index, totalDays.value - 1);
+};
 </script>
 
 <template>
@@ -158,6 +276,120 @@ const mobileShortcuts = [
                 </Card>
             </Link>
         </div>
+
+        <Card>
+            <template #title>
+                <div class="flex items-center justify-between gap-3">
+                    <span>Programação da semana</span>
+                    <!-- Desktop: label + ícone -->
+                    <div class="hidden md:flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
+                        <button
+                            v-for="opt in programFilterOptions"
+                            :key="opt.value"
+                            type="button"
+                            class="flex items-center gap-1.5 rounded px-3 py-1 text-xs font-medium transition-colors"
+                            :class="programFilter === opt.value ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                            @click="programFilter = opt.value"
+                        >
+                            <iconify-icon :icon="opt.icon" width="13" height="13" />
+                            {{ opt.label }}
+                        </button>
+                    </div>
+                    <!-- Mobile: ícones apenas -->
+                    <div class="flex md:hidden items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
+                        <button
+                            v-for="opt in programFilterOptions"
+                            :key="opt.value"
+                            type="button"
+                            class="flex items-center justify-center rounded p-1.5 transition-colors"
+                            :class="programFilter === opt.value ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+                            :aria-label="opt.label"
+                            :title="opt.label"
+                            @click="programFilter = opt.value"
+                        >
+                            <iconify-icon :icon="opt.icon" width="16" height="16" />
+                        </button>
+                    </div>
+                </div>
+            </template>
+            <template #content>
+                <Carousel
+                    :value="weeklyProgramCarousel"
+                    :num-visible="4"
+                    :num-scroll="1"
+                    :page="weeklyProgramPage"
+                    @update:page="(value) => weeklyProgramPage = value"
+                    :show-indicators="false"
+                    :show-navigators="false"
+                    :responsive-options="[
+                        { breakpoint: '1400px', numVisible: 3, numScroll: 1 },
+                        { breakpoint: '1024px', numVisible: 2, numScroll: 1 },
+                        { breakpoint: '768px', numVisible: 1, numScroll: 1 },
+                    ]"
+                    circular
+                    class="bo-weekly-carousel"
+                >
+                    <template #item="{ data: column }">
+                        <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                            <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
+                            <div class="space-y-2">
+                                <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                    Sem itens.
+                                </div>
+                                <Link
+                                    v-for="item in column.items"
+                                    :key="`${item.kind}-${item.id}`"
+                                    :href="item.url"
+                                    class="block rounded-lg border border-slate-200 p-2 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                >
+                                    <p class="truncate text-xs font-semibold">
+                                        <iconify-icon :icon="programItemIcon(item)" width="12" height="12" class="mr-1 align-[-2px]" />
+                                        {{ item.title }}
+                                    </p>
+                                    <div class="mt-1 flex items-center justify-between gap-1">
+                                        <BoTaskStatusTag v-if="isTaskProgramItem(item)" :status="item.status" />
+                                        <BoStatusTag v-else :value="item.status" />
+                                        <span class="text-[10px] text-slate-500">
+                                            <BoDateText :value="programItemDate(item)" mode="datetime" />
+                                        </span>
+                                    </div>
+                                </Link>
+                            </div>
+                        </div>
+                    </template>
+                </Carousel>
+
+                <div class="mt-3 flex items-center justify-center gap-3">
+                    <Button
+                        icon="pi pi-chevron-left"
+                        text
+                        rounded
+                        aria-label="Dia anterior"
+                        @click="goWeeklyProgramPrev"
+                    />
+
+                    <div class="flex items-center gap-1.5">
+                        <button
+                            v-for="(column, index) in visibleIndicators"
+                            :key="`weekly-indicator-${index}`"
+                            type="button"
+                            class="h-2 rounded-full transition-all duration-200"
+                            :class="index === weeklyProgramPageIndicator ? 'w-4 bg-indigo-500' : 'w-2 bg-slate-300 dark:bg-slate-700'"
+                            :aria-label="column.ariaLabel"
+                            @click="goWeeklyProgramToIndicator(index)"
+                        />
+                    </div>
+
+                    <Button
+                        icon="pi pi-chevron-right"
+                        text
+                        rounded
+                        aria-label="Próximo dia"
+                        @click="goWeeklyProgramNext"
+                    />
+                </div>
+            </template>
+        </Card>
 
         <div class="hidden gap-4 xl:grid xl:grid-cols-2">
             <Card>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Icon } from '@iconify/vue';
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import AppMenu from './AppMenu.vue';
 
 defineProps({
@@ -31,7 +31,7 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
         class="bo-sidebar fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-950/95"
         :class="collapsed ? 'w-[72px]' : 'w-64'"
     >
-        <div class="mb-5 flex items-center gap-2.5 px-2">
+        <Link :href="route('dashboard')" class="mb-5 flex items-center gap-2.5 px-2">
             <!-- Collapsed: show icon or gradient fallback -->
             <template v-if="collapsed">
                 <img
@@ -63,12 +63,12 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
                         <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
                     </div>
                     <div>
-                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Band Organizer</p>
+                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Índigos - Artist Organizer</p>
                         <p class="text-[10px] text-slate-400 dark:text-slate-500">Painel colaborativo</p>
                     </div>
                 </template>
             </template>
-        </div>
+        </Link>
 
         <AppMenu :items="items" :collapsed="collapsed" />
     </aside>
@@ -80,7 +80,7 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
         @update:visible="emit('closeMobile')"
     >
         <template #header>
-            <div class="flex items-center gap-2.5">
+            <Link :href="route('dashboard')" class="flex items-center gap-2.5" @click="emit('closeMobile')">
                 <img
                     v-if="iconUrl"
                     :src="iconUrl"
@@ -94,10 +94,10 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
                     <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
                 </div>
                 <div>
-                    <p class="text-sm font-bold leading-tight">Band Organizer</p>
+                    <p class="text-sm font-bold leading-tight">Índigos - Artist Organizer</p>
                     <p class="text-[10px] text-slate-400">Painel colaborativo</p>
                 </div>
-            </div>
+            </Link>
         </template>
         <AppMenu :items="items" @navigate="emit('closeMobile')" />
     </Drawer>

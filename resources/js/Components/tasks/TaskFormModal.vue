@@ -25,6 +25,7 @@ const form = useForm({
     description: '',
     assigned_user_id: null,
     priority: 'medium',
+    archived: false,
     scheduled_for: '',
     due_date: '',
     reminder_at: '',
@@ -34,6 +35,19 @@ const form = useForm({
 
 const selectedPlan = computed(() => props.plans?.find((plan) => plan.id === form.plan_id));
 const phaseOptions = computed(() => selectedPlan.value?.phases ?? []);
+const completedStatusIds = computed(() =>
+    (props.statuses || [])
+        .filter((status) => {
+            const name = String(status?.name || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase();
+
+            return ['conclu', 'finaliz', 'done', 'completed'].some((token) => name.includes(token));
+        })
+        .map((status) => status.id),
+);
+const canArchive = computed(() => completedStatusIds.value.includes(form.task_status_id));
 const hydrating = ref(false);
 
 const closeModal = () => emit('update:visible', false);
@@ -52,6 +66,7 @@ const hydrateForm = () => {
             description: '',
             assigned_user_id: null,
             priority: 'medium',
+            archived: false,
             scheduled_for: '',
             due_date: '',
             reminder_at: '',
@@ -73,6 +88,7 @@ const hydrateForm = () => {
         description: props.task.description,
         assigned_user_id: props.task.assigned_user_id,
         priority: props.task.priority,
+        archived: !!props.task.archived,
         scheduled_for: props.task.scheduled_for,
         due_date: props.task.due_date,
         reminder_at: props.task.reminder_at,
@@ -106,6 +122,12 @@ watch(() => form.plan_id, () => {
     }
 
     form.plan_phase_id = null;
+});
+
+watch(canArchive, (value) => {
+    if (!value) {
+        form.archived = false;
+    }
 });
 
 watch(() => form.scheduled_for, (value) => {
@@ -250,6 +272,14 @@ const submit = () => {
                     <label>Status</label>
                     <Select v-model="form.task_status_id" :options="statuses" option-label="name" option-value="id" :invalid="!!form.errors.task_status_id" fluid />
                     <Message v-if="form.errors.task_status_id" severity="error" size="small" variant="simple">{{ form.errors.task_status_id }}</Message>
+                </div>
+
+                <div v-if="canArchive" class="space-y-2">
+                    <label>Arquivamento</label>
+                    <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                        <Checkbox v-model="form.archived" binary input-id="task-archived" />
+                        <label for="task-archived" class="text-sm">Arquivar</label>
+                    </div>
                 </div>
             </div>
 

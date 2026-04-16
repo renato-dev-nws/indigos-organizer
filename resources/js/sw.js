@@ -1,4 +1,4 @@
-// Band Organizer – custom service worker
+// Índigos - Artist Organizer – custom service worker
 // Uses Workbox for precaching + adds Web Push support
 
 import { precacheAndRoute } from 'workbox-precaching';
@@ -23,14 +23,14 @@ self.addEventListener('push', (event) => {
     try {
         payload = event.data.json();
     } catch {
-        payload = { title: 'Band Organizer', body: event.data.text() };
+        payload = { title: 'Índigos - Artist Organizer', body: event.data.text() };
     }
 
-    const title = payload.title ?? 'Band Organizer';
+    const title = payload.title ?? 'Índigos - Artist Organizer';
     const options = {
         body: payload.body ?? payload.message ?? '',
-        icon: payload.icon ?? '/icons/icon-192x192.png',
-        badge: '/icons/icon-192x192.png',
+        icon: payload.icon ?? '/icons/io-icon-192x192.png',
+        badge: '/icons/io-icon-192x192.png',
         data: payload.data ?? {},
         tag: payload.tag ?? 'band-organizer',
         renotify: true,

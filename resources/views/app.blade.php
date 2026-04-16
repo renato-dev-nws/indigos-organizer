@@ -26,6 +26,9 @@
 
         <!-- PWA -->
         <link rel="manifest" href="/manifest.webmanifest">
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/io-icon-32x32.png">
+        <link rel="icon" type="image/png" sizes="64x64" href="/icons/io-icon-64x64.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/io-icon-192x192.png">
         <meta name="theme-color" content="#4f46e5">
 
         <!-- Iconify Web Component -->

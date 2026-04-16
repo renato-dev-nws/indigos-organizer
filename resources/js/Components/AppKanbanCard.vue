@@ -1,5 +1,6 @@
 <script setup>
 import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
+import BoDateText from '@/Components/ui/BoDateText.vue';
 
 const props = defineProps({
     task: {
@@ -50,7 +51,7 @@ const completion = () => {
         <ProgressBar :value="completion()" style="height: 0.4rem" />
         <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>{{ task.subtasks?.filter((s) => s.completed).length || 0 }}/{{ task.subtasks?.length || 0 }} subtarefas</span>
-            <span>{{ task.due_date || 'Sem prazo' }}</span>
+            <span><BoDateText :value="task.due_date" mode="date" fallback="Sem prazo" /></span>
         </div>
     </div>
 </template>

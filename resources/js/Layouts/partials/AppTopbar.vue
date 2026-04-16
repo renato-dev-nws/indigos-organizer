@@ -41,7 +41,7 @@ const handleMenuClick = () => {
                 </button>
 
                 <!-- Logo visível apenas no mobile -->
-                <div class="flex items-center gap-2 md:hidden">
+                <Link :href="route('dashboard')" class="flex items-center gap-2 md:hidden">
                     <div v-if="iconUrl && isInlineSvgIcon" class="h-7 w-7 rounded-md" v-html="iconUrl" />
                     <img v-else-if="iconUrl" :src="iconUrl" alt="Ícone" class="h-7 w-7 rounded-md object-contain" />
                     <div
@@ -50,8 +50,8 @@ const handleMenuClick = () => {
                     >
                         <Icon icon="ph:music-notes-bold" class="h-3.5 w-3.5 text-white" />
                     </div>
-                    <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Band Organizer</span>
-                </div>
+                    <span class="text-sm font-bold text-slate-800 dark:text-slate-100">Índigos - Artist Organizer</span>
+                </Link>
             </div>
 
             <div class="flex items-center gap-2">

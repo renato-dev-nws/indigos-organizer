@@ -51,7 +51,7 @@ const BoPreset = definePreset(Aura, {
     },
 });
 
-const appName = import.meta.env.VITE_APP_NAME || 'Band Organizer';
+const appName = import.meta.env.VITE_APP_NAME || 'Índigos - Artist Organizer';
 
 createInertiaApp({
     title: (title) => (title ? `${title} — ${appName}` : appName),

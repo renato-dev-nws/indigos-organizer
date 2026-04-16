@@ -43,7 +43,7 @@ const isInlineSvg = computed(() => typeof logoUrl.value === 'string' && logoUrl.
             <template v-if="logoUrl">
                 <div v-if="isInlineSvg" class="h-16 w-auto" v-html="logoUrl" />
                 <img v-else :src="logoUrl" alt="Logo" class="h-16 w-auto object-contain" />
-                <span class="text-xs text-slate-400 dark:text-slate-500">Band Organizer</span>
+                <span class="text-xs text-slate-400 dark:text-slate-500">Índigos - Artist Organizer</span>
             </template>
             <template v-else>
                 <div
@@ -51,7 +51,7 @@ const isInlineSvg = computed(() => typeof logoUrl.value === 'string' && logoUrl.
                 >
                     <Icon icon="ph:music-notes-bold" class="h-7 w-7 text-white" />
                 </div>
-                <p class="text-lg font-bold text-slate-800 dark:text-slate-100">Band Organizer</p>
+                <p class="text-lg font-bold text-slate-800 dark:text-slate-100">Índigos - Artist Organizer</p>
             </template>
         </div>
 

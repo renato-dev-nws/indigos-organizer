@@ -25,6 +25,7 @@ class StoreTaskRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'task_status_id' => ['required', 'uuid', 'exists:task_statuses,id'],
             'priority' => ['required', 'in:low,medium,high,urgent'],
+            'archived' => ['nullable', 'boolean'],
             'scheduled_for' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'reminder_at' => ['nullable', 'date'],

@@ -186,6 +186,20 @@ const fullCalendarOptions = computed(() => ({
             </template>
         </BoPageHeader>
 
+        <div class="md:hidden">
+            <SelectButton
+                v-model="viewMode"
+                size="small"
+                :options="[
+                    { label: 'Lista', value: 'list' },
+                    { label: 'Programação', value: 'calendar' },
+                    { label: 'Calendário', value: 'full_calendar' },
+                ]"
+                option-label="label"
+                option-value="value"
+            />
+        </div>
+
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
@@ -327,7 +341,7 @@ const fullCalendarOptions = computed(() => ({
             </Card>
         </div>
 
-        <div class="block space-y-3 md:hidden">
+        <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
             <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ content.title }}</h3>
@@ -349,5 +363,43 @@ const fullCalendarOptions = computed(() => ({
                 </div>
             </div>
         </div>
+
+        <div v-else-if="viewMode === 'calendar'" class="md:hidden">
+            <Carousel :value="calendarColumns" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
+                <template #item="{ data: column }">
+                    <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                        <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
+                        <div class="space-y-2">
+                            <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                Sem publicações.
+                            </div>
+                            <Link
+                                v-for="content in column.items"
+                                :key="content.id"
+                                :href="route('contents.show', content.id)"
+                                class="block rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+                            >
+                                <p class="truncate text-xs font-semibold">
+                                    <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                    {{ content.title }}
+                                </p>
+                                <div class="mt-1 flex items-center justify-between gap-1">
+                                    <BoStatusTag :value="content.status" />
+                                    <span class="text-[10px] text-slate-500">
+                                        <BoDateText :value="content.planned_publish_at" mode="datetime" />
+                                    </span>
+                                </div>
+                            </Link>
+                        </div>
+                    </div>
+                </template>
+            </Carousel>
+        </div>
+
+        <Card v-else class="md:hidden">
+            <template #content>
+                <FullCalendar :options="fullCalendarOptions" />
+            </template>
+        </Card>
     </div>
 </template>

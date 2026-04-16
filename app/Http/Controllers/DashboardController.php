@@ -72,6 +72,46 @@ class DashboardController extends Controller
             'contactsTotal' => Contact::query()->count(),
         ];
 
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+        $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SATURDAY);
+
+        $weeklyTasks = Task::query()
+            ->where(fn (Builder $query) => $query
+                ->where('assigned_user_id', $userId)
+                ->orWhereNull('assigned_user_id')
+            )
+            ->where('archived', false)
+            ->with(['status:id,name,color'])
+            ->where(function ($query) use ($weekStart, $weekEnd) {
+                $query
+                    ->whereBetween('scheduled_for', [$weekStart, $weekEnd])
+                    ->orWhereBetween('due_date', [$weekStart->toDateString(), $weekEnd->toDateString()]);
+            })
+            ->orderByRaw('coalesce(scheduled_for, due_date::timestamp) asc')
+            ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date'])
+            ->map(fn (Task $task) => [
+                'id' => $task->id,
+                'kind' => 'task',
+                'title' => $task->title,
+                'status' => $task->status,
+                'scheduled_for' => optional($task->scheduled_for)?->toIso8601String(),
+                'due_date' => optional($task->due_date)?->toDateString(),
+                'url' => route('tasks.edit', $task),
+            ]);
+
+        $weeklyContents = Content::query()
+            ->whereBetween('planned_publish_at', [$weekStart, $weekEnd])
+            ->orderBy('planned_publish_at')
+            ->get(['id', 'title', 'status', 'planned_publish_at'])
+            ->map(fn (Content $content) => [
+                'id' => $content->id,
+                'kind' => 'content',
+                'title' => $content->title,
+                'status' => $content->status,
+                'planned_publish_at' => optional($content->planned_publish_at)?->toIso8601String(),
+                'url' => route('contents.show', $content),
+            ]);
+
         return Inertia::render('Dashboard', [
             'summary' => $summary,
             'boardIdeas' => Idea::query()
@@ -120,6 +160,7 @@ class DashboardController extends Controller
                 ->orderByDesc('updated_at')
                 ->take(5)
                 ->get(),
+            'weeklyProgramItems' => $weeklyTasks->concat($weeklyContents)->values(),
         ]);
     }
 

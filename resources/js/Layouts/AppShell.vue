@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch, watchEffect } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -62,19 +62,6 @@ watch(
     { immediate: true, deep: true },
 );
 
-// Dynamically update the browser favicon when a system icon is set
-watchEffect(() => {
-    const iconUrl = page.props.systemSettings?.icon_url;
-    if (iconUrl) {
-        let link = /** @type {HTMLLinkElement|null} */ (document.querySelector("link[rel='icon']"));
-        if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
-        }
-        link.href = iconUrl;
-    }
-});
 </script>
 
 <template>

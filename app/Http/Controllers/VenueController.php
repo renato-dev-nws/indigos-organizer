@@ -90,7 +90,20 @@ class VenueController extends Controller
                 }
             })
             ->when(request('rating'), fn ($q, $rating) => $q->where('rating', (int) $rating))
-            ->when(request('search'), fn ($q, $search) => $q->where('name', 'ilike', "%{$search}%"));
+            ->when(request('search'), function ($q, $search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner
+                        ->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('address_line', 'ilike', "%{$search}%")
+                        ->orWhere('address_number', 'ilike', "%{$search}%")
+                        ->orWhere('neighborhood', 'ilike', "%{$search}%")
+                        ->orWhere('city', 'ilike', "%{$search}%")
+                        ->orWhere('state', 'ilike', "%{$search}%")
+                        ->orWhere('contact_name', 'ilike', "%{$search}%")
+                        ->orWhere('email', 'ilike', "%{$search}%")
+                        ->orWhere('description', 'ilike', "%{$search}%");
+                });
+            });
     }
 
     public function create(): Response

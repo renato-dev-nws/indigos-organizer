@@ -13,6 +13,8 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ venues: Object, sizes: Array, types: Array, filters: Object, mapPoints: Array });
 
 const viewMode = ref('list');
+const quickSearch = ref(props.filters?.search ?? '');
+const quickSearchTimer = ref(null);
 const mapEl = ref(null);
 const mapReady = ref(false);
 const mapError = ref('');
@@ -56,11 +58,11 @@ const syncLocalFiltersFromProps = () => {
     localFilters.has_performed = props.filters?.has_performed ?? null;
     localFilters.rating = props.filters?.rating ?? null;
     localFilters.search = props.filters?.search ?? '';
+    quickSearch.value = props.filters?.search ?? '';
 };
 
 const filterChips = computed(() => {
     const chips = [];
-    if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.venue_type_id) {
         const type = props.types?.find((s) => s.id === localFilters.venue_type_id);
         if (type) chips.push({ key: 'venue_type_id', label: type.name });
@@ -82,12 +84,11 @@ const resetFilters = () => {
     localFilters.city = '';
     localFilters.has_performed = null;
     localFilters.rating = null;
-    localFilters.search = '';
     submitFilters();
 };
 
 const removeChip = (key) => {
-    localFilters[key] = ['search', 'city'].includes(key) ? '' : null;
+    localFilters[key] = key === 'city' ? '' : null;
     submitFilters();
 };
 
@@ -96,6 +97,21 @@ const cancelFilters = () => {
 };
 
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
+
+watch(quickSearch, (value) => {
+    if (quickSearchTimer.value) {
+        clearTimeout(quickSearchTimer.value);
+    }
+
+    quickSearchTimer.value = setTimeout(() => {
+        if (localFilters.search === value) {
+            return;
+        }
+
+        localFilters.search = value;
+        submitFilters();
+    }, 1000);
+});
 
 const paginate = (event) => {
     router.get(route('venues.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
@@ -631,6 +647,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    if (quickSearchTimer.value) {
+        clearTimeout(quickSearchTimer.value);
+    }
+
     if (themeObserver) {
         themeObserver.disconnect();
         themeObserver = null;
@@ -662,13 +682,20 @@ onUnmounted(() => {
         </BoPageHeader>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
-            <div class="space-y-2">
-                <label class="text-sm font-medium">Busca</label>
-                <IconField>
-                    <InputIcon class="pi pi-search" />
-                    <InputText v-model="localFilters.search" placeholder="Buscar por nome" />
-                </IconField>
-            </div>
+            <template #right-actions>
+                <div class="relative">
+                    <InputText v-model="quickSearch" class="w-72 pr-8" placeholder="Busca rápida de locais" />
+                    <button
+                        v-if="quickSearch"
+                        type="button"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        aria-label="Limpar busca"
+                        @click="quickSearch = ''"
+                    >
+                        <i class="pi pi-times-circle" />
+                    </button>
+                </div>
+            </template>
             <div class="space-y-2">
                 <label class="text-sm font-medium">Tipo</label>
                 <Select v-model="localFilters.venue_type_id" :options="types" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />

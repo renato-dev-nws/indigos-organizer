@@ -11,8 +11,10 @@ use App\Models\Plan;
 use App\Models\Task;
 use App\Models\TaskStatus;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -24,6 +26,7 @@ class TaskController extends Controller
     public function index(): Response
     {
         $baseQuery = $this->applyTaskFilters(Task::query());
+        $boardQuery = $this->applyTaskFilters(Task::query(), true);
 
         $tasks = (clone $baseQuery)
             ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
@@ -31,19 +34,33 @@ class TaskController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $boardTasks = (clone $baseQuery)
+        $boardTasks = (clone $boardQuery)
             ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
             ->latest()
             ->get();
 
-        $calendarSourceTasks = (clone $baseQuery)
+        $calendarSourceTasks = (clone $boardQuery)
             ->with(['status:id,name,color'])
-            ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date']);
+            ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date', 'archived']);
+
+        $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
+        $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SATURDAY);
+
+        $weeklyTaskItems = (clone $boardQuery)
+            ->with(['status:id,name,color'])
+            ->where(function ($query) use ($weekStart, $weekEnd) {
+                $query
+                    ->whereBetween('scheduled_for', [$weekStart, $weekEnd])
+                    ->orWhereBetween('due_date', [$weekStart->toDateString(), $weekEnd->toDateString()]);
+            })
+            ->orderByRaw('coalesce(scheduled_for, due_date::timestamp) asc')
+            ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date', 'archived']);
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $tasks,
             'boardTasks' => $boardTasks,
             'taskCalendarItems' => $this->buildTaskCalendarItems($calendarSourceTasks),
+            'weeklyTaskItems' => $weeklyTaskItems,
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()
@@ -58,7 +75,7 @@ class TaskController extends Controller
         ]);
     }
 
-    private function applyTaskFilters(Builder $query): Builder
+    private function applyTaskFilters(Builder $query, bool $excludeArchived = false): Builder
     {
         $assignedUserFilter = request('assigned_user_id');
         if (blank($assignedUserFilter)) {
@@ -66,6 +83,8 @@ class TaskController extends Controller
         }
 
         $currentUserId = (string) Auth::id();
+
+        $includeCompletedAndArchived = request()->boolean('include_completed');
 
         return $query
             ->when(
@@ -82,7 +101,7 @@ class TaskController extends Controller
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
             ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
-            ->when(! request()->boolean('include_completed'), function ($q) {
+            ->when(! $includeCompletedAndArchived, function ($q) {
                 $q->whereHas('status', function ($statusQuery) {
                     $statusQuery
                         ->where('name', 'not ilike', '%conclu%')
@@ -91,6 +110,10 @@ class TaskController extends Controller
                         ->where('name', 'not ilike', '%completed%');
                 });
             })
+            ->when(
+                ! $includeCompletedAndArchived || $excludeArchived,
+                fn ($q) => $q->where('archived', false)
+            )
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
     }
 
@@ -240,10 +263,70 @@ class TaskController extends Controller
 
     public function updateStatus(UpdateTaskStatusRequest $request, Task $task): RedirectResponse
     {
-        abort_unless(TaskStatus::where('id', $request->task_status_id)->exists(), 422, 'Status inválido.');
+        $status = TaskStatus::where('id', $request->task_status_id)->first();
+        abort_unless($status, 422, 'Status inválido.');
 
-        $task->update(['task_status_id' => $request->task_status_id]);
+        $task->update([
+            'task_status_id' => $request->task_status_id,
+            'archived' => $this->isCompletedStatusName($status->name) ? $task->archived : false,
+        ]);
 
         return back()->with('success', 'Status da tarefa atualizado.');
+    }
+
+    public function quickAction(Request $request, Task $task): RedirectResponse
+    {
+        $payload = $request->validate([
+            'action' => ['required', 'in:complete,archive'],
+        ]);
+
+        if ($payload['action'] === 'complete') {
+            $completedStatusId = TaskStatus::query()
+                ->where(function ($query) {
+                    $query
+                        ->where('name', 'ilike', '%conclu%')
+                        ->orWhere('name', 'ilike', '%finaliz%')
+                        ->orWhere('name', 'ilike', '%done%')
+                        ->orWhere('name', 'ilike', '%completed%');
+                })
+                ->orderByDesc('order')
+                ->value('id');
+
+            if (! $completedStatusId) {
+                return back()->with('error', 'Nenhum status de conclusão foi encontrado.');
+            }
+
+            $task->update([
+                'task_status_id' => $completedStatusId,
+                'archived' => false,
+            ]);
+
+            return back()->with('success', 'Tarefa concluída com sucesso.');
+        }
+
+        $task->loadMissing('status');
+
+        if (! $this->isCompletedTask($task)) {
+            return back()->with('error', 'Só é possível arquivar tarefas concluídas.');
+        }
+
+        $task->update(['archived' => true]);
+
+        return back()->with('success', 'Tarefa arquivada com sucesso.');
+    }
+
+    private function isCompletedTask(Task $task): bool
+    {
+        return $this->isCompletedStatusName($task->status?->name);
+    }
+
+    private function isCompletedStatusName(?string $name): bool
+    {
+        $statusName = Str::of($name ?? '')
+            ->ascii()
+            ->lower()
+            ->toString();
+
+        return Str::contains($statusName, ['conclu', 'finaliz', 'done', 'completed']);
     }
 }
