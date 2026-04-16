@@ -71,7 +71,7 @@ class TaskController extends Controller
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'currentUserId' => (string) Auth::id(),
-            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_completed']),
+            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_archived']),
         ]);
     }
 
@@ -84,7 +84,7 @@ class TaskController extends Controller
 
         $currentUserId = (string) Auth::id();
 
-        $includeCompletedAndArchived = request()->boolean('include_completed');
+        $includeArchived = request()->boolean('include_archived') || request()->boolean('include_completed');
 
         return $query
             ->when(
@@ -101,17 +101,8 @@ class TaskController extends Controller
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
             ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
-            ->when(! $includeCompletedAndArchived, function ($q) {
-                $q->whereHas('status', function ($statusQuery) {
-                    $statusQuery
-                        ->where('name', 'not ilike', '%conclu%')
-                        ->where('name', 'not ilike', '%finaliz%')
-                        ->where('name', 'not ilike', '%done%')
-                        ->where('name', 'not ilike', '%completed%');
-                });
-            })
             ->when(
-                ! $includeCompletedAndArchived || $excludeArchived,
+                ! $includeArchived || $excludeArchived,
                 fn ($q) => $q->where('archived', false)
             )
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
@@ -131,7 +122,7 @@ class TaskController extends Controller
             ]);
 
         $deadlineItems = $tasks
-            ->filter(fn (Task $task) => filled($task->due_date) && $this->isRunningTask($task))
+            ->filter(fn (Task $task) => filled($task->due_date))
             ->map(fn (Task $task) => [
                 'id' => 'task-deadline-'.$task->id,
                 'title' => 'Deadline: '.$task->title,
@@ -144,16 +135,6 @@ class TaskController extends Controller
             ]);
 
         return $scheduledItems->concat($deadlineItems)->values();
-    }
-
-    private function isRunningTask(Task $task): bool
-    {
-        $statusName = Str::of($task->status?->name ?? '')
-            ->ascii()
-            ->lower()
-            ->toString();
-
-        return Str::contains($statusName, ['execucao', 'executando', 'running']);
     }
 
     public function create(): Response

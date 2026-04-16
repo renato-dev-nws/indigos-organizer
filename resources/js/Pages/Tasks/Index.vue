@@ -26,7 +26,6 @@ const confirm = useConfirm();
 const viewMode = ref('list');
 const tableRows = ref(15);
 const tablePage = ref(0);
-const weekViewType = ref('all');
 
 const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
@@ -43,7 +42,7 @@ const localFilters = reactive({
     priority: props.filters?.priority ?? null,
     related_type: props.filters?.related_type ?? null,
     content_id: props.filters?.content_id ?? null,
-    include_completed: props.filters?.include_completed === '1' || props.filters?.include_completed === 1 || props.filters?.include_completed === true,
+    include_archived: props.filters?.include_archived === '1' || props.filters?.include_archived === 1 || props.filters?.include_archived === true,
     search: props.filters?.search ?? '',
 });
 
@@ -52,7 +51,7 @@ const syncLocalFiltersFromProps = () => {
     localFilters.priority = props.filters?.priority ?? null;
     localFilters.related_type = props.filters?.related_type ?? null;
     localFilters.content_id = props.filters?.content_id ?? null;
-    localFilters.include_completed = props.filters?.include_completed === '1' || props.filters?.include_completed === 1 || props.filters?.include_completed === true;
+    localFilters.include_archived = props.filters?.include_archived === '1' || props.filters?.include_archived === 1 || props.filters?.include_archived === true;
     localFilters.search = props.filters?.search ?? '';
 };
 
@@ -61,7 +60,7 @@ const filterChips = computed(() => {
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
     if (localFilters.related_type) chips.push({ key: 'related_type', label: relatedTypeLabels[localFilters.related_type] || localFilters.related_type });
     if (localFilters.priority) chips.push({ key: 'priority', label: localFilters.priority });
-    if (localFilters.include_completed) chips.push({ key: 'include_completed', label: 'Inclui concluídas e arquivadas' });
+    if (localFilters.include_archived) chips.push({ key: 'include_archived', label: 'Inclui arquivadas' });
     if (localFilters.assigned_user_id === '__all__') {
         chips.push({ key: 'assigned_user_id', label: 'Todos' });
     } else if (localFilters.assigned_user_id) {
@@ -83,7 +82,7 @@ const resetFilters = () => {
     localFilters.priority = null;
     localFilters.related_type = null;
     localFilters.content_id = null;
-    localFilters.include_completed = false;
+    localFilters.include_archived = false;
     localFilters.search = '';
     submitFilters();
 };
@@ -91,8 +90,8 @@ const resetFilters = () => {
 const removeChip = (key) => {
     if (key === 'search') {
         localFilters.search = '';
-    } else if (key === 'include_completed') {
-        localFilters.include_completed = false;
+    } else if (key === 'include_archived') {
+        localFilters.include_archived = false;
     } else {
         localFilters[key] = null;
     }
@@ -323,10 +322,6 @@ const weekColumns = computed(() => {
     const grouped = labels.map((label, dayIndex) => ({ label, dayIndex, items: [] }));
 
     for (const task of props.weeklyTaskItems || []) {
-        if (weekViewType.value !== 'all' && weekViewType.value !== 'tasks') {
-            continue;
-        }
-
         const sourceDate = task.scheduled_for || task.due_date;
         if (!sourceDate) {
             continue;
@@ -396,6 +391,20 @@ const fullCalendarOptions = computed(() => ({
             </template>
         </BoPageHeader>
 
+        <div class="md:hidden">
+            <SelectButton
+                v-model="viewMode"
+                size="small"
+                :options="[
+                    { label: 'Lista', value: 'list' },
+                    { label: 'Programação', value: 'weekly' },
+                    { label: 'Calendário', value: 'full_calendar' },
+                ]"
+                option-label="label"
+                option-value="value"
+            />
+        </div>
+
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <template #after-filter-button>
                 <Tag v-if="showMyTasksTag" value="Minhas tarefas" severity="secondary" />
@@ -448,10 +457,10 @@ const fullCalendarOptions = computed(() => ({
                 />
             </div>
             <div class="space-y-2">
-                <label class="text-sm font-medium">Concluídas</label>
+                <label class="text-sm font-medium">Arquivadas</label>
                 <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-                    <Checkbox v-model="localFilters.include_completed" binary input-id="include-completed" />
-                    <label for="include-completed" class="text-sm">Incluir concluídas e arquivadas</label>
+                    <Checkbox v-model="localFilters.include_archived" binary input-id="include-archived" />
+                    <label for="include-archived" class="text-sm">Incluir tarefas arquivadas na lista</label>
                 </div>
             </div>
         </BoFilterBar>
@@ -613,21 +622,7 @@ const fullCalendarOptions = computed(() => ({
 
         <template v-else-if="viewMode === 'weekly'">
             <Card class="mb-4">
-                <template #title>
-                    <div class="flex items-center justify-between gap-3">
-                        <span>Programação da semana</span>
-                        <SelectButton
-                            v-model="weekViewType"
-                            size="small"
-                            :options="[
-                                { label: 'Todos', value: 'all' },
-                                { label: 'Tarefas', value: 'tasks' },
-                            ]"
-                            option-label="label"
-                            option-value="value"
-                        />
-                    </div>
-                </template>
+                <template #title>Programação da semana</template>
                 <template #content>
                     <div class="hidden gap-3 md:grid lg:grid-cols-7">
                         <Card v-for="column in weekColumns" :key="column.label" class="lg:col-span-1">
