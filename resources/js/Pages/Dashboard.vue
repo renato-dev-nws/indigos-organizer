@@ -27,6 +27,8 @@ const dashboardCards = computed(() => [
     {
         key: 'tasks',
         title: 'Tarefas',
+        icon: 'ph:check-square-bold',
+        colors: 'bg-indigo-300 dark:bg-indigo-500',
         value: props.summary?.tasksTotal || 0,
         subItems: [
             { label: 'Agendadas', value: props.summary?.tasksScheduled || 0 },
@@ -38,6 +40,8 @@ const dashboardCards = computed(() => [
     {
         key: 'contents',
         title: 'Conteúdos',
+        icon: 'ph:video-camera-bold',
+        colors: 'bg-sky-300 dark:bg-sky-600',
         value: props.summary?.contentsTotal || 0,
         subItems: [
             { label: 'Na fila', value: props.summary?.contentsQueued || 0 },
@@ -49,6 +53,8 @@ const dashboardCards = computed(() => [
     {
         key: 'ideas',
         title: 'Ideias',
+        icon: 'ph:lightbulb-bold',
+        colors: 'bg-violet-300 dark:bg-violet-600',
         value: props.summary?.ideasTotal || 0,
         subItems: [
             { label: 'Suas ideias', value: props.summary?.ideasMine || 0 },
@@ -92,8 +98,13 @@ const mobileShortcuts = [
         <div class="hidden gap-3 md:grid md:grid-cols-3">
             <Card v-for="card in dashboardCards" :key="card.key" class="h-full">
                 <template #content>
-                    <p class="text-xs uppercase tracking-wide text-slate-500">{{ card.title }}</p>
-                    <p class="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ card.value }}</p>
+                    <p class="text-xs font-bold uppercase tracking-wide rounded-full p-1" :class="card.colors">
+                        <iconify-icon :icon="card.icon" class="mx-2 -mb-[0.1rem]" />
+                        {{ card.title }}
+                    </p>
+                    <p class="mt-1 text-3xl text-center font-semibold text-slate-900 dark:text-slate-100">
+                        {{ card.value }}
+                    </p>
                     <div class="mt-3 grid grid-cols-2 gap-2">
                         <div v-for="item in card.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70">
                             <p class="text-slate-500 dark:text-slate-300">{{ item.label }}</p>
@@ -109,12 +120,17 @@ const mobileShortcuts = [
                 <template #item="{ data }">
                     <Card>
                         <template #content>
-                            <p class="text-xs uppercase tracking-wide text-slate-500">{{ data.title }}</p>
-                            <p class="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ data.value }}</p>
+                            <p class="text-xs uppercase tracking-wide rounded-full p-1" :class="data.colors">
+                                <iconify-icon :icon="data.icon" class="mx-2 -mb-[0.1rem]" />
+                                {{ data.title }}
+                            </p>
+                            <p class="mt-1 text-center text-3xl font-semibold text-slate-900 dark:text-slate-100">
+                                {{ data.value }}
+                            </p>
                             <div class="mt-3 grid grid-cols-2 gap-2">
                                 <div v-for="item in data.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70">
-                                    <p class="text-slate-500 dark:text-slate-300">{{ item.label }}</p>
-                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ item.value }}</p>
+                                    <p class="text-slate-500 dark:text-slate-300 text-center">{{ item.label }}</p>
+                                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 text-center">{{ item.value }}</p>
                                 </div>
                             </div>
                         </template>
@@ -123,6 +139,7 @@ const mobileShortcuts = [
             </Carousel>
         </div>
 
+        <h2 class="md:hidden text-xl">Acesso rápido</h2>
         <div class="grid grid-cols-3 gap-2 md:hidden">
             <Link v-for="shortcut in mobileShortcuts" :key="shortcut.title" :href="shortcut.href" class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <i :class="shortcut.icon" class="mb-1 text-base text-slate-600 dark:text-slate-200" />
@@ -130,6 +147,7 @@ const mobileShortcuts = [
             </Link>
         </div>
 
+        <hr class="md:hidden" />
         <div class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Link v-for="card in generalCards" :key="card.title" :href="card.href">
                 <Card class="h-full transition hover:-translate-y-0.5 hover:shadow-md">
