@@ -29,7 +29,7 @@ const menuItems = computed(() => [
     { label: 'Ideias', icon: 'ph:lightbulb-bold', href: route('ideas.index') },
     { label: 'Conteúdos', icon: 'ph:video-camera-bold', href: route('contents.index') },
     { label: 'Planejamentos', icon: 'mdi:timer-music-outline', href: route('plans.index') },
-    { label: 'Notas Rápidas', icon: 'mdi:notebook-outline', href: route('fast-notes.index') },
+    { label: 'Notas Rápidas', icon: 'mdi:notebook-edit-outline', href: route('fast-notes.index') },
     { label: 'Eventos', icon: 'ph:ticket-bold', href: route('events.index') },
     { label: 'Locais', icon: 'mdi:map-marker-multiple-outline', href: route('venues.index') },
     { label: 'Contatos', icon: 'ph:address-book-bold', href: route('contacts.index') },

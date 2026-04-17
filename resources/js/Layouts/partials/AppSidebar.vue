@@ -40,12 +40,15 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
                     alt="Ícone"
                     class="h-8 w-8 shrink-0 rounded-lg object-contain"
                 />
-                <div
+                <div v-else class="flex h-8 w-8 shrink-0">
+                    <img src="/icons/io-icon-32x32.png" />
+                </div>
+                <!-- <div
                     v-else
                     class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
                 >
                     <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
-                </div>
+                </div> -->
             </template>
 
             <!-- Expanded: show logo or gradient + text -->
@@ -57,14 +60,17 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
                     class="h-9 max-w-[180px] object-contain"
                 />
                 <template v-else>
-                    <div
+                    <div class="flex h-8 w-8 shrink-0">
+                        <img src="/icons/io-icon-32x32.png" />
+                    </div>
+                    <!-- <div
                         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
                     >
                         <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
-                    </div>
+                    </div> -->
                     <div>
-                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Índigos - Artist Organizer</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500">Painel colaborativo</p>
+                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Índigos Organizer</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500">For Creatives</p>
                     </div>
                 </template>
             </template>
