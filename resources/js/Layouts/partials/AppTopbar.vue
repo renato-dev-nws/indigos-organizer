@@ -16,6 +16,11 @@ const emit = defineEmits(['toggleDesktopSidebar', 'openMobileSidebar']);
 const page = usePage();
 const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
 const isInlineSvgIcon = computed(() => typeof iconUrl.value === 'string' && iconUrl.value.trim().startsWith('<svg'));
+const avatarUrl = computed(() => page.props.auth?.user?.avatar_url ?? '');
+const userInitial = computed(() => {
+    const name = String(page.props.auth?.user?.name ?? '').trim();
+    return name ? name.charAt(0).toUpperCase() : '?';
+});
 
 const handleMenuClick = () => {
     if (window.innerWidth < 768) {
@@ -57,6 +62,10 @@ const handleMenuClick = () => {
             <div class="flex items-center gap-2">
                 <AppThemeSwitcher />
                 <AppNotificationBell />
+                <div class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar do usuário" class="h-full w-full object-cover" />
+                    <span v-else>{{ userInitial }}</span>
+                </div>
                 <div class="hidden text-right sm:block">
                     <p class="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-200">{{ page.props.auth?.user?.name }}</p>
                     <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ page.props.auth?.user?.email }}</p>

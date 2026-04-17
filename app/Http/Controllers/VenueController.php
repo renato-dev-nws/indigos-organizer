@@ -65,6 +65,7 @@ class VenueController extends Controller
 
         return Inertia::render('Venues/Index', [
             'venues' => $venues,
+            'venueCharts' => $this->buildVenueCharts(),
             'sizes' => VenueSize::orderBy('name')->get(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'color']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'color']),
@@ -72,6 +73,57 @@ class VenueController extends Controller
             'mapPoints' => $mapPoints,
             'filters' => request()->only(['venue_type_id', 'status', 'city', 'has_performed', 'rating', 'search']),
         ]);
+    }
+
+    private function buildVenueCharts(): array
+    {
+        $scope = $this->applyVenueFilters(Venue::query());
+
+        $types = VenueType::query()->orderBy('name')->get(['id', 'name']);
+        $categories = VenueCategory::query()->orderBy('name')->get(['id', 'name']);
+        $styles = VenueStyle::query()->where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name']);
+
+        $stateCounts = (clone $scope)
+            ->selectRaw('upper(state) as state, count(*) as total')
+            ->whereNotNull('state')
+            ->where('state', '<>', '')
+            ->groupBy('state')
+            ->orderByRaw('count(*) desc')
+            ->get();
+
+        $cityCounts = (clone $scope)
+            ->selectRaw("concat(city, ' - ', upper(state)) as city_label, count(*) as total")
+            ->whereNotNull('city')
+            ->where('city', '<>', '')
+            ->whereNotNull('state')
+            ->where('state', '<>', '')
+            ->groupBy('city_label')
+            ->orderByRaw('count(*) desc')
+            ->limit(20)
+            ->get();
+
+        return [
+            'types' => [
+                'labels' => $types->pluck('name')->values(),
+                'data' => $types->map(fn (VenueType $type) => (int) (clone $scope)->where('venue_type_id', $type->id)->count())->values(),
+            ],
+            'categories' => [
+                'labels' => $categories->pluck('name')->values(),
+                'data' => $categories->map(fn (VenueCategory $category) => (int) (clone $scope)->where('venue_category_id', $category->id)->count())->values(),
+            ],
+            'styles' => [
+                'labels' => $styles->pluck('name')->values(),
+                'data' => $styles->map(fn (VenueStyle $style) => (int) (clone $scope)->where('venue_style_id', $style->id)->count())->values(),
+            ],
+            'states' => [
+                'labels' => $stateCounts->pluck('state')->values(),
+                'data' => $stateCounts->pluck('total')->map(fn ($count) => (int) $count)->values(),
+            ],
+            'cities' => [
+                'labels' => $cityCounts->pluck('city_label')->values(),
+                'data' => $cityCounts->pluck('total')->map(fn ($count) => (int) $count)->values(),
+            ],
+        ];
     }
 
     private function applyVenueFilters(Builder $query): Builder

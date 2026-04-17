@@ -1,6 +1,6 @@
 <script setup>
 import { computed, reactive, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -14,6 +14,7 @@ const props = defineProps({
     users: Object,
     filters: Object,
 });
+const page = usePage();
 
 const localFilters = reactive({
     search: props.filters?.search ?? '',
@@ -56,13 +57,16 @@ const paginate = (event) => {
 const removeUser = (id) => {
     router.delete(route('users.destroy', id), { preserveScroll: true });
 };
+
+const isAdmin = computed(() => !!page.props.auth?.user?.is_admin);
+const canEditUser = (user) => isAdmin.value || page.props.auth?.user?.id === user.id;
 </script>
 
 <template>
     <div class="space-y-4">
         <BoPageHeader title="Usuários" subtitle="Administração de acesso e autoria">
             <template #actions>
-                <Link :href="route('users.create')">
+                <Link v-if="isAdmin" :href="route('users.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo usuário" />
                     <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo usuário" />
                 </Link>
@@ -84,6 +88,11 @@ const removeUser = (id) => {
                 <DataTable :value="users.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="name" header="Nome" sortable />
                     <Column field="email" header="E-mail" sortable />
+                    <Column header="Perfil" class="w-24">
+                        <template #body="{ data }">
+                            <Tag :value="data.is_admin ? 'Admin' : 'Usuário'" :severity="data.is_admin ? 'danger' : 'secondary'" />
+                        </template>
+                    </Column>
                     <Column field="theme" header="Tema" />
                     <Column header="Autoria" class="w-56">
                         <template #body="{ data }">
@@ -103,14 +112,14 @@ const removeUser = (id) => {
                         <template #body="{ data }">
                             <div class="flex gap-1">
                                 <Link :href="route('users.edit', data.id)">
-                                    <Button icon="pi pi-pencil" outlined rounded severity="secondary" size="small" v-tooltip.top="'Editar'" />
+                                    <Button icon="pi pi-pencil" outlined rounded severity="secondary" size="small" v-tooltip.top="'Editar'" :disabled="!canEditUser(data)" />
                                 </Link>
                                 <BoConfirmButton
                                     icon="pi pi-trash"
                                     severity="danger"
                                     message="Deseja remover este usuário?"
                                     :rounded="true"
-                                    :disabled="$page.props.auth.user?.id === data.id"
+                                    :disabled="!isAdmin || page.props.auth.user?.id === data.id"
                                     @confirm="removeUser(data.id)"
                                 />
                             </div>

@@ -15,7 +15,7 @@ import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ contents: Object, filters: Object, platforms: Array, types: Array, categories: Array });
+const props = defineProps({ contents: Object, filters: Object, platforms: Array, types: Array, categories: Array, styles: Array, contentCharts: Object, contentChartPeriod: Object });
 
 const viewMode = ref('list');
 
@@ -160,6 +160,121 @@ const fullCalendarOptions = computed(() => ({
         router.visit(route('contents.show', info.event.id));
     },
 }));
+
+const selectedContentChart = ref('line');
+const selectedContentChartPeriod = ref(props.contentChartPeriod?.period ?? '7d');
+const selectedContentChartStart = ref(props.contentChartPeriod?.start ?? '');
+const selectedContentChartEnd = ref(props.contentChartPeriod?.end ?? '');
+
+watch(
+    () => props.contentChartPeriod,
+    (value) => {
+        selectedContentChartPeriod.value = value?.period ?? '7d';
+        selectedContentChartStart.value = value?.start ?? '';
+        selectedContentChartEnd.value = value?.end ?? '';
+    },
+    { deep: true },
+);
+
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+};
+
+const chartWithoutLegendOptions = {
+    ...chartOptions,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+    },
+};
+
+const doughnutChartOptions = {
+    ...chartOptions,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top',
+        },
+    },
+};
+
+const contentLineChartData = computed(() => ({
+    labels: props.contentCharts?.lineCreatedPublished?.labels ?? [],
+    datasets: [
+        {
+            type: 'line',
+            label: 'Conteúdos criados',
+            borderColor: '#2563eb',
+            backgroundColor: '#2563eb',
+            tension: 0.3,
+            data: props.contentCharts?.lineCreatedPublished?.created ?? [],
+        },
+        {
+            type: 'line',
+            label: 'Conteúdos publicados',
+            borderColor: '#16a34a',
+            backgroundColor: '#16a34a',
+            tension: 0.3,
+            data: props.contentCharts?.lineCreatedPublished?.published ?? [],
+        },
+    ],
+}));
+
+const contentTypesChartData = computed(() => ({
+    labels: props.contentCharts?.types?.labels ?? [],
+    datasets: [{ data: props.contentCharts?.types?.data ?? [] }],
+}));
+
+const contentCategoriesChartData = computed(() => ({
+    labels: props.contentCharts?.categories?.labels ?? [],
+    datasets: [{ data: props.contentCharts?.categories?.data ?? [] }],
+}));
+
+const contentStylesChartData = computed(() => ({
+    labels: props.contentCharts?.styles?.labels ?? [],
+    datasets: [{ data: props.contentCharts?.styles?.data ?? [] }],
+}));
+
+const contentStatusesChartData = computed(() => ({
+    labels: props.contentCharts?.statuses?.labels ?? [],
+    datasets: [{
+        backgroundColor: ['#ef4444', '#3b82f6', '#eab308', '#16a34a', '#64748b', '#f97316'],
+        data: props.contentCharts?.statuses?.data ?? [],
+    }],
+}));
+
+const contentPlatformsChartData = computed(() => ({
+    labels: props.contentCharts?.platforms?.labels ?? [],
+    datasets: [{ backgroundColor: '#0ea5e9', data: props.contentCharts?.platforms?.data ?? [] }],
+}));
+
+const applyContentChartPeriod = () => {
+    const payload = {
+        ...localFilters,
+        chart_period: selectedContentChartPeriod.value,
+    };
+
+    if (selectedContentChartPeriod.value === 'custom') {
+        payload.chart_start = selectedContentChartStart.value || null;
+        payload.chart_end = selectedContentChartEnd.value || null;
+    } else {
+        payload.chart_start = null;
+        payload.chart_end = null;
+    }
+
+    router.get(route('contents.index'), payload, { preserveState: true, preserveScroll: true, replace: true });
+};
 </script>
 
 <template>
@@ -174,6 +289,7 @@ const fullCalendarOptions = computed(() => ({
                             { label: 'Lista', value: 'list' },
                             { label: 'Programação da semana', value: 'calendar' },
                             { label: 'Calendário completo', value: 'full_calendar' },
+                            { label: 'Gráficos', value: 'charts' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -194,6 +310,7 @@ const fullCalendarOptions = computed(() => ({
                     { label: 'Lista', value: 'list' },
                     { label: 'Programação', value: 'calendar' },
                     { label: 'Calendário', value: 'full_calendar' },
+                    { label: 'Gráficos', value: 'charts' },
                 ]"
                 option-label="label"
                 option-value="value"
@@ -334,11 +451,12 @@ const fullCalendarOptions = computed(() => ({
                 </Card>
             </div>
 
-            <Card v-else>
+            <Card v-else-if="viewMode === 'full_calendar'">
                 <template #content>
                     <FullCalendar :options="fullCalendarOptions" />
                 </template>
             </Card>
+
         </div>
 
         <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
@@ -396,9 +514,69 @@ const fullCalendarOptions = computed(() => ({
             </Carousel>
         </div>
 
-        <Card v-else class="md:hidden">
+        <Card v-else-if="viewMode === 'full_calendar'" class="bo-content-mobile-calendar md:hidden">
             <template #content>
                 <FullCalendar :options="fullCalendarOptions" />
+            </template>
+        </Card>
+
+        <Card v-else>
+            <template #title>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span>Gráficos de conteúdo</span>
+                    <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                        <Select
+                            v-model="selectedContentChart"
+                            size="small"
+                            :options="[
+                                { label: 'Criados x publicados', value: 'line' },
+                                { label: 'Tipos de conteúdo', value: 'types' },
+                                { label: 'Categorias de conteúdo', value: 'categories' },
+                                { label: 'Estilos de conteúdo', value: 'styles' },
+                                { label: 'Status dos conteúdos', value: 'statuses' },
+                                { label: 'Plataformas', value: 'platforms' },
+                            ]"
+                            option-label="label"
+                            option-value="value"
+                            class="w-48"
+                        />
+                        <Select
+                            v-model="selectedContentChartPeriod"
+                            size="small"
+                            :options="[
+                                { label: '7 dias', value: '7d' },
+                                { label: '15 dias', value: '15d' },
+                                { label: '30 dias', value: '30d' },
+                                { label: 'Personalizado', value: 'custom' },
+                            ]"
+                            option-label="label"
+                            option-value="value"
+                            class="w-36"
+                            @change="applyContentChartPeriod"
+                        />
+                    </div>
+                </div>
+            </template>
+            <template #content>
+                <div v-if="selectedContentChartPeriod === 'custom'" class="mb-4 flex flex-wrap items-end justify-end gap-2">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium">Início</label>
+                        <InputText v-model="selectedContentChartStart" type="date" class="w-40" @change="applyContentChartPeriod" />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium">Fim</label>
+                        <InputText v-model="selectedContentChartEnd" type="date" class="w-40" @change="applyContentChartPeriod" />
+                    </div>
+                </div>
+
+                <div class="h-[350px] md:h-[400px]">
+                    <Chart v-if="selectedContentChart === 'line'" class="bo-chart-fill" type="line" :data="contentLineChartData" :options="chartOptions" />
+                    <Chart v-else-if="selectedContentChart === 'types'" class="bo-chart-fill" type="doughnut" :data="contentTypesChartData" :options="doughnutChartOptions" />
+                    <Chart v-else-if="selectedContentChart === 'categories'" class="bo-chart-fill" type="doughnut" :data="contentCategoriesChartData" :options="doughnutChartOptions" />
+                    <Chart v-else-if="selectedContentChart === 'styles'" class="bo-chart-fill" type="doughnut" :data="contentStylesChartData" :options="doughnutChartOptions" />
+                    <Chart v-else-if="selectedContentChart === 'statuses'" class="bo-chart-fill" type="bar" :data="contentStatusesChartData" :options="chartWithoutLegendOptions" />
+                    <Chart v-else class="bo-chart-fill" type="bar" :data="contentPlatformsChartData" :options="chartWithoutLegendOptions" />
+                </div>
             </template>
         </Card>
     </div>

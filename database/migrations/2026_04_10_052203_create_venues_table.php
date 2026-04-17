@@ -39,6 +39,7 @@ return new class extends Migration
             $table->string('instagram_url')->nullable();
             $table->string('facebook_url')->nullable();
             $table->string('youtube_url')->nullable();
+            $table->string('whatsapp')->nullable();
             $table->string('website_url')->nullable();
             $table->text('notes')->nullable();
             $table->text('description')->nullable();

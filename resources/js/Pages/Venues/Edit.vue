@@ -34,6 +34,7 @@ const form = useForm({
     instagram_url: props.venue.instagram_url,
     facebook_url: props.venue.facebook_url,
     youtube_url: props.venue.youtube_url,
+    whatsapp: props.venue.whatsapp,
     website_url: props.venue.website_url,
     notes: props.venue.notes,
     description: props.venue.description,
@@ -188,8 +189,8 @@ const submit = () => form.put(route('venues.update', props.venue.id));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-site">Website</label>
-                    <InputText id="venue-site" v-model="form.website_url" fluid />
+                    <label for="venue-whatsapp">WhatsApp</label>
+                    <InputText id="venue-whatsapp" v-model="form.whatsapp" fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -276,6 +277,11 @@ const submit = () => form.put(route('venues.update', props.venue.id));
                 <div class="space-y-2">
                     <label for="venue-youtube">YouTube</label>
                     <InputText id="venue-youtube" v-model="form.youtube_url" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-site">Website</label>
+                    <InputText id="venue-site" v-model="form.website_url" fluid />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

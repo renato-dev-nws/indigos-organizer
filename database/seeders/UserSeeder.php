@@ -23,6 +23,8 @@ class UserSeeder extends Seeder
                 [
                     'name' => $member['name'],
                     'password' => Hash::make('password'),
+                    'is_admin' => $member['email'] === 'joao@band.com',
+                    'avatar_url' => null,
                     'theme' => 'system',
                 ]
             );

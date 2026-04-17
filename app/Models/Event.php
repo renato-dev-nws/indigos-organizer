@@ -23,6 +23,7 @@ class Event extends Model
         'venue_id',
         'title',
         'attendance_mode',
+        'is_online',
         'description',
         'event_date',
         'event_time',
@@ -39,6 +40,7 @@ class Event extends Model
     {
         return [
             'event_date' => 'date',
+            'is_online' => 'boolean',
             'ticket_price_first_batch' => 'decimal:2',
             'ticket_price_second_batch' => 'decimal:2',
             'ticket_price_third_batch' => 'decimal:2',

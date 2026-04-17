@@ -19,6 +19,7 @@ const props = defineProps({
     disableDeleteMessage: { type: String, default: 'Este registro nao pode ser removido.' },
     reorderRoute: { type: String, default: '' },
     extraPayload: { type: Object, default: () => ({}) },
+    readOnly: { type: Boolean, default: false },
 });
 
 const toast = useToast();
@@ -180,7 +181,7 @@ const onPage = (event) => {
         <template #title>
             <div class="flex items-center justify-between gap-3">
                 <span>{{ title }}</span>
-                <Button icon="pi pi-plus" label="Novo" size="small" @click="openCreate" />
+                <Button v-if="!readOnly" icon="pi pi-plus" label="Novo" size="small" @click="openCreate" />
             </div>
         </template>
         <template #content>
@@ -197,8 +198,8 @@ const onPage = (event) => {
                                 <span class="text-sm font-medium">{{ index + 1 }}. {{ element.name }}</span>
                             </div>
                             <div class="flex gap-1">
-                                <Button icon="pi pi-pencil" size="small" text rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(element)" />
-                                <BoConfirmButton
+                                <Button v-if="!readOnly" icon="pi pi-pencil" size="small" text rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(element)" />
+                                <BoConfirmButton v-if="!readOnly"
                                     icon="pi pi-trash"
                                     severity="danger"
                                     :disabled="!canDelete(element)"
@@ -210,7 +211,7 @@ const onPage = (event) => {
                         </div>
                     </template>
                 </draggable>
-                <Button class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
+                <Button v-if="!readOnly" class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
             </template>
 
             <!-- Normal mode: DataTable + optional reorder section -->
@@ -237,8 +238,8 @@ const onPage = (event) => {
                     <Column header="Ações" class="bo-action-col w-20">
                         <template #body="{ data }">
                             <div class="flex gap-1">
-                                <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
-                                <BoConfirmButton
+                                <Button v-if="!readOnly" icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
+                                <BoConfirmButton v-if="!readOnly"
                                     icon="pi pi-trash"
                                     severity="danger"
                                     :disabled="!canDelete(data)"
@@ -272,13 +273,13 @@ const onPage = (event) => {
                             </div>
                         </template>
                     </draggable>
-                    <Button class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
+                    <Button v-if="!readOnly" class="mt-3" icon="pi pi-save" label="Salvar ordem" size="small" @click="saveOrder" />
                 </div>
             </template>
         </template>
     </Card>
 
-    <Dialog v-model:visible="dialogVisible" :header="editing ? 'Editar registro' : 'Novo registro'" modal :style="{ width: '32rem' }">
+    <Dialog v-if="!readOnly" v-model:visible="dialogVisible" :header="editing ? 'Editar registro' : 'Novo registro'" modal :style="{ width: '32rem' }">
         <div class="space-y-4">
             <div class="space-y-2">
                 <label for="settings-name">Nome</label>

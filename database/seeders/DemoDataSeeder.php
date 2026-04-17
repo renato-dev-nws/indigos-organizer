@@ -112,6 +112,7 @@ class DemoDataSeeder extends Seeder
                 'description' => 'Descricao da tarefa '.$index,
                 'task_status_id' => $taskStatuses[$index % $taskStatuses->count()]?->id,
                 'priority' => ['low', 'medium', 'high', 'urgent'][$index % 4],
+                'scheduled_for' => Carbon::now()->addDays($index)->setTime(10 + ($index % 6), 0),
                 'due_date' => Carbon::now()->addDays($index),
             ]);
 
@@ -150,6 +151,7 @@ class DemoDataSeeder extends Seeder
                 'instagram_url' => 'https://instagram.com/casa'.$index,
                 'facebook_url' => 'https://facebook.com/casa'.$index,
                 'youtube_url' => 'https://youtube.com/@casa'.$index,
+                'whatsapp' => '(11) 98888-100'.$index,
                 'website_url' => 'https://casa'.$index.'.com',
                 'notes' => 'Possui boa estrutura tecnica',
                 'description' => 'Local de show de exemplo',

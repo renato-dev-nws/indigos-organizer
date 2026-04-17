@@ -76,6 +76,10 @@ defineProps({ venue: Object });
                         <li><a v-if="venue.instagram_url" :href="venue.instagram_url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Instagram</a><span v-else>-</span></li>
                         <li><a v-if="venue.facebook_url" :href="venue.facebook_url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Facebook</a><span v-else>-</span></li>
                         <li><a v-if="venue.youtube_url" :href="venue.youtube_url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">YouTube</a><span v-else>-</span></li>
+                        <li>
+                            <a v-if="venue.whatsapp" :href="`https://wa.me/${String(venue.whatsapp).replace(/\D/g, '')}`" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">WhatsApp</a>
+                            <span v-else>-</span>
+                        </li>
                         <li><a v-if="venue.website_url" :href="venue.website_url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Site</a><span v-else>-</span></li>
                     </ul>
 

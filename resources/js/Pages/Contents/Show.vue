@@ -92,6 +92,12 @@ defineProps({ content: Object });
                         <Column field="original_name" header="Arquivo" />
                         <Column field="mime_type" header="MIME" />
                         <Column field="size" header="Tamanho" />
+                        <Column header="Ações" class="w-24">
+                            <template #body="{ data }">
+                                <a v-if="data.url" :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Abrir</a>
+                                <span v-else>-</span>
+                            </template>
+                        </Column>
                     </DataTable>
                 </template>
             </Card>

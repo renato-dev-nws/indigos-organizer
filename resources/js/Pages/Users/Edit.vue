@@ -1,5 +1,5 @@
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3';
+import { Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -19,8 +19,13 @@ const form = useForm({
     email: props.user.email,
     password: '',
     password_confirmation: '',
+    avatar_url: props.user.avatar_url ?? '',
+    is_admin: !!props.user.is_admin,
     theme: props.user.theme || 'system',
 });
+
+const page = usePage();
+const isAdmin = !!page.props.auth?.user?.is_admin;
 
 const submit = () => form.put(route('users.update', props.user.id));
 </script>
@@ -51,6 +56,20 @@ const submit = () => form.put(route('users.update', props.user.id));
                 <div class="space-y-2">
                     <label for="user-theme">Tema padrão</label>
                     <Select id="user-theme" v-model="form.theme" :options="['light', 'dark', 'system']" fluid />
+                </div>
+
+                <div class="space-y-2 md:col-span-2">
+                    <label for="user-avatar">Avatar (URL)</label>
+                    <InputText id="user-avatar" v-model="form.avatar_url" fluid :invalid="!!form.errors.avatar_url" placeholder="https://..." />
+                    <Message v-if="form.errors.avatar_url" severity="error" size="small" variant="simple">{{ form.errors.avatar_url }}</Message>
+                </div>
+
+                <div v-if="isAdmin" class="space-y-2 md:col-span-2">
+                    <label for="user-admin">Permissão</label>
+                    <div class="flex items-center gap-2">
+                        <Checkbox id="user-admin" v-model="form.is_admin" binary />
+                        <label for="user-admin" class="text-sm">Usuário administrador</label>
+                    </div>
                 </div>
 
                 <div class="space-y-2">

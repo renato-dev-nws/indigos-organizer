@@ -46,6 +46,7 @@ const form = useForm({
     instagram_url: '',
     facebook_url: '',
     youtube_url: '',
+    whatsapp: '',
     website_url: '',
     notes: '',
     description: '',
@@ -193,8 +194,8 @@ const submit = () => form.post(route('venues.store'));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-site">Website</label>
-                    <InputText id="venue-site" v-model="form.website_url" fluid />
+                    <label for="venue-whatsapp">WhatsApp</label>
+                    <InputText id="venue-whatsapp" v-model="form.whatsapp" fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -281,6 +282,11 @@ const submit = () => form.post(route('venues.store'));
                 <div class="space-y-2">
                     <label for="venue-youtube">YouTube</label>
                     <InputText id="venue-youtube" v-model="form.youtube_url" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="venue-site">Website</label>
+                    <InputText id="venue-site" v-model="form.website_url" fluid />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

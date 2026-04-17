@@ -91,6 +91,7 @@ class PlanSeeder extends Seeder
                         'description' => null,
                         'task_status_id' => $taskStatusId,
                         'priority' => 'medium',
+                        'scheduled_for' => now()->addDays(($phaseData['order'] * 7) + $index)->setTime(9, 30),
                         'due_date' => null,
                     ]
                 );

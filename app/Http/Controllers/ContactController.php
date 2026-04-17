@@ -23,7 +23,9 @@ class ContactController extends Controller
                         ->where('name', 'ilike', "%{$search}%")
                         ->orWhere('email', 'ilike', "%{$search}%")
                         ->orWhere('phone', 'ilike', "%{$search}%")
-                        ->orWhere('whatsapp', 'ilike', "%{$search}%");
+                        ->orWhere('whatsapp', 'ilike', "%{$search}%")
+                        ->orWhere('description', 'ilike', "%{$search}%")
+                        ->orWhereHas('venue', fn ($venueQuery) => $venueQuery->where('name', 'ilike', "%{$search}%"));
                 }))
             ->when(request('venue_id'), fn ($query, $venueId) => $query->where('venue_id', $venueId))
             ->latest()

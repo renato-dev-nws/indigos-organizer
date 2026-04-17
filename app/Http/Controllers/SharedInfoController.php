@@ -18,7 +18,19 @@ class SharedInfoController extends Controller
     {
         $infos = SharedInfo::query()
             ->with(['user', 'documents', 'links', 'categories'])
-            ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
+            ->when(request('search'), function ($query, $search) {
+                $query->where(function ($inner) use ($search): void {
+                    $inner
+                        ->where('title', 'ilike', "%{$search}%")
+                        ->orWhere('description', 'ilike', "%{$search}%")
+                        ->orWhereHas('categories', fn ($categoryQuery) => $categoryQuery->where('name', 'ilike', "%{$search}%"))
+                        ->orWhereHas('links', fn ($linkQuery) => $linkQuery
+                            ->where('title', 'ilike', "%{$search}%")
+                            ->orWhere('description', 'ilike', "%{$search}%")
+                        )
+                        ->orWhereHas('documents', fn ($documentQuery) => $documentQuery->where('original_name', 'ilike', "%{$search}%"));
+                });
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();

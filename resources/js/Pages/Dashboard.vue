@@ -11,6 +11,8 @@ import BoDateText from '@/Components/ui/BoDateText.vue';
 defineOptions({ layout: AppLayout });
 const props = defineProps({
     summary: Object,
+    dashboardCharts: Object,
+    dashboardChartPeriods: Object,
     boardIdeas: Array,
     nextScheduledTasks: Array,
     deadlineSoonTasks: Array,
@@ -45,7 +47,7 @@ const dashboardCards = computed(() => [
         key: 'contents',
         title: 'Conteúdos',
         icon: 'ph:video-camera-bold',
-        colors: 'bg-sky-300 dark:bg-sky-600',
+        colors: 'bg-purple-300 dark:bg-purple-600',
         value: props.summary?.contentsTotal || 0,
         subItems: [
             { label: 'Na fila', value: props.summary?.contentsQueued || 0 },
@@ -160,6 +162,15 @@ watch(weeklyProgramCarousel, () => {
     weeklyProgramPage.value = clampWeeklyProgramPage(weeklyProgramPage.value);
 });
 
+watch(
+    () => props.dashboardChartPeriods,
+    (value) => {
+        dashboardTaskByUserPeriod.value = value?.taskByUserStatus?.period ?? '7d';
+        dashboardContentsLinePeriod.value = value?.contentsLine?.period ?? '7d';
+    },
+    { deep: true },
+);
+
 const programItemDate = (item) => item.kind === 'task'
     ? (item.scheduled_for || item.due_date)
     : item.planned_publish_at;
@@ -173,6 +184,120 @@ const programFilterOptions = [
     { label: 'Tarefas', value: 'tasks', icon: 'ph:check-square-bold' },
     { label: 'Conteúdo', value: 'content', icon: 'ph:video-camera-bold' },
 ];
+
+const dashboardTaskByUserPeriod = ref(props.dashboardChartPeriods?.taskByUserStatus?.period ?? '7d');
+const dashboardContentsLinePeriod = ref(props.dashboardChartPeriods?.contentsLine?.period ?? '7d');
+const selectedDashboardUser = ref('__all__');
+
+const dashboardChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+};
+
+const dashboardChartNoLegendOptions = {
+    ...dashboardChartOptions,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+    },
+};
+
+const dashboardStackedChartOptions = {
+    ...dashboardChartOptions,
+    scales: {
+        x: { stacked: true },
+        y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+};
+
+const dashboardTaskStatusChartData = computed(() => ({
+    labels: props.dashboardCharts?.taskStatus?.labels ?? [],
+    datasets: [{ backgroundColor: props.dashboardCharts?.taskStatus?.colors ?? [], data: props.dashboardCharts?.taskStatus?.data ?? [] }],
+}));
+
+const dashboardTaskByUserChartData = computed(() => {
+    const users = props.dashboardCharts?.taskByUserStatus?.users ?? [];
+    const statuses = props.dashboardCharts?.taskByUserStatus?.statuses ?? [];
+
+    let labels = users.map((user) => user.name);
+    let datasets = statuses.map((status) => ({
+        label: status.name,
+        backgroundColor: status.color || '#64748b',
+        data: status.values,
+    }));
+
+    if (selectedDashboardUser.value && selectedDashboardUser.value !== '__all__') {
+        const userIndex = users.findIndex((user) => user.id === selectedDashboardUser.value);
+        if (userIndex >= 0) {
+            labels = [users[userIndex].name];
+            datasets = statuses.map((status) => ({
+                label: status.name,
+                backgroundColor: status.color || '#64748b',
+                data: [status.values[userIndex] ?? 0],
+            }));
+        }
+    }
+
+    return { labels, datasets };
+});
+
+const dashboardContentsLineChartData = computed(() => ({
+    labels: props.dashboardCharts?.contentsLine?.labels ?? [],
+    datasets: [
+        {
+            type: 'line',
+            label: 'Criados',
+            borderColor: '#2563eb',
+            backgroundColor: '#2563eb',
+            tension: 0.3,
+            data: props.dashboardCharts?.contentsLine?.created ?? [],
+        },
+        {
+            type: 'line',
+            label: 'Publicados',
+            borderColor: '#16a34a',
+            backgroundColor: '#16a34a',
+            tension: 0.3,
+            data: props.dashboardCharts?.contentsLine?.published ?? [],
+        },
+    ],
+}));
+
+const dashboardContentStatusesChartData = computed(() => ({
+    labels: props.dashboardCharts?.contentStatuses?.labels ?? [],
+    datasets: [{ backgroundColor: ['#ef4444', '#3b82f6', '#eab308', '#16a34a', '#64748b', '#f97316'], data: props.dashboardCharts?.contentStatuses?.data ?? [] }],
+}));
+
+const applyDashboardTaskByUserPeriod = () => {
+    router.get(route('dashboard'), {
+        dashboard_tasks_users_period: dashboardTaskByUserPeriod.value,
+        dashboard_contents_line_period: dashboardContentsLinePeriod.value,
+    }, { preserveState: true, preserveScroll: true, replace: true });
+};
+
+const applyDashboardContentsLinePeriod = () => {
+    router.get(route('dashboard'), {
+        dashboard_tasks_users_period: dashboardTaskByUserPeriod.value,
+        dashboard_contents_line_period: dashboardContentsLinePeriod.value,
+    }, { preserveState: true, preserveScroll: true, replace: true });
+};
 
 // Indicators: 4 slots on desktop (numVisible=4), 7 on mobile (numVisible=1)
 // We compute how many visible slots exist based on viewport — use a JS-computed value
@@ -224,7 +349,7 @@ const goWeeklyProgramToIndicator = (index) => {
                         {{ card.value }}
                     </p>
                     <div class="mt-3 grid grid-cols-2 gap-2">
-                        <div v-for="item in card.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70">
+                        <div v-for="item in card.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 border border-indigo-500">
                             <p class="text-slate-500 dark:text-slate-300">{{ item.label }}</p>
                             <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ item.value }}</p>
                         </div>
@@ -262,18 +387,6 @@ const goWeeklyProgramToIndicator = (index) => {
             <Link v-for="shortcut in mobileShortcuts" :key="shortcut.title" :href="shortcut.href" class="rounded-xl border border-slate-200 bg-white px-2 py-3 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <i :class="shortcut.icon" class="mb-1 text-base text-slate-600 dark:text-slate-200" />
                 <p class="text-[11px] font-medium leading-tight">{{ shortcut.title }}</p>
-            </Link>
-        </div>
-
-        <hr class="md:hidden" />
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <Link v-for="card in generalCards" :key="card.title" :href="card.href">
-                <Card class="h-full transition hover:-translate-y-0.5 hover:shadow-md">
-                    <template #content>
-                        <p class="text-xs uppercase tracking-wide text-slate-500">{{ card.title }}</p>
-                        <p class="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ card.value }}</p>
-                    </template>
-                </Card>
             </Link>
         </div>
 
@@ -330,8 +443,8 @@ const goWeeklyProgramToIndicator = (index) => {
                     class="bo-weekly-carousel"
                 >
                     <template #item="{ data: column }">
-                        <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                            <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
+                        <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 mx-1">
+                            <p class="mb-2 text-sm font-semibold bg-slate-300 dark:bg-slate-700 px-2 py-1 rounded-full">{{ column.label }}</p>
                             <div class="space-y-2">
                                 <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                     Sem itens.
@@ -390,6 +503,133 @@ const goWeeklyProgramToIndicator = (index) => {
                 </div>
             </template>
         </Card>
+
+        <div class="hidden grid-cols-1 gap-4 md:grid lg:grid-cols-2">
+            <Card>
+                <template #title>
+                    <div class="flex items-center justify-between gap-2">
+                        <span>Status de tarefas</span>
+                    </div>
+                </template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardChartNoLegendOptions" />
+                    </div>
+                </template>
+            </Card>
+
+            <Card>
+                <template #title>
+                    <div class="flex items-center justify-between gap-2">
+                        <span>Tarefas por usuários</span>
+                        <div class="ml-auto flex items-center gap-2">
+                            <Select
+                                v-model="dashboardTaskByUserPeriod"
+                                size="small"
+                                :options="[
+                                    { label: '7 dias', value: '7d' },
+                                    { label: '15 dias', value: '15d' },
+                                    { label: '30 dias', value: '30d' },
+                                ]"
+                                option-label="label"
+                                option-value="value"
+                                class="!w-28"
+                                @change="applyDashboardTaskByUserPeriod"
+                            />
+                            <Select v-model="selectedDashboardUser" size="small" :options="dashboardCharts?.taskByUserStatus?.users || []" option-label="name" option-value="id" class="!w-36" />
+                        </div>
+                    </div>
+                </template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart class="bo-chart-fill" type="bar" :data="dashboardTaskByUserChartData" :options="dashboardStackedChartOptions" />
+                    </div>
+                </template>
+            </Card>
+
+            <Card>
+                <template #title>
+                    <div class="flex items-center justify-between gap-2">
+                        <span>Conteúdos criados x publicados</span>
+                        <Select
+                            v-model="dashboardContentsLinePeriod"
+                            size="small"
+                            :options="[
+                                { label: '7 dias', value: '7d' },
+                                { label: '15 dias', value: '15d' },
+                                { label: '30 dias', value: '30d' },
+                            ]"
+                            option-label="label"
+                            option-value="value"
+                            class="!w-28"
+                            @change="applyDashboardContentsLinePeriod"
+                        />
+                    </div>
+                </template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart class="bo-chart-fill" type="line" :data="dashboardContentsLineChartData" :options="dashboardChartOptions" />
+                    </div>
+                </template>
+            </Card>
+
+            <Card>
+                <template #title>Status dos conteúdos</template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart class="bo-chart-fill" type="bar" :data="dashboardContentStatusesChartData" :options="dashboardChartNoLegendOptions" />
+                    </div>
+                </template>
+            </Card>
+        </div>
+
+        <div class="md:hidden">
+            <Carousel :value="[1, 2, 3, 4]" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
+                <template #item="{ data }">
+                    <Card>
+                        <template #content>
+                            <div v-if="data === 1" class="space-y-3">
+                                <p class="text-sm font-semibold">Status de tarefas</p>
+                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardChartNoLegendOptions" /></div>
+                            </div>
+                            <div v-else-if="data === 2" class="space-y-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-sm font-semibold">Tarefas por usuários</p>
+                                    <Select v-model="dashboardTaskByUserPeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="!w-28" @change="applyDashboardTaskByUserPeriod" />
+                                </div>
+                                <Select v-model="selectedDashboardUser" size="small" :options="dashboardCharts?.taskByUserStatus?.users || []" option-label="name" option-value="id" class="!w-36" />
+                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardTaskByUserChartData" :options="dashboardStackedChartOptions" /></div>
+                            </div>
+                            <div v-else-if="data === 3" class="space-y-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-sm font-semibold">Conteúdos criados x publicados</p>
+                                    <Select v-model="dashboardContentsLinePeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="!w-28" @change="applyDashboardContentsLinePeriod" />
+                                </div>
+                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="line" :data="dashboardContentsLineChartData" :options="dashboardChartOptions" /></div>
+                            </div>
+                            <div v-else class="space-y-3">
+                                <p class="text-sm font-semibold">Status dos conteúdos</p>
+                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardContentStatusesChartData" :options="dashboardChartNoLegendOptions" /></div>
+                            </div>
+                        </template>
+                    </Card>
+                </template>
+            </Carousel>
+        </div>
+
+        <hr class="md:hidden" />
+
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <Link v-for="card in generalCards" :key="card.title" :href="card.href">
+                <Card class="h-full transition hover:-translate-y-0.5 hover:shadow-md">
+                    <template #content>
+                        <p class="text-xs uppercase tracking-wide text-slate-500">{{ card.title }}</p>
+                        <p class="mt-1 text-3xl font-semibold text-slate-900 dark:text-slate-100">{{ card.value }}</p>
+                    </template>
+                </Card>
+            </Link>
+        </div>
+
 
         <div class="hidden gap-4 xl:grid xl:grid-cols-2">
             <Card>

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignUuid('venue_id')->nullable()->constrained('venues')->nullOnDelete();
             $table->string('title');
             $table->enum('attendance_mode', ['participant', 'audience'])->default('participant');
+            $table->boolean('is_online')->default(false);
             $table->longText('description')->nullable();
             $table->date('event_date');
             $table->time('event_time')->nullable();

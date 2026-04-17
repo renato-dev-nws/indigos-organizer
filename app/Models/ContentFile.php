@@ -16,8 +16,19 @@ class ContentFile extends Model
 
     protected $fillable = ['content_id', 'original_name', 'path', 'mime_type', 'size'];
 
+    protected $appends = ['url'];
+
     public function content(): BelongsTo
     {
         return $this->belongsTo(Content::class);
+    }
+
+    public function getUrlAttribute(): ?string
+    {
+        if (blank($this->path)) {
+            return null;
+        }
+
+        return asset('storage/'.$this->path);
     }
 }

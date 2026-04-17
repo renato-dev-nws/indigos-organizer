@@ -25,6 +25,7 @@ const form = useForm({
     event_type_id: null,
     venue_id: null,
     attendance_mode: 'participant',
+    is_online: false,
     description: '',
     event_date: '',
     event_time: '',

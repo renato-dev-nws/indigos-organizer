@@ -73,19 +73,22 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/content-platforms', [SettingsController::class, 'contentPlatforms'])->name('settings.pages.content-platforms');
     Route::get('/settings/task-statuses', [SettingsController::class, 'taskStatuses'])->name('settings.pages.task-statuses');
     Route::get('/settings/system', [SystemSettingController::class, 'index'])->name('settings.pages.system');
-    Route::post('/settings/system', [SystemSettingController::class, 'update'])->name('settings.system.update');
     Route::put('/settings/theme', [ThemeController::class, 'update'])->name('settings.theme');
-    Route::resource('/settings/idea-types', IdeaTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-types');
-    Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
-    Route::resource('/settings/venue-types', VenueTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-types');
-    Route::resource('/settings/venue-categories', VenueCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-categories');
-    Route::resource('/settings/event-types', EventTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.event-types');
-    Route::resource('/settings/shared-info-categories', SharedInfoCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.shared-info-categories');
-    Route::resource('/settings/content-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.content-styles');
-    Route::resource('/settings/venue-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-styles');
-    Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');
-    Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');
-    Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
+
+    Route::middleware('admin')->group(function () {
+        Route::post('/settings/system', [SystemSettingController::class, 'update'])->name('settings.system.update');
+        Route::resource('/settings/idea-types', IdeaTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-types');
+        Route::resource('/settings/idea-categories', IdeaCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.idea-categories');
+        Route::resource('/settings/venue-types', VenueTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-types');
+        Route::resource('/settings/venue-categories', VenueCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-categories');
+        Route::resource('/settings/event-types', EventTypeController::class)->only(['store', 'update', 'destroy'])->names('settings.event-types');
+        Route::resource('/settings/shared-info-categories', SharedInfoCategoryController::class)->only(['store', 'update', 'destroy'])->names('settings.shared-info-categories');
+        Route::resource('/settings/content-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.content-styles');
+        Route::resource('/settings/venue-styles', VenueStyleController::class)->only(['store', 'update', 'destroy'])->names('settings.venue-styles');
+        Route::resource('/settings/content-platforms', ContentPlatformController::class)->only(['store', 'update', 'destroy'])->names('settings.content-platforms');
+        Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');
+        Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
+    });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

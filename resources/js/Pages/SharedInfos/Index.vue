@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
@@ -10,16 +10,33 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ sharedInfos: Object, filters: Object });
 
 const localFilters = reactive({ search: props.filters?.search ?? '' });
+const quickSearch = ref(props.filters?.search ?? '');
+const quickSearchTimer = ref(null);
 const syncLocalFiltersFromProps = () => {
     localFilters.search = props.filters?.search ?? '';
+    quickSearch.value = props.filters?.search ?? '';
 };
-const filterChips = computed(() => (localFilters.search ? [{ key: 'search', label: localFilters.search }] : []));
+const filterChips = computed(() => []);
 
 const submitFilters = () => router.get(route('shared-infos.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
-const resetFilters = () => { localFilters.search = ''; submitFilters(); };
-const removeChip = () => { localFilters.search = ''; submitFilters(); };
+const resetFilters = () => { localFilters.search = ''; quickSearch.value = ''; submitFilters(); };
+const removeChip = () => { localFilters.search = ''; quickSearch.value = ''; submitFilters(); };
 const cancelFilters = () => { syncLocalFiltersFromProps(); };
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
+watch(quickSearch, (value) => {
+    if (quickSearchTimer.value) {
+        clearTimeout(quickSearchTimer.value);
+    }
+
+    quickSearchTimer.value = setTimeout(() => {
+        if (localFilters.search === value) {
+            return;
+        }
+
+        localFilters.search = value;
+        submitFilters();
+    }, 1000);
+});
 const paginate = (event) => router.get(route('shared-infos.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { preserveScroll: true });
 </script>
@@ -37,8 +54,14 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
-                <label class="text-sm font-medium">Busca</label>
-                <InputText v-model="localFilters.search" placeholder="Título" />
+                <label class="text-sm font-medium">Busca rápida</label>
+                <IconField>
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="quickSearch" placeholder="Título, categoria, descrição, links e arquivos" />
+                </IconField>
+                <div class="mt-1 flex justify-end">
+                    <Button v-if="quickSearch" type="button" size="small" text label="Limpar" @click="quickSearch = ''" />
+                </div>
             </div>
         </BoFilterBar>
 

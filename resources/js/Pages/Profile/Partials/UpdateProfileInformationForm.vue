@@ -19,6 +19,7 @@ const user = usePage().props.auth.user;
 const form = useForm({
     name: user.name,
     email: user.email,
+    avatar_url: user.avatar_url || '',
 });
 </script>
 
@@ -67,6 +68,21 @@ const form = useForm({
                 />
 
                 <InputError class="mt-2" :message="form.errors.email" />
+            </div>
+
+            <div>
+                <InputLabel for="avatar_url" value="Avatar URL" />
+
+                <TextInput
+                    id="avatar_url"
+                    type="url"
+                    class="mt-1 block w-full"
+                    v-model="form.avatar_url"
+                    autocomplete="photo"
+                    placeholder="https://..."
+                />
+
+                <InputError class="mt-2" :message="form.errors.avatar_url" />
             </div>
 
             <div v-if="mustVerifyEmail && user.email_verified_at === null">

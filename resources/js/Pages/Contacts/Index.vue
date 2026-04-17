@@ -20,6 +20,8 @@ const localFilters = reactive({
     search: props.filters?.search ?? '',
     venue_id: props.filters?.venue_id ?? null,
 });
+const quickSearch = ref(props.filters?.search ?? '');
+const quickSearchTimer = ref(null);
 
 const showFormModal = ref(false);
 const selectedContact = ref(null);
@@ -27,16 +29,28 @@ const selectedContact = ref(null);
 const syncLocalFiltersFromProps = () => {
     localFilters.search = props.filters?.search ?? '';
     localFilters.venue_id = props.filters?.venue_id ?? null;
+    quickSearch.value = props.filters?.search ?? '';
 };
 
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 
+watch(quickSearch, (value) => {
+    if (quickSearchTimer.value) {
+        clearTimeout(quickSearchTimer.value);
+    }
+
+    quickSearchTimer.value = setTimeout(() => {
+        if (localFilters.search === value) {
+            return;
+        }
+
+        localFilters.search = value;
+        submitFilters();
+    }, 1000);
+});
+
 const filterChips = computed(() => {
     const chips = [];
-
-    if (localFilters.search) {
-        chips.push({ key: 'search', label: localFilters.search });
-    }
 
     if (localFilters.venue_id) {
         const venue = props.venues?.find((item) => item.id === localFilters.venue_id);
@@ -55,11 +69,15 @@ const submitFilters = () => {
 const resetFilters = () => {
     localFilters.search = '';
     localFilters.venue_id = null;
+    quickSearch.value = '';
     submitFilters();
 };
 
 const removeChip = (key) => {
     localFilters[key] = key === 'search' ? '' : null;
+    if (key === 'search') {
+        quickSearch.value = '';
+    }
     submitFilters();
 };
 
@@ -99,8 +117,14 @@ const refreshContacts = () => {
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <div class="space-y-2">
-                <label class="text-sm font-medium">Busca</label>
-                <InputText v-model="localFilters.search" placeholder="Nome, email, telefone ou WhatsApp" />
+                <label class="text-sm font-medium">Busca rápida</label>
+                <IconField>
+                    <InputIcon class="pi pi-search" />
+                    <InputText v-model="quickSearch" placeholder="Nome, email, descrição ou local" />
+                </IconField>
+                <div class="mt-1 flex justify-end">
+                    <Button v-if="quickSearch" type="button" size="small" text label="Limpar" @click="quickSearch = ''" />
+                </div>
             </div>
 
             <div class="space-y-2">

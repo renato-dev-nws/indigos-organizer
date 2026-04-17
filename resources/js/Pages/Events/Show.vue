@@ -167,8 +167,12 @@ watch(
                         <p class="font-semibold"><BoDateText :value="event.starts_at" mode="datetime" /></p>
                     </div>
                     <div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Evento online</p>
+                        <p class="font-semibold">{{ event.is_online ? 'Sim' : 'Não' }}</p>
+                    </div>
+                    <div>
                         <p class="text-sm text-slate-500 dark:text-slate-400">Local</p>
-                        <p class="font-semibold">{{ event.venue?.name || '-' }}</p>
+                        <p class="font-semibold">{{ event.is_online ? 'Evento online' : (event.venue?.name || '-') }}</p>
                     </div>
                 </div>
             </template>
@@ -196,7 +200,7 @@ watch(
                 </template>
             </Card>
 
-            <Card>
+            <Card v-if="!event.is_online">
                 <template #title>Local</template>
                 <template #content>
                     <div class="grid gap-4 md:grid-cols-2">

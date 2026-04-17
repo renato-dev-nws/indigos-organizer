@@ -171,10 +171,34 @@ html:not(.app-dark) body:not(.app-dark) .p-paginator {
         margin-top: 2px;
         padding: 0;
     }
+
+    .bo-content-mobile-calendar,
+    .bo-content-mobile-calendar .p-card-content,
+    .bo-content-mobile-calendar .fc {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    .bo-content-mobile-calendar .fc .fc-toolbar {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
 }
 
 .bo-page-header-actions {
     align-self: flex-start;
+}
+
+.bo-chart-fill,
+.bo-chart-fill.p-chart,
+.bo-chart-fill canvas,
+.bo-chart-fill .chartjs-render-monitor {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.bo-chart-fill canvas {
+    display: block;
 }
 
 @media (max-width: 768px) {

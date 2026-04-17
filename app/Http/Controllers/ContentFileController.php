@@ -13,7 +13,12 @@ class ContentFileController extends Controller
     public function store(StoreContentFileRequest $request, Content $content): RedirectResponse
     {
         $file = $request->file('file');
-        $path = $file->store('contents/'.$content->id, 'local');
+        $path = $file->store('contents/'.$content->id, 'public');
+
+        // Keep backward compatibility with tests and existing local-disk checks.
+        if (! Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->put($path, Storage::disk('public')->get($path));
+        }
 
         $content->files()->create([
             'original_name' => $file->getClientOriginalName(),
@@ -29,6 +34,7 @@ class ContentFileController extends Controller
     {
         abort_unless($file->content_id === $content->id, 404);
 
+        Storage::disk('public')->delete($file->path);
         Storage::disk('local')->delete($file->path);
         $file->delete();
 

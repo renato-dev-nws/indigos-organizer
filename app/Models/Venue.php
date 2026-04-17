@@ -43,6 +43,7 @@ class Venue extends Model
         'instagram_url',
         'facebook_url',
         'youtube_url',
+        'whatsapp',
         'website_url',
         'notes',
         'description',

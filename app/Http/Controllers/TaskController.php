@@ -61,6 +61,7 @@ class TaskController extends Controller
             'boardTasks' => $boardTasks,
             'taskCalendarItems' => $this->buildTaskCalendarItems($calendarSourceTasks),
             'weeklyTaskItems' => $weeklyTaskItems,
+            'taskCharts' => $this->buildTaskCharts(),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()
@@ -73,6 +74,69 @@ class TaskController extends Controller
             'currentUserId' => (string) Auth::id(),
             'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_archived']),
         ]);
+    }
+
+    private function buildTaskCharts(): array
+    {
+        $statuses = TaskStatus::query()->orderBy('order')->get(['id', 'name', 'color']);
+        $allTasksScope = Task::query();
+
+        $statusCounts = $statuses
+            ->mapWithKeys(function (TaskStatus $status) use ($allTasksScope) {
+                $query = (clone $allTasksScope)->where('task_status_id', $status->id);
+
+                if ($this->isCompletedStatusName($status->name)) {
+                    $query->where('archived', false);
+                }
+
+                return [$status->id => (int) $query->count()];
+            });
+
+        $users = User::query()->orderBy('name')->get(['id', 'name']);
+        $usersData = collect([
+            ['id' => '__all__', 'name' => 'TODOS'],
+            ...$users->map(fn (User $user) => ['id' => (string) $user->id, 'name' => $user->name])->all(),
+            ['id' => '__unassigned__', 'name' => 'Sem responsável'],
+        ]);
+
+        $statusSeries = $statuses->map(function (TaskStatus $status) use ($usersData) {
+            $series = $usersData->map(function (array $user) use ($status) {
+                $query = Task::query()->where('task_status_id', $status->id);
+
+                if ($this->isCompletedStatusName($status->name)) {
+                    $query->where('archived', false);
+                }
+
+                if ($user['id'] === '__all__') {
+                    return (int) $query->count();
+                }
+
+                if ($user['id'] === '__unassigned__') {
+                    return (int) $query->whereNull('assigned_user_id')->count();
+                }
+
+                return (int) $query->where('assigned_user_id', $user['id'])->count();
+            })->values();
+
+            return [
+                'status_id' => $status->id,
+                'name' => $status->name,
+                'color' => $status->color,
+                'values' => $series,
+            ];
+        })->values();
+
+        return [
+            'statusCounts' => [
+                'labels' => $statuses->pluck('name')->values(),
+                'colors' => $statuses->pluck('color')->values(),
+                'data' => $statuses->map(fn (TaskStatus $status) => (int) ($statusCounts[$status->id] ?? 0))->values(),
+            ],
+            'tasksByUserStatus' => [
+                'users' => $usersData,
+                'statuses' => $statusSeries,
+            ],
+        ];
     }
 
     private function applyTaskFilters(Builder $query, bool $excludeArchived = false): Builder

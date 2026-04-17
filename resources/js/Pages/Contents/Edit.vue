@@ -98,6 +98,7 @@ const removeFile = (fileId) => {
                         option-value="value"
                         fluid
                     />
+                    <Message v-if="form.errors.status" severity="error" size="small" variant="simple">{{ form.errors.status }}</Message>
                 </div>
 
                 <div class="space-y-2">
@@ -131,11 +132,13 @@ const removeFile = (fileId) => {
                 <div class="space-y-2">
                     <label for="planned-publish">Publicação planejada</label>
                     <DatePicker id="planned-publish" v-model="form.planned_publish_at" show-time hour-format="24" fluid />
+                    <Message v-if="form.errors.planned_publish_at" severity="error" size="small" variant="simple">{{ form.errors.planned_publish_at }}</Message>
                 </div>
 
                 <div class="space-y-2">
                     <label for="published-at">Publicado em</label>
                     <DatePicker id="published-at" v-model="form.published_at" show-time hour-format="24" fluid />
+                    <Message v-if="form.errors.published_at" severity="error" size="small" variant="simple">{{ form.errors.published_at }}</Message>
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

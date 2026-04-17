@@ -61,6 +61,15 @@ watch(
     { deep: true },
 );
 
+watch(
+    () => props.form.is_online,
+    (value) => {
+        if (value) {
+            props.form.venue_id = null;
+        }
+    },
+);
+
 const selectedVenue = computed(() => venueOptions.value.find((venue) => venue.id === props.form.venue_id) || null);
 
 const isDarkMode = () => typeof document !== 'undefined'
@@ -310,7 +319,7 @@ const createVenue = async () => {
 <template>
     <form class="space-y-4" @submit.prevent="emit('submit')">
         <BoFormSection title="Dados principais" description="Informações do evento, agenda e ingressos">
-            <div class="md:col-span-2 space-y-2">
+            <div class="space-y-2">
                 <label for="event-title">Título</label>
                 <InputText id="event-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                 <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
@@ -353,7 +362,12 @@ const createVenue = async () => {
                 <Textarea id="event-description" v-model="form.description" rows="5" fluid />
             </div>
 
-            <div class="md:col-span-2 grid gap-4 xl:grid-cols-2">
+            <div class="md:col-span-2 flex items-center gap-2">
+                <Checkbox id="event-is-online" v-model="form.is_online" binary />
+                <label for="event-is-online" class="text-sm font-medium">Evento online</label>
+            </div>
+
+            <div v-if="!form.is_online" class="md:col-span-2 grid gap-4 xl:grid-cols-2">
                 <div class="space-y-3 rounded-2xl border border-slate-200/80 p-4 dark:border-slate-800">
                     <div class="space-y-2">
                         <label for="event-venue">Local</label>
@@ -418,7 +432,7 @@ const createVenue = async () => {
                 <div class="space-y-3">
                     <div v-for="(item, index) in form.extra_infos" :key="index" class="grid gap-3 rounded-xl border border-slate-200/80 p-3 md:grid-cols-[1fr_2fr_auto] dark:border-slate-800">
                         <InputText v-model="item.title" placeholder="Título" />
-                        <Textarea v-model="item.information" rows="2" placeholder="Informação" fluid />
+                        <InputText v-model="item.information" placeholder="Informação" fluid />
                         <div class="flex items-start justify-end">
                             <Button type="button" icon="pi pi-trash" text severity="danger" aria-label="Remover informação" @click="removeExtraInfo(index)" />
                         </div>

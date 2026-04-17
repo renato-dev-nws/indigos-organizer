@@ -20,6 +20,7 @@ const form = useForm({
     event_type_id: props.event.event_type_id,
     venue_id: props.event.venue_id,
     attendance_mode: props.event.attendance_mode,
+    is_online: !!props.event.is_online,
     description: props.event.description,
     event_date: props.event.event_date,
     event_time: props.event.event_time ? String(props.event.event_time).slice(0, 5) : '',

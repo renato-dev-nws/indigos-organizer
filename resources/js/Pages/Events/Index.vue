@@ -157,8 +157,13 @@ const fullCalendarOptions = computed(() => ({
                     <Column header="Data e hora">
                         <template #body="{ data }"><BoDateText :value="data.starts_at" mode="datetime" /></template>
                     </Column>
+                    <Column header="Online" class="w-20">
+                        <template #body="{ data }">
+                            <Checkbox :model-value="!!data.is_online" binary disabled />
+                        </template>
+                    </Column>
                     <Column header="Local">
-                        <template #body="{ data }">{{ data.venue?.name || '-' }}</template>
+                        <template #body="{ data }">{{ data.is_online ? 'Evento online' : (data.venue?.name || '-') }}</template>
                     </Column>
                     <Column header="Ações" class="bo-action-col w-28">
                         <template #body="{ data }">
@@ -180,7 +185,8 @@ const fullCalendarOptions = computed(() => ({
                         </div>
                         <p class="mt-1 text-xs text-slate-500">Presença: {{ attendanceLabels[event.attendance_mode] || event.attendance_mode }}</p>
                         <p class="text-xs text-slate-500">Data: <BoDateText :value="event.starts_at" mode="datetime" /></p>
-                        <p class="text-xs text-slate-500">Local: {{ event.venue?.name || '-' }}</p>
+                        <p class="text-xs text-slate-500">Online: {{ event.is_online ? 'Sim' : 'Não' }}</p>
+                        <p class="text-xs text-slate-500">Local: {{ event.is_online ? 'Evento online' : (event.venue?.name || '-') }}</p>
                         <div class="mt-3 flex justify-end gap-1">
                             <Link :href="route('events.show', event.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                             <Link :href="route('events.edit', event.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>

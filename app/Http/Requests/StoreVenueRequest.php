@@ -40,6 +40,7 @@ class StoreVenueRequest extends FormRequest
             'instagram_url' => ['nullable', 'url', 'max:255'],
             'facebook_url' => ['nullable', 'url', 'max:255'],
             'youtube_url' => ['nullable', 'url', 'max:255'],
+            'whatsapp' => ['nullable', 'string', 'max:255'],
             'website_url' => ['nullable', 'url', 'max:255'],
             'notes' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],

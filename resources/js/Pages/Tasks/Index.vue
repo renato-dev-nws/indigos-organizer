@@ -21,7 +21,7 @@ import TaskFormModal from '@/Components/tasks/TaskFormModal.vue';
 import TaskViewModal from '@/Components/tasks/TaskViewModal.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, weeklyTaskItems: Array, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
+const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, weeklyTaskItems: Array, taskCharts: Object, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
 const confirm = useConfirm();
 const viewMode = ref('list');
 const tableRows = ref(15);
@@ -366,6 +366,84 @@ const fullCalendarOptions = computed(() => ({
         await openViewModalByTaskId(taskId);
     },
 }));
+
+const selectedTaskChart = ref('status');
+const selectedUserStackedView = ref('__all__');
+
+const taskChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+};
+
+const taskStatusChartOptions = {
+    ...taskChartOptions,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+    },
+};
+
+const taskStackedChartOptions = {
+    ...taskChartOptions,
+    scales: {
+        x: { stacked: true },
+        y: {
+            stacked: true,
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+};
+
+const taskStatusChartData = computed(() => ({
+    labels: props.taskCharts?.statusCounts?.labels ?? [],
+    datasets: [
+        {
+            backgroundColor: props.taskCharts?.statusCounts?.colors ?? [],
+            data: props.taskCharts?.statusCounts?.data ?? [],
+        },
+    ],
+}));
+
+const taskByUserChartData = computed(() => {
+    const users = props.taskCharts?.tasksByUserStatus?.users ?? [];
+    const statuses = props.taskCharts?.tasksByUserStatus?.statuses ?? [];
+
+    let labels = users.map((user) => user.name);
+    let datasets = statuses.map((status) => ({
+        label: status.name,
+        backgroundColor: status.color || '#64748b',
+        data: status.values,
+    }));
+
+    if (selectedUserStackedView.value && selectedUserStackedView.value !== '__all__') {
+        const userIndex = users.findIndex((user) => user.id === selectedUserStackedView.value);
+        if (userIndex >= 0) {
+            labels = [users[userIndex].name];
+            datasets = statuses.map((status) => ({
+                label: status.name,
+                backgroundColor: status.color || '#64748b',
+                data: [status.values[userIndex] ?? 0],
+            }));
+        }
+    }
+
+    return { labels, datasets };
+});
+
 </script>
 
 <template>
@@ -381,6 +459,7 @@ const fullCalendarOptions = computed(() => ({
                             { label: 'Kanban', value: 'kanban' },
                             { label: 'Programação da semana', value: 'weekly' },
                             { label: 'Calendário completo', value: 'full_calendar' },
+                            { label: 'Gráficos', value: 'charts' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -399,6 +478,7 @@ const fullCalendarOptions = computed(() => ({
                     { label: 'Lista', value: 'list' },
                     { label: 'Programação', value: 'weekly' },
                     { label: 'Calendário', value: 'full_calendar' },
+                    { label: 'Gráficos', value: 'charts' },
                 ]"
                 option-label="label"
                 option-value="value"
@@ -691,10 +771,48 @@ const fullCalendarOptions = computed(() => ({
             </Card>
         </template>
 
-        <template v-else>
+        <template v-else-if="viewMode === 'full_calendar'">
             <Card>
                 <template #content>
                     <FullCalendar :options="fullCalendarOptions" />
+                </template>
+            </Card>
+        </template>
+
+        <template v-else>
+            <Card>
+                <template #title>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span>Gráficos de tarefas</span>
+                        <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                            <Select
+                                v-model="selectedTaskChart"
+                                size="small"
+                                :options="[
+                                    { label: 'Status de tarefas', value: 'status' },
+                                    { label: 'Status por usuário', value: 'user_status' },
+                                ]"
+                                option-label="label"
+                                option-value="value"
+                                class="w-44"
+                            />
+                            <Select
+                                v-if="selectedTaskChart === 'user_status'"
+                                v-model="selectedUserStackedView"
+                                size="small"
+                                :options="taskCharts?.tasksByUserStatus?.users || []"
+                                option-label="name"
+                                option-value="id"
+                                class="w-40"
+                            />
+                        </div>
+                    </div>
+                </template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart v-if="selectedTaskChart === 'status'" class="bo-chart-fill" type="bar" :data="taskStatusChartData" :options="taskStatusChartOptions" />
+                        <Chart v-else class="bo-chart-fill" type="bar" :data="taskByUserChartData" :options="taskStackedChartOptions" />
+                    </div>
                 </template>
             </Card>
         </template>

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import SettingsCrudSection from '@/Components/settings/SettingsCrudSection.vue';
@@ -26,6 +26,8 @@ const props = defineProps({
 });
 
 const selectedTab = ref(props.activeTab);
+const page = usePage();
+const readOnly = !page.props.auth?.user?.is_admin;
 
 watch(() => props.activeTab, (value) => {
     selectedTab.value = value;
@@ -73,6 +75,7 @@ const switchTab = (tabValue) => {
             :disable-delete-message="disableDeleteMessage"
             :reorder-route="reorderRoute"
             :extra-payload="extraPayload"
+            :read-only="readOnly"
         />
     </div>
 </template>

@@ -45,6 +45,19 @@ class GoogleAuthenticatedSessionController extends Controller
             ]);
         }
 
+        $avatarUrl = '';
+        try {
+            if (method_exists($googleUser, 'getAvatar')) {
+                $avatarUrl = trim((string) $googleUser->getAvatar());
+            }
+        } catch (Throwable) {
+            $avatarUrl = '';
+        }
+
+        if ($avatarUrl !== '' && $avatarUrl !== ($user->avatar_url ?? null)) {
+            $user->forceFill(['avatar_url' => $avatarUrl])->save();
+        }
+
         Auth::login($user, true);
         $request->session()->regenerate();
 

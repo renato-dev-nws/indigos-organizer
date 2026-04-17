@@ -2,7 +2,7 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import { Icon } from '@iconify/vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 defineOptions({ layout: AppLayout });
@@ -11,6 +11,8 @@ const props = defineProps({
     logoUrl: { type: String, default: null },
     iconUrl: { type: String, default: null },
 });
+const page = usePage();
+const readOnly = !page.props.auth?.user?.is_admin;
 
 // Logo
 const logoInput = ref(null);
@@ -93,6 +95,7 @@ const handleRemoveIcon = () => {
                         type="button"
                         size="small"
                         :loading="logoForm.processing"
+                        :disabled="readOnly"
                         @click="logoInput.click()"
                     >
                         <Icon icon="ph:upload-simple-bold" class="mr-1 h-4 w-4" />
@@ -105,6 +108,7 @@ const handleRemoveIcon = () => {
                         severity="danger"
                         outlined
                         :loading="removeLogo.processing"
+                        :disabled="readOnly"
                         @click="handleRemoveLogo"
                     >
                         <Icon icon="ph:trash-bold" class="mr-1 h-4 w-4" />
@@ -140,6 +144,7 @@ const handleRemoveIcon = () => {
                         type="button"
                         size="small"
                         :loading="iconForm.processing"
+                        :disabled="readOnly"
                         @click="iconInput.click()"
                     >
                         <Icon icon="ph:upload-simple-bold" class="mr-1 h-4 w-4" />
@@ -152,6 +157,7 @@ const handleRemoveIcon = () => {
                         severity="danger"
                         outlined
                         :loading="removeIcon.processing"
+                        :disabled="readOnly"
                         @click="handleRemoveIcon"
                     >
                         <Icon icon="ph:trash-bold" class="mr-1 h-4 w-4" />
@@ -160,5 +166,9 @@ const handleRemoveIcon = () => {
                 </div>
             </div>
         </div>
+
+        <Message v-if="readOnly" severity="info" size="small">
+            Apenas administradores podem alterar configurações do sistema.
+        </Message>
     </div>
 </template>

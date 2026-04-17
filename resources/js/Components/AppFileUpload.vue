@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
 defineProps({
@@ -13,6 +14,7 @@ defineProps({
 });
 
 const emit = defineEmits(['upload', 'remove']);
+const showUploader = ref(false);
 
 const onUpload = ({ files }) => {
     emit('upload', files || []);
@@ -28,7 +30,13 @@ const formatSize = (size) => {
 
 <template>
     <div class="space-y-4">
+        <div class="flex items-center gap-2">
+            <Button type="button" icon="pi pi-paperclip" label="Adicionar arquivo" @click="showUploader = !showUploader" />
+            <Button v-if="showUploader" type="button" text label="Ocultar" @click="showUploader = false" />
+        </div>
+
         <FileUpload
+            v-if="showUploader"
             mode="advanced"
             custom-upload
             auto
@@ -52,13 +60,16 @@ const formatSize = (size) => {
             </Column>
             <Column header="Ações" class="w-36">
                 <template #body="{ data }">
-                    <BoConfirmButton
-                        label="Remover"
-                        icon="pi pi-trash"
-                        severity="danger"
-                        message="Deseja remover este arquivo?"
-                        @confirm="emit('remove', data.id)"
-                    />
+                    <div class="flex items-center gap-2">
+                        <a v-if="data.url" :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Abrir</a>
+                        <BoConfirmButton
+                            label="Remover"
+                            icon="pi pi-trash"
+                            severity="danger"
+                            message="Deseja remover este arquivo?"
+                            @confirm="emit('remove', data.id)"
+                        />
+                    </div>
                 </template>
             </Column>
             <template #empty>

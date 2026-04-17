@@ -10,7 +10,7 @@ import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ venues: Object, sizes: Array, types: Array, filters: Object, mapPoints: Array });
+const props = defineProps({ venues: Object, sizes: Array, types: Array, filters: Object, mapPoints: Array, venueCharts: Object });
 
 const viewMode = ref('list');
 const quickSearch = ref(props.filters?.search ?? '');
@@ -145,6 +145,61 @@ const statusColors = {
     negotiating: '#f59e0b',
     open_doors: '#16a34a',
 };
+
+const selectedVenueChart = ref('types');
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top',
+        },
+    },
+};
+
+const barChartOptions = {
+    ...chartOptions,
+    scales: {
+        y: {
+            beginAtZero: true,
+            ticks: {
+                stepSize: 1,
+                precision: 0,
+            },
+        },
+    },
+    plugins: {
+        legend: {
+            display: false,
+        },
+    },
+};
+
+const venueTypesChartData = computed(() => ({
+    labels: props.venueCharts?.types?.labels ?? [],
+    datasets: [{ data: props.venueCharts?.types?.data ?? [] }],
+}));
+
+const venueCategoriesChartData = computed(() => ({
+    labels: props.venueCharts?.categories?.labels ?? [],
+    datasets: [{ data: props.venueCharts?.categories?.data ?? [] }],
+}));
+
+const venueStylesChartData = computed(() => ({
+    labels: props.venueCharts?.styles?.labels ?? [],
+    datasets: [{ backgroundColor: '#0ea5e9', data: props.venueCharts?.styles?.data ?? [] }],
+}));
+
+const venueStatesChartData = computed(() => ({
+    labels: props.venueCharts?.states?.labels ?? [],
+    datasets: [{ data: props.venueCharts?.states?.data ?? [] }],
+}));
+
+const venueCitiesChartData = computed(() => ({
+    labels: props.venueCharts?.cities?.labels ?? [],
+    datasets: [{ data: props.venueCharts?.cities?.data ?? [] }],
+}));
 
 const escapeHtml = (value = '') => String(value)
     .replaceAll('&', '&amp;')
@@ -669,6 +724,7 @@ onUnmounted(() => {
                         :options="[
                             { label: 'Lista', value: 'list' },
                             { label: 'Mapa', value: 'map' },
+                            { label: 'Gráficos', value: 'charts' },
                         ]"
                         option-label="label"
                         option-value="value"
@@ -799,7 +855,7 @@ onUnmounted(() => {
                 </template>
             </Card>
 
-            <Card v-else>
+            <Card v-else-if="viewMode === 'map'">
                 <template #content>
                     <div class="lg:grid lg:grid-cols-3 lg:gap-4 xl:grid-cols-4">
                         <div class="lg:col-span-2 xl:col-span-3">
@@ -845,6 +901,37 @@ onUnmounted(() => {
                                 </p>
                             </div>
                         </aside>
+                    </div>
+                </template>
+            </Card>
+
+            <Card v-else>
+                <template #title>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span>Gráficos de locais</span>
+                        <Select
+                            v-model="selectedVenueChart"
+                            size="small"
+                            :options="[
+                                { label: 'Tipos (donnut)', value: 'types' },
+                                { label: 'Categorias (donnut)', value: 'categories' },
+                                { label: 'Estilos (barras)', value: 'styles' },
+                                { label: 'Estados/UF (pie)', value: 'states' },
+                                { label: 'Cidades (pie)', value: 'cities' },
+                            ]"
+                            option-label="label"
+                            option-value="value"
+                            class="!w-40"
+                        />
+                    </div>
+                </template>
+                <template #content>
+                    <div class="h-[350px] md:h-[400px]">
+                        <Chart v-if="selectedVenueChart === 'types'" class="bo-chart-fill" type="doughnut" :data="venueTypesChartData" :options="chartOptions" />
+                        <Chart v-else-if="selectedVenueChart === 'categories'" class="bo-chart-fill" type="doughnut" :data="venueCategoriesChartData" :options="chartOptions" />
+                        <Chart v-else-if="selectedVenueChart === 'styles'" class="bo-chart-fill" type="bar" :data="venueStylesChartData" :options="barChartOptions" />
+                        <Chart v-else-if="selectedVenueChart === 'states'" class="bo-chart-fill" type="pie" :data="venueStatesChartData" :options="chartOptions" />
+                        <Chart v-else class="bo-chart-fill" type="pie" :data="venueCitiesChartData" :options="chartOptions" />
                     </div>
                 </template>
             </Card>
