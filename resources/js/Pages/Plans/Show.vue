@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
@@ -22,6 +22,14 @@ const standaloneTasks = computed(() => (props.plan.tasks || []).filter((task) =>
 const openTask = (task) => {
     activeTask.value = task;
     taskModalVisible.value = true;
+};
+
+const togglePhaseCompletion = (phase, completed) => {
+    router.patch(
+        route('plans.phases.completion', [props.plan.id, phase.id]),
+        { completed: !!completed },
+        { preserveScroll: true },
+    );
 };
 </script>
 
@@ -70,7 +78,13 @@ const openTask = (task) => {
                     <div v-for="phase in plan.phases" :key="phase.id" class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                         <div class="mb-2 flex items-center justify-between gap-2">
                             <h3 class="font-semibold">{{ phase.order }}. {{ phase.title }}</h3>
-                            <Tag :value="`${phase.tasks?.length || 0} tarefas`" severity="secondary" />
+                            <div class="flex items-center gap-2">
+                                <Tag :value="`${phase.tasks?.length || 0} tarefas`" severity="secondary" />
+                                <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 dark:border-slate-700">
+                                    <Checkbox :model-value="!!phase.completed" binary :input-id="`phase-completed-view-${phase.id}`" @update:model-value="(value) => togglePhaseCompletion(phase, value)" />
+                                    <label :for="`phase-completed-view-${phase.id}`" class="text-xs font-medium">Concluída</label>
+                                </div>
+                            </div>
                         </div>
                         <p class="mb-2 text-sm text-slate-500">{{ phase.description || 'Sem descrição' }}</p>
                         <div class="grid gap-2 md:grid-cols-2">
@@ -106,6 +120,24 @@ const openTask = (task) => {
                         <p class="text-xs text-slate-500">{{ task.status?.name || 'Sem status' }}</p>
                     </button>
                     <p v-if="!standaloneTasks.length" class="text-sm text-slate-500">Nenhuma tarefa vinculada diretamente.</p>
+                </div>
+            </template>
+        </Card>
+
+        <Card>
+            <template #title>Conteúdos vinculados</template>
+            <template #content>
+                <div class="grid gap-2 md:grid-cols-2">
+                    <Link
+                        v-for="content in plan.contents || []"
+                        :key="content.id"
+                        :href="route('contents.show', content.id)"
+                        class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left transition hover:border-indigo-300 hover:bg-indigo-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-indigo-700 dark:hover:bg-slate-800"
+                    >
+                        <p class="text-sm font-semibold">{{ content.title }}</p>
+                        <p class="text-xs text-slate-500">{{ content.status || 'Sem status' }}</p>
+                    </Link>
+                    <p v-if="!(plan.contents || []).length" class="text-sm text-slate-500">Nenhum conteúdo vinculado a este planejamento.</p>
                 </div>
             </template>
         </Card>

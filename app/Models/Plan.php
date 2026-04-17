@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Plan extends Model
 {
@@ -48,6 +49,59 @@ class Plan extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function contents(): HasMany
+    {
+        return $this->hasMany(Content::class);
+    }
+
+    public function refreshProgress(): int
+    {
+        $this->loadMissing([
+            'phases.tasks.status:id,name',
+            'tasks.status:id,name',
+        ]);
+
+        $phases = $this->phases->values();
+        if ($phases->isEmpty()) {
+            $this->update(['progress' => 0]);
+
+            return 0;
+        }
+
+        $phaseWeight = 100 / $phases->count();
+        $accumulated = 0.0;
+
+        foreach ($phases as $phase) {
+            if ($phase->completed) {
+                $accumulated += $phaseWeight;
+                continue;
+            }
+
+            $phaseTasks = $phase->tasks ?? collect();
+            if ($phaseTasks->isEmpty()) {
+                continue;
+            }
+
+            $doneTasks = $phaseTasks->filter(fn (Task $task) => $this->isCompletedTaskStatusName($task->status?->name))->count();
+            $accumulated += ($doneTasks / $phaseTasks->count()) * $phaseWeight;
+        }
+
+        $progress = (int) max(0, min(100, round($accumulated)));
+        $this->update(['progress' => $progress]);
+
+        return $progress;
+    }
+
+    private function isCompletedTaskStatusName(?string $name): bool
+    {
+        $statusName = Str::of($name ?? '')
+            ->ascii()
+            ->lower()
+            ->toString();
+
+        return Str::contains($statusName, ['conclu', 'finaliz', 'done', 'completed']);
     }
 
     public function statusLabel(): string

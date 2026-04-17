@@ -201,6 +201,16 @@ const venueCitiesChartData = computed(() => ({
     datasets: [{ data: props.venueCharts?.cities?.data ?? [] }],
 }));
 
+const selectedVenueChartTitle = computed(() => {
+    return {
+        types: 'Tipos de locais',
+        categories: 'Categorias de locais',
+        styles: 'Estilos de locais',
+        states: 'Distribuicao por estados',
+        cities: 'Distribuicao por cidades',
+    }[selectedVenueChart.value] ?? 'Graficos de locais';
+});
+
 const escapeHtml = (value = '') => String(value)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -907,8 +917,8 @@ onUnmounted(() => {
 
             <Card v-else>
                 <template #title>
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <span>Gráficos de locais</span>
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Graficos de locais</h3>
                         <Select
                             v-model="selectedVenueChart"
                             size="small"
@@ -926,6 +936,7 @@ onUnmounted(() => {
                     </div>
                 </template>
                 <template #content>
+                    <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ selectedVenueChartTitle }}</p>
                     <div class="h-[350px] md:h-[400px]">
                         <Chart v-if="selectedVenueChart === 'types'" class="bo-chart-fill" type="doughnut" :data="venueTypesChartData" :options="chartOptions" />
                         <Chart v-else-if="selectedVenueChart === 'categories'" class="bo-chart-fill" type="doughnut" :data="venueCategoriesChartData" :options="chartOptions" />

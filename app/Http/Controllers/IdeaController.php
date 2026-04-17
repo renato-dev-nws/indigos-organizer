@@ -37,7 +37,7 @@ class IdeaController extends Controller
         return Inertia::render('Ideas/Index', [
             'ideas' => $ideas,
             'ideaBoardItems' => $ideaBoardItems,
-            'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'venue_style_id', 'search']),
+            'filters' => request()->only(['status', 'idea_type_id', 'idea_category_id', 'venue_style_id', 'search', 'mine']),
             'ideaTypes' => IdeaType::query()->orderBy('name')->get(),
             'ideaCategories' => IdeaCategory::query()->orderBy('name')->get(),
             'venueStyles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
@@ -51,6 +51,7 @@ class IdeaController extends Controller
                 $q->where('is_private', false)
                     ->orWhere('user_id', Auth::id());
             })
+            ->when(request()->boolean('mine'), fn ($q) => $q->where('user_id', Auth::id()))
             ->when(
                 request('status'),
                 fn ($q, $status) => $q->where('status', $status),

@@ -43,6 +43,8 @@ const localFilters = reactive({
     related_type: props.filters?.related_type ?? null,
     content_id: props.filters?.content_id ?? null,
     include_archived: props.filters?.include_archived === '1' || props.filters?.include_archived === 1 || props.filters?.include_archived === true,
+    overdue_only: props.filters?.overdue_only === '1' || props.filters?.overdue_only === 1 || props.filters?.overdue_only === true,
+    scheduled_only: props.filters?.scheduled_only === '1' || props.filters?.scheduled_only === 1 || props.filters?.scheduled_only === true,
     search: props.filters?.search ?? '',
 });
 
@@ -52,6 +54,8 @@ const syncLocalFiltersFromProps = () => {
     localFilters.related_type = props.filters?.related_type ?? null;
     localFilters.content_id = props.filters?.content_id ?? null;
     localFilters.include_archived = props.filters?.include_archived === '1' || props.filters?.include_archived === 1 || props.filters?.include_archived === true;
+    localFilters.overdue_only = props.filters?.overdue_only === '1' || props.filters?.overdue_only === 1 || props.filters?.overdue_only === true;
+    localFilters.scheduled_only = props.filters?.scheduled_only === '1' || props.filters?.scheduled_only === 1 || props.filters?.scheduled_only === true;
     localFilters.search = props.filters?.search ?? '';
 };
 
@@ -61,8 +65,12 @@ const filterChips = computed(() => {
     if (localFilters.related_type) chips.push({ key: 'related_type', label: relatedTypeLabels[localFilters.related_type] || localFilters.related_type });
     if (localFilters.priority) chips.push({ key: 'priority', label: localFilters.priority });
     if (localFilters.include_archived) chips.push({ key: 'include_archived', label: 'Inclui arquivadas' });
+    if (localFilters.overdue_only) chips.push({ key: 'overdue_only', label: 'Apenas atrasadas' });
+    if (localFilters.scheduled_only) chips.push({ key: 'scheduled_only', label: 'Apenas agendadas' });
     if (localFilters.assigned_user_id === '__all__') {
         chips.push({ key: 'assigned_user_id', label: 'Todos' });
+    } else if (localFilters.assigned_user_id === '__unassigned__') {
+        chips.push({ key: 'assigned_user_id', label: 'Tarefas para todos' });
     } else if (localFilters.assigned_user_id) {
         const user = props.users.find((x) => x.id === localFilters.assigned_user_id);
         if (user) chips.push({ key: 'assigned_user_id', label: user.name });
@@ -83,6 +91,8 @@ const resetFilters = () => {
     localFilters.related_type = null;
     localFilters.content_id = null;
     localFilters.include_archived = false;
+    localFilters.overdue_only = false;
+    localFilters.scheduled_only = false;
     localFilters.search = '';
     submitFilters();
 };
@@ -160,6 +170,19 @@ const taskIsCompleted = (task) => {
         .toLowerCase();
 
     return ['conclu', 'finaliz', 'done', 'completed'].some((token) => statusName.includes(token));
+};
+
+const isTaskOverdue = (task) => {
+    if (!task?.due_date || task?.archived || taskIsCompleted(task)) {
+        return false;
+    }
+
+    const dueDate = new Date(`${task.due_date}T23:59:59`);
+    if (Number.isNaN(dueDate.getTime())) {
+        return false;
+    }
+
+    return dueDate.getTime() < Date.now();
 };
 
 const canShowTaskQuickAction = (task) => !(taskIsCompleted(task) && task.archived);
@@ -513,7 +536,7 @@ const taskByUserChartData = computed(() => {
                 <label class="text-sm font-medium">Responsável</label>
                 <Select
                     v-model="localFilters.assigned_user_id"
-                    :options="[{ id: '__all__', name: 'Todos' }, ...users]"
+                    :options="[{ id: '__all__', name: 'Todos' }, { id: '__unassigned__', name: 'Tarefas para todos' }, ...users]"
                     option-label="name"
                     option-value="id"
                     show-clear
@@ -543,6 +566,20 @@ const taskByUserChartData = computed(() => {
                     <label for="include-archived" class="text-sm">Incluir tarefas arquivadas na lista</label>
                 </div>
             </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Tarefas atrasadas</label>
+                <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                    <Checkbox v-model="localFilters.overdue_only" binary input-id="overdue-only" />
+                    <label for="overdue-only" class="text-sm">Exibir apenas tarefas atrasadas</label>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Apenas agendadas</label>
+                <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                    <Checkbox v-model="localFilters.scheduled_only" binary input-id="scheduled-only" />
+                    <label for="scheduled-only" class="text-sm">Exibir apenas tarefas com agendamento</label>
+                </div>
+            </div>
         </BoFilterBar>
 
         <Card v-if="viewMode === 'list'">
@@ -551,7 +588,10 @@ const taskByUserChartData = computed(() => {
                     <DataTable :value="paginatedTasks" data-key="id" striped-rows>
                         <Column field="title" header="Título">
                             <template #body="{ data }">
-                                <button type="button" class="font-medium text-left hover:underline" @click="openViewModal(data)">{{ data.title }}</button>
+                                <button type="button" class="flex items-center gap-1 font-medium text-left hover:underline" @click="openViewModal(data)">
+                                    <iconify-icon v-if="isTaskOverdue(data)" icon="mdi:clock-alert" class="text-red-500" width="14" height="14" />
+                                    <span>{{ data.title }}</span>
+                                </button>
                             </template>
                         </Column>
                         <Column header="Relacionada a">
@@ -610,7 +650,10 @@ const taskByUserChartData = computed(() => {
                 <div class="block space-y-3 md:hidden">
                     <div v-for="task in paginatedTasks" :key="task.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <div class="mb-2 flex items-start justify-between gap-2">
-                            <button type="button" class="font-semibold text-left hover:underline" @click="openViewModal(task)">{{ task.title }}</button>
+                            <button type="button" class="flex items-center gap-1 font-semibold text-left hover:underline" @click="openViewModal(task)">
+                                <iconify-icon v-if="isTaskOverdue(task)" icon="mdi:clock-alert" class="text-red-500" width="14" height="14" />
+                                <span>{{ task.title }}</span>
+                            </button>
                             <BoPriorityTag :value="task.priority" />
                         </div>
                         <p class="text-xs text-slate-500">{{ relatedTypeLabels[task.related_type] || task.related_type }}</p>
@@ -782,9 +825,9 @@ const taskByUserChartData = computed(() => {
         <template v-else>
             <Card>
                 <template #title>
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <span>Gráficos de tarefas</span>
-                        <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Graficos de tarefas</h3>
+                        <div class="flex flex-wrap items-center gap-2">
                             <Select
                                 v-model="selectedTaskChart"
                                 size="small"
@@ -809,6 +852,9 @@ const taskByUserChartData = computed(() => {
                     </div>
                 </template>
                 <template #content>
+                    <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {{ selectedTaskChart === 'status' ? 'Status de tarefas' : 'Status de tarefas por responsavel' }}
+                    </p>
                     <div class="h-[350px] md:h-[400px]">
                         <Chart v-if="selectedTaskChart === 'status'" class="bo-chart-fill" type="bar" :data="taskStatusChartData" :options="taskStatusChartOptions" />
                         <Chart v-else class="bo-chart-fill" type="bar" :data="taskByUserChartData" :options="taskStackedChartOptions" />

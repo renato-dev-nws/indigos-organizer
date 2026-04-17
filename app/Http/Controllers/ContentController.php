@@ -9,6 +9,7 @@ use App\Models\ContentPlatform;
 use App\Models\Idea;
 use App\Models\IdeaCategory;
 use App\Models\IdeaType;
+use App\Models\Plan;
 use App\Models\VenueStyle;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -223,6 +224,7 @@ class ContentController extends Controller
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
             'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
@@ -246,19 +248,20 @@ class ContentController extends Controller
     public function show(Content $content): Response
     {
         return Inertia::render('Contents/Show', [
-            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'files', 'links', 'idea', 'user']),
+            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'files', 'links', 'idea', 'plan', 'user']),
         ]);
     }
 
     public function edit(Content $content): Response
     {
         return Inertia::render('Contents/Edit', [
-            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'links', 'files']),
+            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'links', 'files', 'plan']),
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
             'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
+            'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->orderBy('title')->get(['id', 'title']),
             'venueStyleIds' => $content->styles()->pluck('venue_styles.id')->all(),
         ]);
     }

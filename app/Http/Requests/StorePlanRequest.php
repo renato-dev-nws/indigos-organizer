@@ -25,6 +25,7 @@ class StorePlanRequest extends FormRequest
             'phases.*.title' => ['required_with:phases', 'string', 'max:255'],
             'phases.*.description' => ['nullable', 'string'],
             'phases.*.order' => ['nullable', 'integer'],
+            'phases.*.completed' => ['nullable', 'boolean'],
         ];
     }
 }

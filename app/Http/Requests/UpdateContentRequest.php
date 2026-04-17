@@ -8,6 +8,7 @@ class UpdateContentRequest extends StoreContentRequest
 	{
 		return [
 			'idea_id' => ['nullable', 'uuid', 'exists:ideas,id'],
+			'plan_id' => ['nullable', 'uuid', 'exists:plans,id'],
 			'title' => ['required', 'string', 'max:255'],
 			'script' => ['nullable', 'string'],
 			'content_platform_ids' => ['nullable', 'array'],

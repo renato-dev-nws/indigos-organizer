@@ -8,14 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('plan_phases', function (Blueprint $table) {
+        Schema::create('fast_notes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('plan_id')->constrained('plans')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->integer('order')->default(0);
-            $table->boolean('completed')->default(false);
+            $table->enum('related_type', ['administrative', 'contents', 'tasks', 'planning', 'others'])->default('administrative');
+            $table->json('list_items')->nullable();
+            $table->text('note')->nullable();
+            $table->boolean('is_priority')->default(false);
+            $table->timestamp('archived_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -23,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('plan_phases');
+        Schema::dropIfExists('fast_notes');
     }
 };

@@ -5,6 +5,7 @@ use App\Http\Controllers\ContentFileController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\FastNoteController;
 use App\Http\Controllers\GeneralCalendarController;
 use App\Http\Controllers\IdeaController;
 use App\Http\Controllers\NotificationController;
@@ -56,6 +57,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/venues/quick-store', [VenueController::class, 'quickStore'])->name('venues.quick-store');
     Route::resource('contacts', ContactController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('plans', PlanController::class);
+    Route::patch('/plans/{plan}/phases/{phase}/completion', [PlanController::class, 'updatePhaseCompletion'])->name('plans.phases.completion');
+
+    Route::get('/fast-notes', [FastNoteController::class, 'index'])->name('fast-notes.index');
+    Route::post('/fast-notes', [FastNoteController::class, 'store'])->name('fast-notes.store');
+    Route::put('/fast-notes/{fastNote}', [FastNoteController::class, 'update'])->name('fast-notes.update');
+    Route::patch('/fast-notes/{fastNote}/archive', [FastNoteController::class, 'archive'])->name('fast-notes.archive');
+    Route::delete('/fast-notes/{fastNote}', [FastNoteController::class, 'destroy'])->name('fast-notes.destroy');
+
     Route::resource('events', EventController::class);
     Route::resource('shared-infos', SharedInfoController::class);
     Route::delete('/shared-infos/{sharedInfo}/documents/{document}', [SharedInfoDocumentController::class, 'destroy'])

@@ -37,10 +37,10 @@ const dashboardCards = computed(() => [
         colors: 'bg-indigo-300 dark:bg-indigo-500',
         value: props.summary?.tasksTotal || 0,
         subItems: [
-            { label: 'Agendadas', value: props.summary?.tasksScheduled || 0 },
-            { label: 'Suas tarefas', value: props.summary?.tasksMine || 0 },
-            { label: 'Tarefas de todos', value: props.summary?.tasksEveryone || 0 },
-            { label: 'Atrasadas', value: props.summary?.tasksOverdue || 0 },
+            { label: 'Agendadas', value: props.summary?.tasksScheduled || 0, href: route('tasks.index', { scheduled_only: 1 }) },
+            { label: 'Suas tarefas', value: props.summary?.tasksMine || 0, href: route('tasks.index') },
+            { label: 'Tarefas de todos', value: props.summary?.tasksEveryone || 0, href: route('tasks.index', { assigned_user_id: '__unassigned__' }) },
+            { label: 'Atrasadas', value: props.summary?.tasksOverdue || 0, href: route('tasks.index', { overdue_only: 1 }) },
         ],
     },
     {
@@ -50,10 +50,10 @@ const dashboardCards = computed(() => [
         colors: 'bg-purple-300 dark:bg-purple-600',
         value: props.summary?.contentsTotal || 0,
         subItems: [
-            { label: 'Na fila', value: props.summary?.contentsQueued || 0 },
-            { label: 'Em produção', value: props.summary?.contentsInProduction || 0 },
-            { label: 'Finalizados', value: props.summary?.contentsFinalized || 0 },
-            { label: 'Publicados', value: props.summary?.contentsPublished || 0 },
+            { label: 'Na fila', value: props.summary?.contentsQueued || 0, href: route('contents.index', { status: 'queued' }) },
+            { label: 'Em produção', value: props.summary?.contentsInProduction || 0, href: route('contents.index', { status: 'in_production' }) },
+            { label: 'Finalizados', value: props.summary?.contentsFinalized || 0, href: route('contents.index', { status: 'finalized' }) },
+            { label: 'Publicados', value: props.summary?.contentsPublished || 0, href: route('contents.index', { status: 'published' }) },
         ],
     },
     {
@@ -63,10 +63,10 @@ const dashboardCards = computed(() => [
         colors: 'bg-violet-300 dark:bg-violet-600',
         value: props.summary?.ideasTotal || 0,
         subItems: [
-            { label: 'Suas ideias', value: props.summary?.ideasMine || 0 },
-            { label: 'Na gaveta', value: props.summary?.ideasInDrawer || 0 },
-            { label: 'Na mesa', value: props.summary?.ideasOnTable || 0 },
-            { label: 'No quadro', value: props.summary?.ideasOnBoard || 0 },
+            { label: 'Suas ideias', value: props.summary?.ideasMine || 0, href: route('ideas.index', { mine: 1 }) },
+            { label: 'Na gaveta', value: props.summary?.ideasInDrawer || 0, href: route('ideas.index', { status: 'in_drawer' }) },
+            { label: 'Na mesa', value: props.summary?.ideasOnTable || 0, href: route('ideas.index', { status: 'on_table' }) },
+            { label: 'No quadro', value: props.summary?.ideasOnBoard || 0, href: route('ideas.index', { status: 'on_board' }) },
         ],
     },
 ]);
@@ -349,10 +349,10 @@ const goWeeklyProgramToIndicator = (index) => {
                         {{ card.value }}
                     </p>
                     <div class="mt-3 grid grid-cols-2 gap-2">
-                        <div v-for="item in card.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 border border-indigo-500">
+                        <Link v-for="item in card.subItems" :key="item.label" :href="item.href" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 border border-indigo-500 transition hover:bg-slate-200/80 dark:hover:bg-slate-700/70">
                             <p class="text-slate-500 dark:text-slate-300">{{ item.label }}</p>
                             <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ item.value }}</p>
-                        </div>
+                        </Link>
                     </div>
                 </template>
             </Card>
@@ -371,10 +371,10 @@ const goWeeklyProgramToIndicator = (index) => {
                                 {{ data.value }}
                             </p>
                             <div class="mt-3 grid grid-cols-2 gap-2">
-                                <div v-for="item in data.subItems" :key="item.label" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70">
+                                <Link v-for="item in data.subItems" :key="item.label" :href="item.href" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 transition hover:bg-slate-200/80 dark:hover:bg-slate-700/70">
                                     <p class="text-slate-500 dark:text-slate-300 text-center">{{ item.label }}</p>
                                     <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 text-center">{{ item.value }}</p>
-                                </div>
+                                </Link>
                             </div>
                         </template>
                     </Card>
@@ -733,7 +733,7 @@ const goWeeklyProgramToIndicator = (index) => {
             </Card>
         </div>
 
-        <Card class="xl:hidden">
+        <Card class="md:hidden">
             <template #title>Votação</template>
             <template #content>
                 <div v-if="boardIdeas.length" class="space-y-3">

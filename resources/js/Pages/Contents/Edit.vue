@@ -9,10 +9,11 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, venueStyleIds: Array });
+const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, plans: Array, venueStyleIds: Array });
 
 const form = useForm({
     idea_id: props.content.idea_id,
+    plan_id: props.content.plan_id,
     title: props.content.title,
     script: props.content.script,
     content_platform_ids: props.content.platforms?.map((platform) => platform.id) ?? [],
@@ -79,6 +80,11 @@ const removeFile = (fileId) => {
                 <div class="space-y-2">
                     <label for="content-idea">Ideia de origem</label>
                     <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-plan">Planejamento</label>
+                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">

@@ -20,7 +20,8 @@ class GeneralCalendarController extends Controller
             ->map(fn (Content $content) => [
                 'id' => 'content-'.$content->id,
                 'title' => $content->title,
-                'start' => optional($content->planned_publish_at)->toIso8601String(),
+                'start' => optional($content->planned_publish_at)->toDateString(),
+                'allDay' => true,
                 'type' => 'content',
                 'color' => '#4f46e5',
                 'url' => route('contents.show', $content),

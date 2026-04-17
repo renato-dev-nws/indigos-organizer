@@ -72,7 +72,7 @@ class TaskController extends Controller
             'events' => Event::query()->orderBy('event_date')->orderBy('event_time')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'currentUserId' => (string) Auth::id(),
-            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_archived']),
+            'filters' => request()->only(['assigned_user_id', 'priority', 'related_type', 'content_id', 'search', 'include_archived', 'overdue_only', 'scheduled_only']),
         ]);
     }
 
@@ -160,11 +160,28 @@ class TaskController extends Controller
             )
             ->when(
                 $assignedUserFilter && $assignedUserFilter !== '__all__',
-                fn ($q) => $q->where('assigned_user_id', $assignedUserFilter)
+                function ($q) use ($assignedUserFilter) {
+                    if ($assignedUserFilter === '__unassigned__') {
+                        $q->whereNull('assigned_user_id');
+                        return;
+                    }
+
+                    $q->where('assigned_user_id', $assignedUserFilter);
+                }
             )
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
             ->when(request('related_type'), fn ($q, $relatedType) => $q->where('related_type', $relatedType))
             ->when(request('content_id'), fn ($q, $contentId) => $q->where('content_id', $contentId))
+            ->when(
+                request()->boolean('overdue_only'),
+                fn ($q) => $q
+                    ->whereNotNull('due_date')
+                    ->whereDate('due_date', '<', Carbon::today()->toDateString())
+            )
+            ->when(
+                request()->boolean('scheduled_only'),
+                fn ($q) => $q->whereNotNull('scheduled_for')
+            )
             ->when(
                 ! $includeArchived || $excludeArchived,
                 fn ($q) => $q->where('archived', false)
@@ -251,6 +268,8 @@ class TaskController extends Controller
             $task->subtasks()->createMany($subtasks->all());
         }
 
+        $this->refreshTaskPlanProgress($task);
+
         return redirect()->route('tasks.index')->with('success', 'Tarefa criada com sucesso.');
     }
 
@@ -268,6 +287,7 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
+        $oldPlanId = $task->plan_id;
         $payload = $request->safe()->all();
         if (($payload['related_type'] ?? null) !== 'content') {
             $payload['content_id'] = null;
@@ -296,12 +316,18 @@ class TaskController extends Controller
             $task->subtasks()->createMany($subtasks->all());
         }
 
+        $this->refreshTaskPlanProgress($task);
+        $this->refreshPlanById($oldPlanId, [$task->plan_id]);
+
         return redirect()->route('tasks.index')->with('success', 'Tarefa atualizada com sucesso.');
     }
 
     public function destroy(Task $task): RedirectResponse
     {
+        $planId = $task->plan_id;
         $task->delete();
+
+        $this->refreshPlanById($planId);
 
         return redirect()->route('tasks.index')->with('success', 'Tarefa removida com sucesso.');
     }
@@ -315,6 +341,8 @@ class TaskController extends Controller
             'task_status_id' => $request->task_status_id,
             'archived' => $this->isCompletedStatusName($status->name) ? $task->archived : false,
         ]);
+
+        $this->refreshTaskPlanProgress($task);
 
         return back()->with('success', 'Status da tarefa atualizado.');
     }
@@ -346,6 +374,8 @@ class TaskController extends Controller
                 'archived' => false,
             ]);
 
+            $this->refreshTaskPlanProgress($task);
+
             return back()->with('success', 'Tarefa concluída com sucesso.');
         }
 
@@ -356,6 +386,8 @@ class TaskController extends Controller
         }
 
         $task->update(['archived' => true]);
+
+        $this->refreshTaskPlanProgress($task);
 
         return back()->with('success', 'Tarefa arquivada com sucesso.');
     }
@@ -373,5 +405,26 @@ class TaskController extends Controller
             ->toString();
 
         return Str::contains($statusName, ['conclu', 'finaliz', 'done', 'completed']);
+    }
+
+    private function refreshTaskPlanProgress(Task $task): void
+    {
+        $planId = $task->plan_id;
+        if (blank($planId)) {
+            return;
+        }
+
+        $plan = Plan::query()->find($planId);
+        $plan?->refreshProgress();
+    }
+
+    private function refreshPlanById(?string $planId, array $except = []): void
+    {
+        if (blank($planId) || in_array($planId, $except, true)) {
+            return;
+        }
+
+        $plan = Plan::query()->find($planId);
+        $plan?->refreshProgress();
     }
 }

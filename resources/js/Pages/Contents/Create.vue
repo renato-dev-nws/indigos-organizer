@@ -20,10 +20,12 @@ defineProps({
     categories: Array,
     styles: Array,
     ideas: Array,
+    plans: Array,
 });
 
 const form = useForm({
     idea_id: null,
+    plan_id: null,
     title: '',
     script: '',
     content_platform_ids: [],
@@ -69,6 +71,11 @@ const removeLink = (index) => {
                 <div class="space-y-2">
                     <label for="content-idea">Ideia de origem</label>
                     <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-plan">Planejamento</label>
+                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">

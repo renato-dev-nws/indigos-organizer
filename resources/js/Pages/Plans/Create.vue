@@ -17,21 +17,13 @@ const form = useForm({
     description: '',
     start_date: '',
     end_date: '',
-    completion_progress: 0,
     status: 'queued',
     phases: [],
 });
 
-const addPhase = () => form.phases.push({ title: '', description: '', order: form.phases.length + 1 });
+const addPhase = () => form.phases.push({ title: '', description: '', order: form.phases.length + 1, completed: false });
 const removePhase = (index) => form.phases.splice(index, 1);
-const submit = () => {
-    form
-        .transform((data) => ({
-            ...data,
-            progress: data.completion_progress,
-        }))
-        .post(route('plans.store'));
-};
+const submit = () => form.post(route('plans.store'));
 </script>
 
 <template>
@@ -51,7 +43,6 @@ const submit = () => {
                 <div class="md:col-span-2 space-y-2"><label>Descrição</label><Textarea v-model="form.description" rows="4" fluid /></div>
                 <div class="space-y-2"><label>Início</label><DatePicker v-model="form.start_date" fluid /></div>
                 <div class="space-y-2"><label>Fim</label><DatePicker v-model="form.end_date" fluid /></div>
-                <div class="space-y-2"><label>Progresso</label><InputNumber v-model="form.completion_progress" :min="0" :max="100" fluid /></div>
                 <div class="space-y-2">
                     <label>Status</label>
                     <Select v-model="form.status" :options="[{label:'Na fila',value:'queued'},{label:'Em execução',value:'running'},{label:'Cancelado',value:'cancelled'},{label:'Concluído',value:'completed'}]" option-label="label" option-value="value" fluid />
@@ -62,11 +53,17 @@ const submit = () => {
                 <template #title>Fases</template>
                 <template #content>
                     <div class="space-y-3">
-                        <div v-for="(phase, index) in form.phases" :key="index" class="grid gap-3 md:grid-cols-4">
+                        <div v-for="(phase, index) in form.phases" :key="index" class="grid gap-3 md:grid-cols-5">
                             <InputText v-model="phase.title" placeholder="Título da fase" />
                             <InputText v-model="phase.description" placeholder="Descrição" class="md:col-span-2" />
                             <div class="flex items-center gap-2">
                                 <InputNumber v-model="phase.order" :min="1" />
+                            </div>
+                            <div class="flex items-center gap-2 justify-end">
+                                <div class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                                    <Checkbox v-model="phase.completed" binary :input-id="`phase-completed-${index}`" />
+                                    <label :for="`phase-completed-${index}`" class="text-sm">Concluída</label>
+                                </div>
                                 <Button type="button" icon="pi pi-trash" text severity="danger" @click="removePhase(index)" />
                             </div>
                         </div>

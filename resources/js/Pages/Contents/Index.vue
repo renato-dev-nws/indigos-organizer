@@ -259,6 +259,17 @@ const contentPlatformsChartData = computed(() => ({
     datasets: [{ backgroundColor: '#0ea5e9', data: props.contentCharts?.platforms?.data ?? [] }],
 }));
 
+const selectedContentChartTitle = computed(() => {
+    return {
+        line: 'Conteudos criados x publicados',
+        types: 'Tipos de conteudo',
+        categories: 'Categorias de conteudo',
+        styles: 'Estilos de conteudo',
+        statuses: 'Status dos conteudos',
+        platforms: 'Plataformas de conteudo',
+    }[selectedContentChart.value] ?? 'Graficos de conteudos';
+});
+
 const applyContentChartPeriod = () => {
     const payload = {
         ...localFilters,
@@ -522,9 +533,9 @@ const applyContentChartPeriod = () => {
 
         <Card v-else>
             <template #title>
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span>Gráficos de conteúdo</span>
-                    <div class="ml-auto flex flex-wrap items-center justify-end gap-2">
+                <div class="space-y-3">
+                    <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Graficos de conteudos</h3>
+                    <div class="flex flex-wrap items-center gap-2">
                         <Select
                             v-model="selectedContentChart"
                             size="small"
@@ -558,7 +569,7 @@ const applyContentChartPeriod = () => {
                 </div>
             </template>
             <template #content>
-                <div v-if="selectedContentChartPeriod === 'custom'" class="mb-4 flex flex-wrap items-end justify-end gap-2">
+                <div v-if="selectedContentChartPeriod === 'custom'" class="mb-4 flex flex-wrap items-end gap-2">
                     <div class="space-y-1">
                         <label class="text-xs font-medium">Início</label>
                         <InputText v-model="selectedContentChartStart" type="date" class="w-40" @change="applyContentChartPeriod" />
@@ -568,6 +579,8 @@ const applyContentChartPeriod = () => {
                         <InputText v-model="selectedContentChartEnd" type="date" class="w-40" @change="applyContentChartPeriod" />
                     </div>
                 </div>
+
+                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ selectedContentChartTitle }}</p>
 
                 <div class="h-[350px] md:h-[400px]">
                     <Chart v-if="selectedContentChart === 'line'" class="bo-chart-fill" type="line" :data="contentLineChartData" :options="chartOptions" />

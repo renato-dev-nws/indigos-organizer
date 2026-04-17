@@ -114,4 +114,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(TaskUserNotificationLog::class);
     }
+
+    public function fastNotes(): HasMany
+    {
+        return $this->hasMany(FastNote::class);
+    }
 }

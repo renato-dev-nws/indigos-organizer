@@ -20,6 +20,7 @@ class Content extends Model
     protected $fillable = [
         'user_id',
         'idea_id',
+        'plan_id',
         'title',
         'script',
         'idea_type_id',
@@ -45,6 +46,11 @@ class Content extends Model
     public function idea(): BelongsTo
     {
         return $this->belongsTo(Idea::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
     }
 
     public function platforms(): BelongsToMany

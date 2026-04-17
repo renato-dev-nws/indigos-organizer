@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePlanRequest;
 use App\Http\Requests\UpdatePlanRequest;
 use App\Models\Plan;
+use App\Models\PlanPhase;
+use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,8 +40,9 @@ class PlanController extends Controller
     {
         DB::transaction(function () use ($request): void {
             $plan = Plan::create([
-                ...$request->safe()->except('phases'),
+                ...$request->safe()->except(['phases', 'progress']),
                 'user_id' => (string) Auth::id(),
+                'progress' => 0,
             ]);
 
             foreach ($request->input('phases', []) as $index => $phase) {
@@ -48,8 +51,11 @@ class PlanController extends Controller
                     'title' => $phase['title'],
                     'description' => $phase['description'] ?? null,
                     'order' => $phase['order'] ?? ($index + 1),
+                    'completed' => (bool) ($phase['completed'] ?? false),
                 ]);
             }
+
+            $plan->refreshProgress();
         });
 
         return redirect()->route('plans.index')->with('success', 'Plano criado com sucesso.');
@@ -65,6 +71,7 @@ class PlanController extends Controller
                 'tasks.status',
                 'tasks.assignedUser',
                 'tasks.subtasks',
+                'contents:id,plan_id,title,status,planned_publish_at,published_at',
                 'user',
             ]),
         ]);
@@ -80,7 +87,7 @@ class PlanController extends Controller
     public function update(UpdatePlanRequest $request, Plan $plan): RedirectResponse
     {
         DB::transaction(function () use ($request, $plan): void {
-            $plan->update($request->safe()->except('phases'));
+            $plan->update($request->safe()->except(['phases', 'progress']));
 
             $incoming = collect($request->input('phases', []));
             $incomingIds = $incoming->pluck('id')->filter()->values();
@@ -96,6 +103,7 @@ class PlanController extends Controller
                     'title' => $phase['title'],
                     'description' => $phase['description'] ?? null,
                     'order' => $phase['order'] ?? ($index + 1),
+                    'completed' => (bool) ($phase['completed'] ?? false),
                 ];
 
                 if (! empty($phase['id'])) {
@@ -104,6 +112,8 @@ class PlanController extends Controller
                     $plan->phases()->create($payload);
                 }
             }
+
+            $plan->refreshProgress();
         });
 
         return redirect()->route('plans.index')->with('success', 'Plano atualizado com sucesso.');
@@ -114,5 +124,22 @@ class PlanController extends Controller
         $plan->delete();
 
         return redirect()->route('plans.index')->with('success', 'Plano removido com sucesso.');
+    }
+
+    public function updatePhaseCompletion(Request $request, Plan $plan, PlanPhase $phase): RedirectResponse
+    {
+        abort_unless((string) $phase->plan_id === (string) $plan->id, 404);
+
+        $payload = $request->validate([
+            'completed' => ['required', 'boolean'],
+        ]);
+
+        $phase->update([
+            'completed' => (bool) $payload['completed'],
+        ]);
+
+        $plan->refreshProgress();
+
+        return back()->with('success', 'Fase atualizada com sucesso.');
     }
 }
