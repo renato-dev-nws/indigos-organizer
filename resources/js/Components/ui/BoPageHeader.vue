@@ -24,7 +24,7 @@ defineProps({
         <div class="min-w-0">
             <p v-if="supratitle" class="text-sm text-slate-500 dark:text-slate-400">{{ supratitle }}</p>
             <h1 class="flex items-center gap-2 text-2xl font-bold">
-                <span v-if="icon" class="shrink-0"><iconify-icon :icon="icon" width="28" height="28" /></span>
+                <span v-if="icon" class="shrink-0 -mb-1"><iconify-icon :icon="icon" width="28" height="28" /></span>
                 {{ title }}
             </h1>
             <p v-if="subtitle" class="text-sm text-slate-500 dark:text-slate-400">{{ subtitle }}</p>

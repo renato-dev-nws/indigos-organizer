@@ -28,6 +28,7 @@ class Venue extends Model
         'place_id',
         'address_line',
         'address_number',
+        'address_complement',
         'neighborhood',
         'city',
         'state',

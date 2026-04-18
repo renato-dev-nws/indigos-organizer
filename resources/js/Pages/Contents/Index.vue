@@ -182,6 +182,15 @@ const calendarColumns = computed(() => {
 const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
 const contentWeekDate = (content) => content.planned_publish_at;
 
+const contentCalendarLegend = [
+    { key: 'queued', label: statusLabels.queued, color: statusColors.queued },
+    { key: 'in_production', label: statusLabels.in_production, color: statusColors.in_production },
+    { key: 'finalized', label: statusLabels.finalized, color: statusColors.finalized },
+    { key: 'published', label: statusLabels.published, color: statusColors.published },
+    { key: 'cancelled', label: statusLabels.cancelled, color: statusColors.cancelled },
+    { key: 'paused', label: statusLabels.paused, color: statusColors.paused },
+];
+
 const fullCalendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -566,6 +575,16 @@ const applyContentChartPeriod = () => {
 
             <Card v-else-if="viewMode === 'full_calendar'">
                 <template #content>
+                    <div class="mb-4 flex flex-wrap gap-2">
+                        <div
+                            v-for="legend in contentCalendarLegend"
+                            :key="legend.key"
+                            class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                        >
+                            <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: legend.color }" />
+                            {{ legend.label }}
+                        </div>
+                    </div>
                     <FullCalendar :options="fullCalendarOptions" />
                 </template>
             </Card>
@@ -654,6 +673,16 @@ const applyContentChartPeriod = () => {
 
         <Card v-else-if="viewMode === 'full_calendar'" class="bo-content-mobile-calendar md:hidden">
             <template #content>
+                <div class="mb-4 flex flex-wrap gap-2">
+                    <div
+                        v-for="legend in contentCalendarLegend"
+                        :key="legend.key"
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                    >
+                        <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: legend.color }" />
+                        {{ legend.label }}
+                    </div>
+                </div>
                 <FullCalendar :options="fullCalendarOptions" />
             </template>
         </Card>

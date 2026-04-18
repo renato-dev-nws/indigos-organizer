@@ -13,6 +13,11 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ venues: Object, sizes: Array, types: Array, categories: Array, styles: Array, filters: Object, mapPoints: Array, venueCharts: Object });
 
 const viewMode = ref('list');
+const viewModeOptions = [
+    { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
+    { label: 'Mapa', value: 'map', icon: 'mdi:map-search-outline' },
+    { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
+];
 const quickSearch = ref(props.filters?.search ?? '');
 const quickSearchTimer = ref(null);
 const mapEl = ref(null);
@@ -26,6 +31,8 @@ let themeObserver = null;
 const legacyMarkerIconCache = new Map();
 const renderedMarkerHandles = new Map();
 const hoveredVenueId = ref(null);
+const selectedMobileMapVenue = ref(null);
+const mobileMapSuggestions = ref([]);
 
 const DEFAULT_MARKER_ICON = 'mdi:map-marker';
 const DEFAULT_MARKER_COLOR = '#4f46e5';
@@ -316,6 +323,11 @@ const performancesLabel = (count) => {
     return `${value} vezes`;
 };
 
+const normalizeForSearch = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
 const shouldShowMobileStatus = (status) => ['contacted', 'negotiating', 'open_doors'].includes(status);
 
 const normalizedMapPoints = computed(() => (props.mapPoints || []).map((point) => {
@@ -329,6 +341,76 @@ const normalizedMapPoints = computed(() => (props.mapPoints || []).map((point) =
         isValid: Number.isFinite(lat) && Number.isFinite(lng),
     };
 }).filter((point) => point.isValid));
+
+const searchMobileMapPoints = (event) => {
+    const query = normalizeForSearch(event?.query || '').trim();
+
+    if (!query) {
+        mobileMapSuggestions.value = normalizedMapPoints.value.slice(0, 8);
+        return;
+    }
+
+    mobileMapSuggestions.value = normalizedMapPoints.value
+        .filter((point) => {
+            const haystack = normalizeForSearch([
+                point.name,
+                point.address,
+                point.type?.name,
+            ].filter(Boolean).join(' '));
+
+            return haystack.includes(query);
+        })
+        .slice(0, 8);
+};
+
+const focusMapPoint = (pointOrId) => {
+    if (!mapInstance || !activeInfoWindow) {
+        return;
+    }
+
+    const pointId = typeof pointOrId === 'string' ? pointOrId : pointOrId?.id;
+    if (!pointId) {
+        return;
+    }
+
+    const point = normalizedMapPoints.value.find((item) => item.id === pointId);
+    const handle = renderedMarkerHandles.get(pointId);
+
+    if (!point || !handle) {
+        return;
+    }
+
+    mapInstance.panTo({ lat: point.lat, lng: point.lng });
+    mapInstance.setZoom(Math.max(mapInstance.getZoom() || 0, 14));
+    activeInfoWindow.setContent(buildInfoWindowContent(point));
+
+    if (handle.kind === 'advanced') {
+        activeInfoWindow.open({ anchor: handle.marker, map: mapInstance });
+    } else {
+        activeInfoWindow.open(mapInstance, handle.marker);
+    }
+
+    if (hoveredVenueId.value && hoveredVenueId.value !== pointId) {
+        setMarkerHovered(hoveredVenueId.value, false);
+    }
+
+    hoveredVenueId.value = pointId;
+    setMarkerHovered(pointId, true);
+};
+
+const onMobileMapVenueSelect = (event) => {
+    focusMapPoint(event?.value);
+};
+
+const clearMobileMapVenue = () => {
+    if (hoveredVenueId.value) {
+        setMarkerHovered(hoveredVenueId.value, false);
+        hoveredVenueId.value = null;
+    }
+
+    selectedMobileMapVenue.value = null;
+    mobileMapSuggestions.value = normalizedMapPoints.value.slice(0, 8);
+};
 
 const buildInfoWindowContent = (point) => {
     const icon = sanitizeIcon(point?.type?.icon);
@@ -721,6 +803,8 @@ watch(viewMode, async (value) => {
 watch(
     () => props.mapPoints,
     async () => {
+        mobileMapSuggestions.value = normalizedMapPoints.value.slice(0, 8);
+
         if (viewMode.value !== 'map') {
             return;
         }
@@ -733,6 +817,8 @@ watch(
 );
 
 onMounted(() => {
+    mobileMapSuggestions.value = normalizedMapPoints.value.slice(0, 8);
+
     if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
         themeObserver = new MutationObserver(() => {
             if (viewMode.value === 'map') {
@@ -771,14 +857,17 @@ onUnmounted(() => {
                     <SelectButton
                         v-model="viewMode"
                         size="small"
-                        :options="[
-                            { label: 'Lista', value: 'list' },
-                            { label: 'Mapa', value: 'map' },
-                            { label: 'Gráficos', value: 'charts' },
-                        ]"
+                        :options="viewModeOptions"
                         option-label="label"
                         option-value="value"
-                    />
+                    >
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </SelectButton>
                 </div>
                 <Link :href="route('venues.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo local" />
@@ -786,6 +875,22 @@ onUnmounted(() => {
                 </Link>
             </template>
         </BoPageHeader>
+
+        <div class="md:hidden">
+            <SelectButton
+                v-model="viewMode"
+                size="small"
+                :options="viewModeOptions"
+                option-label="label"
+                option-value="value"
+            >
+                <template #option="slotProps">
+                    <div class="flex items-center justify-center">
+                        <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                    </div>
+                </template>
+            </SelectButton>
+        </div>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
             <template #right-actions>
@@ -962,7 +1067,7 @@ onUnmounted(() => {
                             <p class="text-xs text-slate-500">Apresentou: {{ performancesLabel(venue.performances_count) }}</p>
                             <p class="text-xs text-slate-500">
                                 <iconify-icon icon="mdi:map-marker" class="mr-1 align-[-2px]" />
-                                {{ [venue.address_line, venue.address_number, venue.neighborhood, [venue.city, venue.state].filter(Boolean).join('/'), venue.postal_code].filter(Boolean).join(', ') || 'Endereço não informado' }}
+                                {{ [venue.address_line, venue.address_number, venue.address_complement, venue.neighborhood, [venue.city, venue.state].filter(Boolean).join('/'), venue.postal_code].filter(Boolean).join(', ') || 'Endereço não informado' }}
                             </p>
                             <div class="mt-3 flex justify-end gap-1">
                                 <Link :href="route('venues.show', venue.id)">
@@ -988,6 +1093,38 @@ onUnmounted(() => {
 
             <Card v-else-if="viewMode === 'map'">
                 <template #content>
+                    <div class="mb-3 lg:hidden">
+                        <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Buscar local no mapa</label>
+                        <div class="flex items-start gap-2">
+                            <AutoComplete
+                                v-model="selectedMobileMapVenue"
+                                :suggestions="mobileMapSuggestions"
+                                option-label="name"
+                                fluid
+                                dropdown
+                                placeholder="Digite para localizar no mapa"
+                                @complete="searchMobileMapPoints"
+                                @item-select="onMobileMapVenueSelect"
+                            >
+                                <template #option="slotProps">
+                                    <div class="py-1">
+                                        <p class="text-sm font-medium">{{ slotProps.option.name }}</p>
+                                        <p class="line-clamp-1 text-xs text-slate-500">{{ slotProps.option.address || 'Endereço não informado' }}</p>
+                                    </div>
+                                </template>
+                            </AutoComplete>
+                            <Button
+                                v-if="selectedMobileMapVenue"
+                                type="button"
+                                icon="pi pi-times"
+                                outlined
+                                severity="secondary"
+                                aria-label="Limpar busca"
+                                @click="clearMobileMapVenue"
+                            />
+                        </div>
+                    </div>
+
                     <div class="lg:grid lg:grid-cols-3 lg:gap-4 xl:grid-cols-4">
                         <div class="lg:col-span-2 xl:col-span-3">
                             <div ref="mapEl" class="h-[34rem] w-full rounded-xl border border-slate-200 dark:border-slate-800" />

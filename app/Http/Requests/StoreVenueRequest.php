@@ -26,6 +26,7 @@ class StoreVenueRequest extends FormRequest
             'place_id' => ['nullable', 'string', 'max:255'],
             'address_line' => ['nullable', 'string', 'max:255'],
             'address_number' => ['nullable', 'string', 'max:255'],
+            'address_complement' => ['nullable', 'string', 'max:255'],
             'neighborhood' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'max:255'],

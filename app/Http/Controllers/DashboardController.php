@@ -202,6 +202,7 @@ class DashboardController extends Controller
     private function buildTaskStatusChart(): array
     {
         $statuses = TaskStatus::query()->orderBy('order')->get(['id', 'name', 'color']);
+        $today = Carbon::today()->toDateString();
         $counts = $statuses->mapWithKeys(function (TaskStatus $status) {
             $query = Task::query()->where('task_status_id', $status->id);
 
@@ -216,6 +217,18 @@ class DashboardController extends Controller
             'labels' => $statuses->pluck('name')->values(),
             'colors' => $statuses->pluck('color')->values(),
             'data' => $statuses->map(fn (TaskStatus $status) => (int) ($counts[$status->id] ?? 0))->values(),
+            'overdue' => $statuses->map(function (TaskStatus $status) use ($today) {
+                if ($this->isFinishedTask($status->name)) {
+                    return 0;
+                }
+
+                return (int) Task::query()
+                    ->where('task_status_id', $status->id)
+                    ->where('archived', false)
+                    ->whereNotNull('due_date')
+                    ->whereDate('due_date', '<', $today)
+                    ->count();
+            })->values(),
         ];
     }
 

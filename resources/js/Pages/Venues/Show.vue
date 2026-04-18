@@ -45,6 +45,7 @@ const performancesLabel = computed(() => {
 const fullAddress = computed(() => [
     props.venue?.address_line,
     props.venue?.address_number,
+    props.venue?.address_complement,
     props.venue?.neighborhood,
     [props.venue?.city, props.venue?.state].filter(Boolean).join('/'),
     props.venue?.postal_code,
@@ -167,6 +168,7 @@ const mapEmbedUrl = computed(() => {
                 <template #content>
                     <div class="space-y-1 text-sm">
                         <p><strong>Endereço:</strong> {{ fullAddress || '-' }}</p>
+                        <p><strong>Complemento:</strong> {{ venue.address_complement || '-' }}</p>
                         <p><strong>Bairro:</strong> {{ venue.neighborhood || '-' }}</p>
                         <p><strong>Cidade/UF:</strong> {{ venue.city || '-' }} / {{ venue.state || '-' }}</p>
                         <p><strong>País:</strong> {{ venue.country || '-' }}</p>

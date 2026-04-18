@@ -54,6 +54,7 @@ const calendarOptions = (items) => ({
         month: 'Mês',
         week: 'Semana',
     },
+    eventDisplay: 'block',
     events: (items || []).map((item) => ({
         ...item,
         display: item.display || 'block',
@@ -90,9 +91,9 @@ const calendarOptions = (items) => ({
                     <div
                         v-for="item in legend"
                         :key="item.label"
-                        class="rounded-full px-3 py-1 text-xs font-medium text-white"
-                        :style="{ backgroundColor: item.color }"
+                        class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                     >
+                        <span class="h-2.5 w-2.5 rounded-full" :style="{ backgroundColor: item.color }" />
                         {{ item.label }}
                     </div>
                 </div>

@@ -38,6 +38,7 @@ class VenueController extends Controller
                 'venue_type_id',
                 'address_line',
                 'address_number',
+                'address_complement',
                 'neighborhood',
                 'city',
                 'state',
@@ -55,6 +56,7 @@ class VenueController extends Controller
                 'address' => collect([
                     $venue->address_line,
                     $venue->address_number,
+                    $venue->address_complement,
                     $venue->neighborhood,
                     trim(implode(' - ', array_filter([$venue->city, $venue->state]))),
                     $venue->postal_code,
@@ -149,6 +151,7 @@ class VenueController extends Controller
                         ->where('name', 'ilike', "%{$search}%")
                         ->orWhere('address_line', 'ilike', "%{$search}%")
                         ->orWhere('address_number', 'ilike', "%{$search}%")
+                        ->orWhere('address_complement', 'ilike', "%{$search}%")
                         ->orWhere('neighborhood', 'ilike', "%{$search}%")
                         ->orWhere('city', 'ilike', "%{$search}%")
                         ->orWhere('state', 'ilike', "%{$search}%")
@@ -220,6 +223,7 @@ class VenueController extends Controller
                 'longitude' => $venue->longitude,
                 'address' => collect([
                     trim(implode(', ', array_filter([$venue->address_line, $venue->address_number]))),
+                    $venue->address_complement,
                     $venue->neighborhood,
                     trim(implode(' - ', array_filter([$venue->city, $venue->state]))),
                     $venue->postal_code,

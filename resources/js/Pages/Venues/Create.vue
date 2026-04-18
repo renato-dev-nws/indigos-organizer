@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
@@ -32,6 +32,7 @@ const form = useForm({
     place_id: '',
     address_line: '',
     address_number: '',
+    address_complement: '',
     neighborhood: '',
     city: '',
     state: '',
@@ -54,6 +55,7 @@ const form = useForm({
 
 const addressSearch = ref('');
 const addressInput = ref(null);
+const hasPlacesApi = ref(true);
 
 const readAddressComponent = (components, wantedType, shortName = false) => {
     const component = components.find((item) => item.types?.includes(wantedType));
@@ -72,6 +74,7 @@ const applyPlace = (place) => {
     form.place_id = place.place_id || '';
     form.address_line = route || place.name || '';
     form.address_number = streetNumber;
+    form.address_complement = readAddressComponent(components, 'subpremise');
     form.neighborhood = readAddressComponent(components, 'sublocality') || readAddressComponent(components, 'neighborhood');
     form.city = readAddressComponent(components, 'administrative_area_level_2') || readAddressComponent(components, 'locality');
     form.state = readAddressComponent(components, 'administrative_area_level_1', true);
@@ -83,12 +86,50 @@ const applyPlace = (place) => {
     const addressChunks = [
         route || place.name,
         streetNumber,
+        form.address_complement,
         form.neighborhood,
         form.city,
         form.state,
     ].filter(Boolean);
     addressSearch.value = addressChunks.join(', ');
 };
+
+const clearAddressSelection = () => {
+    addressSearch.value = '';
+    form.place_id = '';
+    form.address_line = '';
+    form.address_number = '';
+    form.address_complement = '';
+    form.neighborhood = '';
+    form.city = '';
+    form.state = '';
+    form.postal_code = '';
+    form.country = '';
+    form.latitude = null;
+    form.longitude = null;
+};
+
+const mapEmbedUrl = computed(() => {
+    if (form.latitude !== null && form.latitude !== '' && form.longitude !== null && form.longitude !== '') {
+        return `https://maps.google.com/maps?q=${form.latitude},${form.longitude}&z=15&output=embed`;
+    }
+
+    const query = [
+        form.address_line,
+        form.address_number,
+        form.address_complement,
+        form.neighborhood,
+        [form.city, form.state].filter(Boolean).join('/'),
+        form.postal_code,
+        form.country,
+    ].filter(Boolean).join(', ');
+
+    if (query) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=14&output=embed`;
+    }
+
+    return '';
+});
 
 const loadGooglePlaces = async () => {
     if (window.google?.maps?.places) {
@@ -100,15 +141,19 @@ const loadGooglePlaces = async () => {
         return false;
     }
 
-    await new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
-        script.async = true;
-        script.defer = true;
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
+    try {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
+            script.async = true;
+            script.defer = true;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    } catch (error) {
+        return false;
+    }
 
     return !!window.google?.maps?.places;
 };
@@ -120,6 +165,7 @@ const initAutocomplete = async () => {
     }
 
     const ready = await loadGooglePlaces();
+    hasPlacesApi.value = ready;
     if (!ready) {
         return;
     }
@@ -234,19 +280,45 @@ const submit = () => form.post(route('venues.store'));
 
                 <div class="space-y-2 md:col-span-2">
                     <label for="venue-address-search">Endereço</label>
-                    <InputText id="venue-address-search" ref="addressInput" v-model="addressSearch" placeholder="Digite e selecione um endereço" fluid />
+                    <div v-if="hasPlacesApi" class="relative">
+                        <InputText id="venue-address-search" ref="addressInput" v-model="addressSearch" placeholder="Digite e selecione um endereço" fluid />
+                        <button
+                            v-if="addressSearch || form.place_id"
+                            type="button"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            aria-label="Limpar endereço"
+                            @click="clearAddressSelection"
+                        >
+                            <i class="pi pi-times-circle" />
+                        </button>
+                    </div>
+                    <div v-if="hasPlacesApi" class="mt-2 grid gap-2 md:grid-cols-2">
+                        <InputText v-model="form.address_number" placeholder="Número" />
+                        <InputText v-model="form.address_complement" placeholder="Complemento" />
+                    </div>
+                    <div v-else class="grid gap-2 md:grid-cols-2">
+                        <InputText v-model="form.address_line" placeholder="Logradouro" />
+                        <InputText v-model="form.address_number" placeholder="Número" />
+                        <InputText v-model="form.address_complement" placeholder="Complemento" />
+                        <InputText v-model="form.neighborhood" placeholder="Bairro" />
+                        <InputText v-model="form.city" placeholder="Cidade" />
+                        <InputText v-model="form.state" placeholder="UF" />
+                        <InputText v-model="form.postal_code" placeholder="CEP" />
+                        <InputText class="md:col-span-2" v-model="form.country" placeholder="País" />
+                    </div>
                     <small class="text-slate-500">Ao selecionar um endereço, cidade, estado, CEP e coordenadas são preenchidos automaticamente.</small>
                 </div>
 
                 <div class="hidden">
                     <InputText v-model="form.place_id" />
-                    <InputText v-model="form.address_line" />
-                    <InputText v-model="form.address_number" />
-                    <InputText v-model="form.neighborhood" />
-                    <InputText v-model="form.city" />
-                    <InputText v-model="form.state" />
-                    <InputText v-model="form.postal_code" />
-                    <InputText v-model="form.country" />
+                    <InputText v-if="hasPlacesApi" v-model="form.address_line" />
+                    <InputText v-if="hasPlacesApi" v-model="form.address_number" />
+                    <InputText v-if="hasPlacesApi" v-model="form.address_complement" />
+                    <InputText v-if="hasPlacesApi" v-model="form.neighborhood" />
+                    <InputText v-if="hasPlacesApi" v-model="form.city" />
+                    <InputText v-if="hasPlacesApi" v-model="form.state" />
+                    <InputText v-if="hasPlacesApi" v-model="form.postal_code" />
+                    <InputText v-if="hasPlacesApi" v-model="form.country" />
                 </div>
 
                 <div v-if="form.city || form.state || form.latitude || form.longitude" class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
@@ -261,12 +333,21 @@ const submit = () => form.post(route('venues.store'));
 
                 <div class="space-y-2">
                     <label for="venue-lat">Latitude</label>
-                    <InputNumber id="venue-lat" v-model="form.latitude" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
+                    <InputNumber id="venue-lat" v-model="form.latitude" :disabled="!!form.place_id" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
                 </div>
 
                 <div class="space-y-2">
                     <label for="venue-lng">Longitude</label>
-                    <InputNumber id="venue-lng" v-model="form.longitude" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
+                    <InputNumber id="venue-lng" v-model="form.longitude" :disabled="!!form.place_id" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
+                </div>
+
+                <div v-if="mapEmbedUrl" class="md:col-span-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                    <iframe
+                        :src="mapEmbedUrl"
+                        class="h-60 w-full"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                    />
                 </div>
 
                 <div class="space-y-2">

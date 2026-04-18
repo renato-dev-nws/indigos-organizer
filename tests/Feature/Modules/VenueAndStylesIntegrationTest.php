@@ -93,11 +93,13 @@ class VenueAndStylesIntegrationTest extends TestCase
             ->post(route('venues.store'), [
                 'name' => 'Casa Teste',
                 'status' => 'undefined',
+                'address_complement' => 'Sala 2',
                 'equipment_tags' => ['PA', 'Luz', 'Monitor'],
             ])
             ->assertRedirect(route('venues.index'));
 
         $venue = $user->venues()->latest()->firstOrFail();
         $this->assertSame(['PA', 'Luz', 'Monitor'], $venue->equipment_tags);
+        $this->assertSame('Sala 2', $venue->address_complement);
     }
 }

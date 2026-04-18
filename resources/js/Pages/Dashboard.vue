@@ -91,8 +91,23 @@ const mobileShortcuts = [
 ];
 
 const weeklyProgramColumns = computed(() => {
-    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const grouped = labels.map((label, dayIndex) => ({ label, dayIndex, items: [] }));
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Próximo domingo'];
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const grouped = Array.from({ length: 8 }).map((_, index) => {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + index);
+
+        return {
+            label: labels[index],
+            dayIndex: index,
+            date,
+            items: [],
+        };
+    });
 
     for (const item of props.weeklyProgramItems || []) {
         if (programFilter.value === 'tasks' && item.kind !== 'task') {
@@ -110,8 +125,13 @@ const weeklyProgramColumns = computed(() => {
             continue;
         }
 
-        const day = new Date(baseDate).getDay();
-        grouped[day].items.push(item);
+        const itemDate = new Date(baseDate);
+        itemDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((itemDate.getTime() - weekStart.getTime()) / 86_400_000);
+
+        if (diffDays >= 0 && diffDays <= 7) {
+            grouped[diffDays].items.push(item);
+        }
     }
 
     return grouped;
@@ -120,11 +140,7 @@ const weeklyProgramColumns = computed(() => {
 const weeklyProgramCarousel = computed(() => weeklyProgramColumns.value.map((column) => ({ ...column })));
 
 const initialWeeklyProgramPage = () => {
-    const day = new Date().getDay();
-    if (day === 0) return 0;
-    if (day === 1) return 1;
-    if (day === 2) return 2;
-    return 3;
+    return new Date().getDay();
 };
 
 const clampWeeklyProgramPage = (value) => {
@@ -221,6 +237,16 @@ const dashboardChartNoLegendOptions = {
     },
 };
 
+const dashboardTaskStatusChartOptions = {
+    ...dashboardChartNoLegendOptions,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top',
+        },
+    },
+};
+
 const dashboardStackedChartOptions = {
     ...dashboardChartOptions,
     scales: {
@@ -238,7 +264,18 @@ const dashboardStackedChartOptions = {
 
 const dashboardTaskStatusChartData = computed(() => ({
     labels: props.dashboardCharts?.taskStatus?.labels ?? [],
-    datasets: [{ backgroundColor: props.dashboardCharts?.taskStatus?.colors ?? [], data: props.dashboardCharts?.taskStatus?.data ?? [] }],
+    datasets: [
+        {
+            label: 'Total por status',
+            backgroundColor: props.dashboardCharts?.taskStatus?.colors ?? [],
+            data: props.dashboardCharts?.taskStatus?.data ?? [],
+        },
+        {
+            label: 'Atrasadas',
+            backgroundColor: '#dc2626',
+            data: props.dashboardCharts?.taskStatus?.overdue ?? [],
+        },
+    ],
 }));
 
 const dashboardTaskByUserChartData = computed(() => {
@@ -522,7 +559,7 @@ const goWeeklyProgramToIndicator = (index) => {
                 </template>
                 <template #content>
                     <div class="h-[350px] md:h-[400px]">
-                        <Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardChartNoLegendOptions" />
+                        <Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardTaskStatusChartOptions" />
                     </div>
                 </template>
             </Card>
@@ -599,20 +636,20 @@ const goWeeklyProgramToIndicator = (index) => {
                         <template #content>
                             <div v-if="data === 1" class="space-y-3">
                                 <p class="text-sm font-semibold">Status de tarefas</p>
-                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardChartNoLegendOptions" /></div>
+                                <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardTaskStatusChartData" :options="dashboardTaskStatusChartOptions" /></div>
                             </div>
                             <div v-else-if="data === 2" class="space-y-3">
-                                <div class="flex items-center justify-between gap-2">
+                                <div class="flex flex-col gap-2">
                                     <p class="text-sm font-semibold">Tarefas por usuários</p>
-                                    <Select v-model="dashboardTaskByUserPeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="!w-28" @change="applyDashboardTaskByUserPeriod" />
+                                    <Select v-model="dashboardTaskByUserPeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="w-full" @change="applyDashboardTaskByUserPeriod" />
                                 </div>
-                                <Select v-model="selectedDashboardUser" size="small" :options="dashboardCharts?.taskByUserStatus?.users || []" option-label="name" option-value="id" class="!w-36" />
+                                <Select v-model="selectedDashboardUser" size="small" :options="dashboardCharts?.taskByUserStatus?.users || []" option-label="name" option-value="id" class="w-full" />
                                 <div class="h-[350px]"><Chart class="bo-chart-fill" type="bar" :data="dashboardTaskByUserChartData" :options="dashboardStackedChartOptions" /></div>
                             </div>
                             <div v-else-if="data === 3" class="space-y-3">
-                                <div class="flex items-center justify-between gap-2">
+                                <div class="flex flex-col gap-2">
                                     <p class="text-sm font-semibold">Conteúdos criados x publicados</p>
-                                    <Select v-model="dashboardContentsLinePeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="!w-28" @change="applyDashboardContentsLinePeriod" />
+                                    <Select v-model="dashboardContentsLinePeriod" size="small" :options="[{ label: '7 dias', value: '7d' }, { label: '15 dias', value: '15d' }, { label: '30 dias', value: '30d' }]" option-label="label" option-value="value" class="w-full" @change="applyDashboardContentsLinePeriod" />
                                 </div>
                                 <div class="h-[350px]"><Chart class="bo-chart-fill" type="line" :data="dashboardContentsLineChartData" :options="dashboardChartOptions" /></div>
                             </div>

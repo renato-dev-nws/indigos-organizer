@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePlanRequest;
 use App\Http\Requests\UpdatePlanRequest;
+use App\Models\Idea;
 use App\Models\Plan;
 use App\Models\PlanPhase;
 use Illuminate\Http\Request;
@@ -133,6 +134,10 @@ class PlanController extends Controller
             $plan->update($planPayload);
 
             if ($phasesToDelete->isNotEmpty()) {
+                Idea::query()
+                    ->whereIn('plan_phase_id', $phasesToDelete->pluck('id'))
+                    ->update(['plan_phase_id' => null]);
+
                 $plan->phases()->whereIn('id', $phasesToDelete->pluck('id'))->delete();
             }
 
