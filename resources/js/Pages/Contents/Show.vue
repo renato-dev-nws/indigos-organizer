@@ -20,12 +20,12 @@ defineProps({ content: Object });
         <BoPageHeader :title="content.title" subtitle="Visão completa do conteúdo">
             <template #actions>
                 <div>
-                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Button type="button" class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
                 </div>
                 <Link :href="route('contents.edit', content.id)">
-                    <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
+                    <Button type="button" class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-pencil" rounded aria-label="Editar" />
                 </Link>
             </template>
         </BoPageHeader>

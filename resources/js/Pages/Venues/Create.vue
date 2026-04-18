@@ -149,8 +149,8 @@ const submit = () => form.post(route('venues.store'));
         <BoPageHeader title="Novo local" supratitle="LOCAIS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
                 <div>
-                    <Button class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Button type="button" class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
                 </div>
             </template>
         </BoPageHeader>

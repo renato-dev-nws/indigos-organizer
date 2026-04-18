@@ -8,6 +8,12 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 const props = defineProps({ venue: Object, sizes: Array, types: Array, categories: Array, styles: Array });
 defineOptions({ layout: AppLayout });
 
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
+
 const form = useForm({
     name: props.venue.name,
     email: props.venue.email,
@@ -144,9 +150,13 @@ const submit = () => form.put(route('venues.update', props.venue.id));
     <div class="space-y-6">
         <BoPageHeader title="Editar local" supratitle="LOCAIS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
+                <div>
+                    <Button type="button" class="!hidden md:!inline-flex" label="Voltar" icon="pi pi-arrow-left" outlined severity="secondary" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                </div>
                 <Link :href="route('venues.show', venue.id)">
-                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
+                    <Button type="button" class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
                 </Link>
             </template>
         </BoPageHeader>

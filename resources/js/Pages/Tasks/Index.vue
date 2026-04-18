@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { router } from '@inertiajs/vue3';
 import { useConfirm } from 'primevue/useconfirm';
@@ -24,6 +24,7 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ tasks: Object, boardTasks: Array, taskCalendarItems: Array, weeklyTaskItems: Array, taskCharts: Object, statuses: Array, contents: Array, plans: Array, events: Array, users: Array, filters: Object, currentUserId: String });
 const confirm = useConfirm();
 const viewMode = ref('list');
+let viewportQuery = null;
 const tableRows = ref(15);
 const tablePage = ref(0);
 const weeklyBaseDate = new Date();
@@ -440,6 +441,40 @@ const fullCalendarOptions = computed(() => ({
 
 const selectedTaskChart = ref('status');
 const selectedUserStackedView = ref('__all__');
+const onViewportChange = (event) => syncViewportMode(event.matches);
+
+const syncViewportMode = (matches) => {
+    if (!matches && viewMode.value === 'kanban') {
+        viewMode.value = 'list';
+    }
+};
+
+onMounted(() => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    viewportQuery = window.matchMedia('(min-width: 768px)');
+    syncViewportMode(viewportQuery.matches);
+
+    if (typeof viewportQuery.addEventListener === 'function') {
+        viewportQuery.addEventListener('change', onViewportChange);
+    } else if (typeof viewportQuery.addListener === 'function') {
+        viewportQuery.addListener(onViewportChange);
+    }
+});
+
+onUnmounted(() => {
+    if (!viewportQuery) {
+        return;
+    }
+
+    if (typeof viewportQuery.removeEventListener === 'function') {
+        viewportQuery.removeEventListener('change', onViewportChange);
+    } else if (typeof viewportQuery.removeListener === 'function') {
+        viewportQuery.removeListener(onViewportChange);
+    }
+});
 
 const taskChartOptions = {
     responsive: true,
@@ -560,7 +595,6 @@ const taskByUserChartData = computed(() => {
                 size="small"
                 :options="[
                     { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
-                    { label: 'Kanban', value: 'kanban', icon: 'mdi:view-column' },
                     { label: 'Programação', value: 'weekly', icon: 'mdi:calendar-week' },
                     { label: 'Calendário', value: 'full_calendar', icon: 'mdi:calendar-month' },
                     { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },

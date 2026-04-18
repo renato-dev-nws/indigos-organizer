@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import draggable from 'vuedraggable';
 import { router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -14,6 +14,7 @@ defineOptions({ layout: AppLayout });
 
 const props = defineProps({ ideas: Object, ideaBoardItems: Array, filters: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array });
 const viewMode = ref('list');
+let viewportQuery = null;
 
 const statusLabels = {
     in_drawer: 'Na gaveta',
@@ -92,6 +93,41 @@ watch(
 );
 
 const isDragging = ref(false);
+
+const syncViewportMode = (matches) => {
+    if (!matches && viewMode.value === 'kanban') {
+        viewMode.value = 'list';
+    }
+};
+
+const onViewportChange = (event) => syncViewportMode(event.matches);
+
+onMounted(() => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    viewportQuery = window.matchMedia('(min-width: 768px)');
+    syncViewportMode(viewportQuery.matches);
+
+    if (typeof viewportQuery.addEventListener === 'function') {
+        viewportQuery.addEventListener('change', onViewportChange);
+    } else if (typeof viewportQuery.addListener === 'function') {
+        viewportQuery.addListener(onViewportChange);
+    }
+});
+
+onUnmounted(() => {
+    if (!viewportQuery) {
+        return;
+    }
+
+    if (typeof viewportQuery.removeEventListener === 'function') {
+        viewportQuery.removeEventListener('change', onViewportChange);
+    } else if (typeof viewportQuery.removeListener === 'function') {
+        viewportQuery.removeListener(onViewportChange);
+    }
+});
 
 const onKanbanChange = (status, event) => {
     const moved = event?.added?.element;

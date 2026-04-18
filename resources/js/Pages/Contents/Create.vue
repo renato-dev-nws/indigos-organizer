@@ -54,8 +54,8 @@ const removeLink = (index) => {
         <BoPageHeader title="Novo conteúdo" supratitle="CONTEÚDOS" subtitle="" icon="mdi:add-circle-outline">
             <template #actions>
                 <div>
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Button type="button" class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
                 </div>
             </template>
         </BoPageHeader>
