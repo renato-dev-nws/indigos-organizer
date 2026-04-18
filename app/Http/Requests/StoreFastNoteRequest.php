@@ -14,6 +14,7 @@ class StoreFastNoteRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'title' => ['nullable', 'string', 'max:255'],
             'related_type' => ['required', 'in:administrative,contents,tasks,planning,others'],
             'list_items' => ['nullable', 'array'],
             'list_items.*.item' => ['required_with:list_items', 'string', 'max:255'],

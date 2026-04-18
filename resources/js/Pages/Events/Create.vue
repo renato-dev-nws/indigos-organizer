@@ -29,6 +29,8 @@ const form = useForm({
     description: '',
     event_date: '',
     event_time: '',
+    end_date: '',
+    end_time: '',
     ticket_link: '',
     ticket_price_first_batch: null,
     ticket_price_second_batch: null,

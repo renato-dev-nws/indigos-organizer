@@ -45,7 +45,7 @@ class TaskController extends Controller
             ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date', 'archived']);
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
-        $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SATURDAY);
+        $weekEnd = (clone $weekStart)->addWeek()->endOfDay();
 
         $weeklyTaskItems = (clone $boardQuery)
             ->with(['status:id,name,color'])

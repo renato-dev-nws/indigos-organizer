@@ -16,6 +16,7 @@ const props = defineProps({
     withOrder: { type: Boolean, default: false },
     reorderOnly: { type: Boolean, default: false },
     disableDeleteWhen: { type: String, default: '' },
+    disableDeleteNames: { type: Array, default: () => [] },
     disableDeleteMessage: { type: String, default: 'Este registro nao pode ser removido.' },
     reorderRoute: { type: String, default: '' },
     extraPayload: { type: Object, default: () => ({}) },
@@ -167,6 +168,23 @@ const paginatedItems = computed(() => {
 });
 
 const canDelete = (item) => {
+    const hasBlockedName = (props.disableDeleteNames || []).some((name) => {
+        const currentName = String(item?.name || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+        const blockedName = String(name || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+
+        return currentName === blockedName;
+    });
+
+    if (hasBlockedName) {
+        return false;
+    }
+
     return !(props.disableDeleteWhen && Number(item[props.disableDeleteWhen] || 0) > 0);
 };
 
@@ -230,7 +248,7 @@ const onPage = (event) => {
                         <template #body="{ data }">
                             <div class="flex items-center gap-2">
                                 <span class="inline-block h-4 w-4 rounded" :style="{ backgroundColor: data.color }" />
-                                <span>{{ data.color }}</span>
+                                <span class="hidden sm:inline">{{ data.color }}</span>
                             </div>
                         </template>
                     </Column>

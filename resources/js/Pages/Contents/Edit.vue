@@ -9,7 +9,7 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
 defineOptions({ layout: AppLayout });
 
-const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, plans: Array, venueStyleIds: Array });
+const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, plans: Array, ideaCategoryIds: Array, venueStyleIds: Array });
 
 const form = useForm({
     idea_id: props.content.idea_id,
@@ -19,7 +19,7 @@ const form = useForm({
     content_platform_ids: props.content.platforms?.map((platform) => platform.id) ?? [],
     venue_style_ids: props.venueStyleIds ?? [],
     idea_type_id: props.content.idea_type_id,
-    idea_category_id: props.content.idea_category_id,
+    idea_category_ids: props.ideaCategoryIds ?? [],
     status: props.content.status,
     links: props.content.links ?? [],
     planned_publish_at: props.content.planned_publish_at,
@@ -56,16 +56,26 @@ const uploadFile = async (files) => {
 const removeFile = (fileId) => {
     router.delete(route('contents.files.destroy', [props.content.id, fileId]), { preserveScroll: true });
 };
+
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
 </script>
 
 <template>
     <div class="space-y-6">
         <BoPageHeader title="Editar conteúdo" supratitle="CONTEÚDOS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
-                <Link :href="route('contents.show', content.id)">
-                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Link :href="route('contents.show', content.id)">
+                        <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                        <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
+                    </Link>
+                </div>
             </template>
         </BoPageHeader>
 
@@ -127,7 +137,15 @@ const removeFile = (fileId) => {
 
                 <div class="space-y-2">
                     <label for="content-category">Categoria</label>
-                    <Select id="content-category" v-model="form.idea_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
+                    <MultiSelect
+                        id="content-category"
+                        v-model="form.idea_category_ids"
+                        :options="categories"
+                        option-label="name"
+                        option-value="id"
+                        placeholder="Selecionar categorias"
+                        fluid
+                    />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

@@ -34,8 +34,8 @@ const vote = (value) => {
         <BoPageHeader :title="idea.title" subtitle="Detalhes completos da ideia">
             <template #actions>
                 <div>
-                    <Button class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Button type="button" class="!hidden md:!inline-flex" icon="pi pi-arrow-left" label="Voltar" outlined severity="secondary" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
                 </div>
                 <Link :href="route('ideas.edit', idea.id)">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-pencil" label="Editar" />

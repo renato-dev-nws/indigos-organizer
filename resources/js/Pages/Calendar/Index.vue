@@ -54,7 +54,13 @@ const calendarOptions = (items) => ({
         month: 'Mês',
         week: 'Semana',
     },
-    events: items,
+    events: (items || []).map((item) => ({
+        ...item,
+        display: item.display || 'block',
+        backgroundColor: item.color,
+        borderColor: item.color,
+        textColor: '#ffffff',
+    })),
     eventClick: async (info) => {
         const taskId = info.event.extendedProps?.task_id;
         if (taskId) {
@@ -81,9 +87,13 @@ const calendarOptions = (items) => ({
         <Card>
             <template #content>
                 <div class="mb-4 flex flex-wrap gap-3">
-                    <div v-for="item in legend" :key="item.label" class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                        <span class="h-3 w-3 rounded-full" :style="{ backgroundColor: item.color }" />
-                        <span>{{ item.label }}</span>
+                    <div
+                        v-for="item in legend"
+                        :key="item.label"
+                        class="rounded-full px-3 py-1 text-xs font-medium text-white"
+                        :style="{ backgroundColor: item.color }"
+                    >
+                        {{ item.label }}
                     </div>
                 </div>
 

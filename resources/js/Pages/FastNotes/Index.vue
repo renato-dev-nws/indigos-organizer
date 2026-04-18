@@ -42,6 +42,7 @@ const showModal = ref(false);
 const editingNote = ref(null);
 
 const form = useForm({
+    title: '',
     related_type: 'administrative',
     list_items: [],
     note: '',
@@ -61,6 +62,7 @@ const listRows = computed(() => form.list_items || []);
 const openCreateModal = () => {
     editingNote.value = null;
     form.defaults({
+        title: '',
         related_type: 'administrative',
         list_items: [],
         note: '',
@@ -73,6 +75,7 @@ const openCreateModal = () => {
 const openEditModal = (note) => {
     editingNote.value = note;
     form.defaults({
+        title: note.title || '',
         related_type: note.related_type || 'administrative',
         list_items: Array.isArray(note.list_items) ? note.list_items.map((item) => ({ item: item.item || '' })) : [],
         note: note.note || '',
@@ -173,6 +176,24 @@ const loadMoreArchived = () => {
 const relatedTypeLabel = (value) => {
     return relatedTypeOptions.find((item) => item.value === value)?.label || value;
 };
+
+const noteItemsCount = (note) => {
+    return Array.isArray(note?.list_items) ? note.list_items.length : 0;
+};
+
+const noteSummary = (note) => {
+    const text = String(note?.note || '').trim();
+
+    if (!text) {
+        return 'Sem descrição.';
+    }
+
+    if (text.length <= 40) {
+        return text;
+    }
+
+    return `${text.slice(0, 40)}...`;
+};
 </script>
 
 <template>
@@ -194,54 +215,63 @@ const relatedTypeLabel = (value) => {
             />
         </div>
 
-        <div class="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-            <article
-                v-for="note in activeNotes"
-                :key="note.id"
-                class="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-                @click="openEditModal(note)"
-            >
-                <div class="mb-5 flex items-start justify-between gap-2">
-                    <p class="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">{{ note.title }}</p>
-                    <Tag v-if="note.is_priority" value="Prioritaria" severity="danger" />
-                </div>
-
-                <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs text-slate-500">
-                        <BoDateText :value="note.created_at" mode="datetime" />
-                    </p>
-                    <div class="flex items-center gap-1" @click.stop>
-                        <Button
-                            icon="pi pi-box"
-                            size="small"
-                            rounded
-                            outlined
-                            severity="secondary"
-                            aria-label="Arquivar"
-                            @click="confirmArchive(note)"
-                        />
-                        <Button
-                            icon="pi pi-pencil"
-                            size="small"
-                            rounded
-                            outlined
-                            severity="secondary"
-                            aria-label="Editar"
-                            @click="openEditModal(note)"
-                        />
-                        <BoConfirmButton
-                            icon="pi pi-trash"
-                            size="small"
-                            severity="danger"
-                            :rounded="true"
-                            message="Deseja remover esta nota rapida?"
-                            @confirm="router.delete(route('fast-notes.destroy', note.id), { preserveScroll: true })"
-                        />
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+            <div class="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+                <article
+                    v-for="note in activeNotes"
+                    :key="note.id"
+                    class="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950"
+                    @click="openEditModal(note)"
+                >
+                    <div class="mb-3 flex items-start justify-between gap-2">
+                        <p class="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">{{ note.title }}</p>
+                        <Tag v-if="note.is_priority" value="Prioritaria" severity="danger" />
                     </div>
-                </div>
-            </article>
 
-            <p v-if="!activeNotes.length" class="col-span-full text-sm text-slate-500">Nenhuma nota rapida ativa.</p>
+                    <div class="mb-3 inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                        <iconify-icon icon="mdi:format-list-bulleted" width="12" height="12" />
+                        <span>{{ noteItemsCount(note) }}</span>
+                    </div>
+
+                    <p class="mb-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">{{ noteSummary(note) }}</p>
+
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-xs text-slate-500">
+                            <BoDateText :value="note.created_at" mode="datetime" />
+                        </p>
+                        <div class="flex items-center gap-1" @click.stop>
+                            <Button
+                                icon="pi pi-box"
+                                size="small"
+                                rounded
+                                outlined
+                                severity="secondary"
+                                aria-label="Arquivar"
+                                @click="confirmArchive(note)"
+                            />
+                            <Button
+                                icon="pi pi-pencil"
+                                size="small"
+                                rounded
+                                outlined
+                                severity="secondary"
+                                aria-label="Editar"
+                                @click="openEditModal(note)"
+                            />
+                            <BoConfirmButton
+                                icon="pi pi-trash"
+                                size="small"
+                                severity="danger"
+                                :rounded="true"
+                                message="Deseja remover esta nota rapida?"
+                                @confirm="router.delete(route('fast-notes.destroy', note.id), { preserveScroll: true })"
+                            />
+                        </div>
+                    </div>
+                </article>
+
+                <p v-if="!activeNotes.length" class="col-span-full text-sm text-slate-500">Nenhuma nota rapida ativa.</p>
+            </div>
         </div>
 
         <div v-if="showArchived" class="space-y-4">
@@ -301,6 +331,11 @@ const relatedTypeLabel = (value) => {
             @update:visible="showModal = $event"
         >
             <form class="space-y-4" @submit.prevent="submit">
+                <div class="space-y-2">
+                    <label for="fast-note-title">Título</label>
+                    <InputText id="fast-note-title" v-model="form.title" placeholder="Opcional" fluid />
+                </div>
+
                 <div class="space-y-2">
                     <label>Referencia relacionada</label>
                     <Select

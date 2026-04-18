@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\EventType;
 use App\Models\Venue;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,20 +18,23 @@ class EventController extends Controller
 {
     public function index(): Response
     {
+        $showPast = request()->boolean('show_past');
+
         $events = Event::query()
             ->with(['type', 'venue.type', 'user'])
             ->when(request('event_type_id'), fn ($q, $typeId) => $q->where('event_type_id', $typeId))
             ->when(request('attendance_mode'), fn ($q, $mode) => $q->where('attendance_mode', $mode))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
-            ->orderBy('event_date')
-            ->orderBy('event_time')
+            ->when(! $showPast, fn ($q) => $q->whereDate('event_date', '>=', Carbon::today()->toDateString()))
+            ->when($showPast, fn ($q) => $q->orderByDesc('event_date')->orderByDesc('event_time'))
+            ->when(! $showPast, fn ($q) => $q->orderBy('event_date')->orderBy('event_time'))
             ->paginate(15)
             ->withQueryString();
 
         return Inertia::render('Events/Index', [
             'events' => $events,
             'types' => EventType::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
-            'filters' => request()->only(['event_type_id', 'attendance_mode', 'search']),
+            'filters' => request()->only(['event_type_id', 'attendance_mode', 'search', 'show_past']),
         ]);
     }
 
@@ -76,11 +80,11 @@ class EventController extends Controller
                 'type',
                 'venue.type',
                 'venue.category',
-                'venue.style',
+                'venue.styles',
                 'extraInfos',
                 'links',
                 'tasks.status',
-                'tasks.assignedUser',
+                'tasks.assignedUsers',
                 'tasks.subtasks',
                 'user',
             ]),
@@ -90,7 +94,7 @@ class EventController extends Controller
     public function edit(Event $event): Response
     {
         return Inertia::render('Events/Edit', [
-            'event' => $event->load(['extraInfos', 'links', 'venue.type', 'venue.category', 'venue.style']),
+            'event' => $event->load(['extraInfos', 'links', 'venue.type', 'venue.category', 'venue.styles']),
             'types' => EventType::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'venues' => $this->venueOptions(),
             'venueTypes' => \App\Models\VenueType::query()->orderBy('name')->get(['id', 'name', 'icon']),
@@ -132,14 +136,13 @@ class EventController extends Controller
     private function venueOptions()
     {
         return Venue::query()
-            ->with(['type:id,name,icon,color', 'category:id,name', 'style:id,name'])
+            ->with(['type:id,name,icon,color', 'category:id,name', 'styles:id,name'])
             ->orderBy('name')
             ->get([
                 'id',
                 'name',
                 'venue_type_id',
                 'venue_category_id',
-                'venue_style_id',
                 'address_line',
                 'address_number',
                 'neighborhood',
@@ -155,7 +158,8 @@ class EventController extends Controller
                 'name' => $venue->name,
                 'type' => $venue->type,
                 'category' => $venue->category,
-                'style' => $venue->style,
+                'style' => $venue->styles->first(),
+                'styles' => $venue->styles,
                 'latitude' => $venue->latitude,
                 'longitude' => $venue->longitude,
                 'address' => collect([

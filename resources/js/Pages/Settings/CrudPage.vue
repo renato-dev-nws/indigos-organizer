@@ -17,6 +17,7 @@ const props = defineProps({
     withOrder: Boolean,
     reorderOnly: Boolean,
     disableDeleteWhen: String,
+    disableDeleteNames: Array,
     disableDeleteMessage: String,
     reorderRoute: String,
     tabs: Array,
@@ -28,6 +29,9 @@ const props = defineProps({
 const selectedTab = ref(props.activeTab);
 const page = usePage();
 const readOnly = !page.props.auth?.user?.is_admin;
+
+const pageTitle = `Configurações de ${props.title || ''}`.trim();
+const sectionTitle = `Configuração: ${props.description || props.title || ''}`.replace(/\.$/, '');
 
 watch(() => props.activeTab, (value) => {
     selectedTab.value = value;
@@ -50,7 +54,7 @@ const switchTab = (tabValue) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader :title="title" :subtitle="description" />
+        <BoPageHeader :title="pageTitle" subtitle="" />
 
         <div v-if="tabs?.length" class="max-w-md">
             <SelectButton
@@ -63,7 +67,7 @@ const switchTab = (tabValue) => {
         </div>
 
         <SettingsCrudSection
-            :title="title"
+            :title="sectionTitle"
             :description="description"
             :items="items"
             :route-base="routeBase"
@@ -72,6 +76,7 @@ const switchTab = (tabValue) => {
             :with-order="withOrder"
             :reorder-only="reorderOnly"
             :disable-delete-when="disableDeleteWhen"
+            :disable-delete-names="disableDeleteNames"
             :disable-delete-message="disableDeleteMessage"
             :reorder-route="reorderRoute"
             :extra-payload="extraPayload"

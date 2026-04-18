@@ -281,7 +281,8 @@ class SettingsController extends Controller
             'reorderOnly' => true,
             'reorderRoute' => 'settings.task-statuses.reorder',
             'disableDeleteWhen' => 'tasks_count',
-            'disableDeleteMessage' => 'Não é permitido remover status com tarefas vinculadas.',
+            'disableDeleteNames' => ['Pendente', 'Em execução', 'Concluído'],
+            'disableDeleteMessage' => 'Não é permitido remover status de referência do sistema ou status com tarefas vinculadas.',
         ]);
     }
 }

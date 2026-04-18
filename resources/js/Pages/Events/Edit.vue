@@ -24,6 +24,8 @@ const form = useForm({
     description: props.event.description,
     event_date: props.event.event_date,
     event_time: props.event.event_time ? String(props.event.event_time).slice(0, 5) : '',
+    end_date: props.event.end_date,
+    end_time: props.event.end_time ? String(props.event.end_time).slice(0, 5) : '',
     ticket_link: props.event.ticket_link,
     ticket_price_first_batch: props.event.ticket_price_first_batch,
     ticket_price_second_batch: props.event.ticket_price_second_batch,

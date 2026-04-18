@@ -6,7 +6,7 @@ import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
-const props = defineProps({ idea: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array, voterUsers: Array, venueStyleIds: Array });
+const props = defineProps({ idea: Object, ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array, voterUsers: Array, collaboratorUsers: Array, venueStyleIds: Array });
 defineOptions({ layout: AppLayout });
 
 const goBack = () => {
@@ -28,6 +28,7 @@ const form = useForm({
     status: props.idea.status,
     is_private: props.idea.is_private,
     voter_users: props.voterUsers ?? [],
+    collaborator_ids: props.collaboratorUsers ?? [],
     references: props.idea.references ?? [],
 });
 
@@ -45,6 +46,10 @@ watch(() => form.status, (newStatus) => {
     if (newStatus !== 'on_board') form.voter_users = [];
 });
 
+watch(() => form.is_private, (isPrivate) => {
+    if (isPrivate) form.collaborator_ids = [];
+});
+
 const submit = () => form.put(route('ideas.update', props.idea.id));
 const addReference = () => form.references.push({ title: '', description: '', url: '' });
 const removeReference = (index) => form.references.splice(index, 1);
@@ -55,8 +60,8 @@ const removeReference = (index) => form.references.splice(index, 1);
         <BoPageHeader title="Editar ideia" supratitle="IDEIAS" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
                 <div>
-                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Button type="button" class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button type="button" class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
                 </div>
             </template>
         </BoPageHeader>
@@ -153,6 +158,11 @@ const removeReference = (index) => form.references.splice(index, 1);
                 <div v-if="form.status === 'on_board'" class="md:col-span-2 space-y-2">
                     <label>Usuários que podem votar</label>
                     <MultiSelect v-model="form.voter_users" :options="users" option-label="name" option-value="id" display="chip" fluid />
+                </div>
+
+                <div v-if="!form.is_private" class="md:col-span-2 space-y-2">
+                    <label>Colaboradores</label>
+                    <MultiSelect v-model="form.collaborator_ids" :options="users" option-label="name" option-value="id" display="chip" fluid />
                 </div>
             </BoFormSection>
 

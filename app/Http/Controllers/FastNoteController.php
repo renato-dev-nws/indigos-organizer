@@ -20,7 +20,6 @@ class FastNoteController extends Controller
         $archivedLimit = max(16, (int) $request->integer('archived_limit', 16));
 
         $activeNotes = FastNote::query()
-            ->where('user_id', Auth::id())
             ->whereNull('archived_at')
             ->latest('created_at')
             ->get();
@@ -30,7 +29,6 @@ class FastNoteController extends Controller
 
         if ($archivedVisible) {
             $archivedQuery = FastNote::query()
-                ->where('user_id', Auth::id())
                 ->whereNotNull('archived_at')
                 ->orderByDesc('archived_at')
                 ->orderByDesc('created_at');
@@ -64,9 +62,11 @@ class FastNoteController extends Controller
             $title .= ' '.($countToday + 1);
         }
 
+        $customTitle = trim((string) ($request->input('title') ?? ''));
+
         FastNote::create([
             'user_id' => $userId,
-            'title' => $title,
+            'title' => filled($customTitle) ? $customTitle : $title,
             ...$this->validatedPayload($request->validated()),
         ]);
 
@@ -77,7 +77,13 @@ class FastNoteController extends Controller
     {
         abort_unless((string) $fastNote->user_id === (string) Auth::id(), 403);
 
-        $fastNote->update($this->validatedPayload($request->validated()));
+        $payload = $this->validatedPayload($request->validated());
+        $customTitle = trim((string) ($request->input('title') ?? ''));
+        if (filled($customTitle)) {
+            $payload['title'] = $customTitle;
+        }
+
+        $fastNote->update($payload);
 
         return back()->with('success', 'Nota rápida atualizada com sucesso.');
     }

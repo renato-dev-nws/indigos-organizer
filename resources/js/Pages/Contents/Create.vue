@@ -31,7 +31,7 @@ const form = useForm({
     content_platform_ids: [],
     venue_style_ids: [],
     idea_type_id: null,
-    idea_category_id: null,
+    idea_category_ids: [],
     status: 'queued',
     links: [],
     planned_publish_at: '',
@@ -118,7 +118,15 @@ const removeLink = (index) => {
 
                 <div class="space-y-2">
                     <label for="content-category">Categoria</label>
-                    <Select id="content-category" v-model="form.idea_category_id" :options="categories" option-label="name" option-value="id" show-clear fluid />
+                    <MultiSelect
+                        id="content-category"
+                        v-model="form.idea_category_ids"
+                        :options="categories"
+                        option-label="name"
+                        option-value="id"
+                        placeholder="Selecionar categorias"
+                        fluid
+                    />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

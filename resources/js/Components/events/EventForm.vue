@@ -319,7 +319,7 @@ const createVenue = async () => {
 <template>
     <form class="space-y-4" @submit.prevent="emit('submit')">
         <BoFormSection title="Dados principais" description="Informações do evento, agenda e ingressos">
-            <div class="space-y-2">
+            <div class="space-y-2 md:col-span-2">
                 <label for="event-title">Título</label>
                 <InputText id="event-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
                 <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
@@ -345,16 +345,32 @@ const createVenue = async () => {
                 />
             </div>
 
-            <div class="space-y-2">
-                <label for="event-date">Data</label>
-                <DatePicker id="event-date" v-model="form.event_date" fluid />
-                <Message v-if="form.errors.event_date" severity="error" size="small" variant="simple">{{ form.errors.event_date }}</Message>
+            <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label for="event-date">Data de início</label>
+                    <DatePicker id="event-date" v-model="form.event_date" fluid />
+                    <Message v-if="form.errors.event_date" severity="error" size="small" variant="simple">{{ form.errors.event_date }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="event-time">Hora de início</label>
+                    <InputMask id="event-time" v-model="form.event_time" mask="99:99" placeholder="20:30" fluid />
+                    <Message v-if="form.errors.event_time" severity="error" size="small" variant="simple">{{ form.errors.event_time }}</Message>
+                </div>
             </div>
 
-            <div class="space-y-2">
-                <label for="event-time">Hora</label>
-                <InputMask id="event-time" v-model="form.event_time" mask="99:99" placeholder="20:30" fluid />
-                <Message v-if="form.errors.event_time" severity="error" size="small" variant="simple">{{ form.errors.event_time }}</Message>
+            <div class="md:col-span-2 grid grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label for="event-end-date">Data final</label>
+                    <DatePicker id="event-end-date" v-model="form.end_date" fluid />
+                    <Message v-if="form.errors.end_date" severity="error" size="small" variant="simple">{{ form.errors.end_date }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="event-end-time">Hora final</label>
+                    <InputMask id="event-end-time" v-model="form.end_time" mask="99:99" placeholder="22:30" fluid />
+                    <Message v-if="form.errors.end_time" severity="error" size="small" variant="simple">{{ form.errors.end_time }}</Message>
+                </div>
             </div>
 
             <div class="md:col-span-2 space-y-2">
@@ -408,6 +424,11 @@ const createVenue = async () => {
                 <label for="ticket-link">Link de ingresso</label>
                 <InputText id="ticket-link" v-model="form.ticket_link" placeholder="https://..." fluid />
             </div>
+
+            <div class="md:col-span-2">
+                <p class="text-sm font-semibold">Valores de ingressos</p>
+            </div>
+
             <div class="space-y-2">
                 <label for="ticket-first">1º lote</label>
                 <InputNumber id="ticket-first" v-model="form.ticket_price_first_batch" mode="currency" currency="BRL" locale="pt-BR" fluid />

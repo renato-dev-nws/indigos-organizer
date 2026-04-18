@@ -25,6 +25,7 @@ class GeneralCalendarController extends Controller
                 'allDay' => true,
                 'type' => 'content',
                 'color' => '#4f46e5',
+                'display' => 'block',
                 'url' => route('contents.show', $content),
             ]);
 
@@ -37,6 +38,7 @@ class GeneralCalendarController extends Controller
                 'start' => $event->starts_at,
                 'type' => 'event',
                 'color' => $event->type?->color ?: '#059669',
+                'display' => 'block',
                 'url' => route('events.show', $event),
             ]);
 
@@ -59,6 +61,7 @@ class GeneralCalendarController extends Controller
                 'type' => 'task_scheduled',
                 'task_id' => $task->id,
                 'color' => '#0ea5e9',
+                'display' => 'block',
             ]);
 
         $deadlineTaskItems = $userTaskItems
@@ -76,7 +79,7 @@ class GeneralCalendarController extends Controller
                 'title' => 'Deadline: '.$task->title,
                 'start' => optional($task->due_date)->toDateString(),
                 'allDay' => true,
-                'display' => 'list-item',
+                'display' => 'block',
                 'type' => 'task_deadline',
                 'task_id' => $task->id,
                 'color' => '#ef4444',

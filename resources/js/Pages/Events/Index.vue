@@ -17,6 +17,17 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ events: Object, types: Array, filters: Object });
 const viewMode = ref('list');
 
+const viewModeOptions = [
+    { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
+    { label: 'Calendário completo', value: 'full_calendar', icon: 'mdi:calendar-month' },
+];
+
+const attendanceQuickOptions = [
+    { label: 'Todos', value: null },
+    { label: 'Participante', value: 'participant' },
+    { label: 'Como público', value: 'audience' },
+];
+
 const attendanceLabels = {
     participant: 'Participante',
     audience: 'Público',
@@ -26,12 +37,14 @@ const localFilters = reactive({
     event_type_id: props.filters?.event_type_id ?? null,
     attendance_mode: props.filters?.attendance_mode ?? null,
     search: props.filters?.search ?? '',
+    show_past: !!props.filters?.show_past,
 });
 
 const syncLocalFiltersFromProps = () => {
     localFilters.event_type_id = props.filters?.event_type_id ?? null;
     localFilters.attendance_mode = props.filters?.attendance_mode ?? null;
     localFilters.search = props.filters?.search ?? '';
+    localFilters.show_past = !!props.filters?.show_past;
 };
 
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
@@ -39,11 +52,11 @@ watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const filterChips = computed(() => {
     const chips = [];
     if (localFilters.search) chips.push({ key: 'search', label: localFilters.search });
-    if (localFilters.attendance_mode) chips.push({ key: 'attendance_mode', label: attendanceLabels[localFilters.attendance_mode] || localFilters.attendance_mode });
     if (localFilters.event_type_id) {
         const type = props.types.find((item) => item.id === localFilters.event_type_id);
         if (type) chips.push({ key: 'event_type_id', label: type.name });
     }
+    if (localFilters.show_past) chips.push({ key: 'show_past', label: 'Exibindo eventos passados' });
     return chips;
 });
 
@@ -52,15 +65,27 @@ const resetFilters = () => {
     localFilters.event_type_id = null;
     localFilters.attendance_mode = null;
     localFilters.search = '';
+    localFilters.show_past = false;
     submitFilters();
 };
 const removeChip = (key) => {
-    localFilters[key] = key === 'search' ? '' : null;
+    if (key === 'search') {
+        localFilters.search = '';
+    } else if (key === 'show_past') {
+        localFilters.show_past = false;
+    } else {
+        localFilters[key] = null;
+    }
     submitFilters();
 };
 const cancelFilters = () => syncLocalFiltersFromProps();
 const paginate = (event) => router.get(route('events.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removeEvent = (id) => router.delete(route('events.destroy', id), { preserveScroll: true });
+
+const setAttendanceFilter = (value) => {
+    localFilters.attendance_mode = value;
+    submitFilters();
+};
 
 const fullCalendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -101,13 +126,17 @@ const fullCalendarOptions = computed(() => ({
                     <SelectButton
                         v-model="viewMode"
                         size="small"
-                        :options="[
-                            { label: 'Lista', value: 'list' },
-                            { label: 'Calendário completo', value: 'full_calendar' },
-                        ]"
+                        :options="viewModeOptions"
                         option-label="label"
                         option-value="value"
-                    />
+                    >
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                                <span class="hidden md:inline">{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </SelectButton>
                 </div>
                 <Link :href="route('events.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo evento" />
@@ -116,7 +145,34 @@ const fullCalendarOptions = computed(() => ({
             </template>
         </BoPageHeader>
 
+        <div class="md:hidden">
+            <SelectButton
+                v-model="viewMode"
+                size="small"
+                :options="viewModeOptions"
+                option-label="label"
+                option-value="value"
+            >
+                <template #option="slotProps">
+                    <div class="flex items-center justify-center">
+                        <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                    </div>
+                </template>
+            </SelectButton>
+        </div>
+
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
+            <template #after-filter-button>
+                <SelectButton
+                    :model-value="localFilters.attendance_mode"
+                    :options="attendanceQuickOptions"
+                    option-label="label"
+                    option-value="value"
+                    size="small"
+                    @update:model-value="setAttendanceFilter"
+                />
+            </template>
+
             <div class="space-y-2">
                 <label class="text-sm font-medium">Busca</label>
                 <InputText v-model="localFilters.search" placeholder="Buscar por título" />
@@ -126,18 +182,11 @@ const fullCalendarOptions = computed(() => ({
                 <Select v-model="localFilters.event_type_id" :options="types" option-label="name" option-value="id" show-clear placeholder="Todos" />
             </div>
             <div class="space-y-2">
-                <label class="text-sm font-medium">Presença</label>
-                <Select
-                    v-model="localFilters.attendance_mode"
-                    :options="[
-                        { label: 'Participante', value: 'participant' },
-                        { label: 'Público', value: 'audience' },
-                    ]"
-                    option-label="label"
-                    option-value="value"
-                    show-clear
-                    placeholder="Todas"
-                />
+                <label class="text-sm font-medium" for="events-show-past">Exibir eventos passados</label>
+                <div class="flex items-center gap-2">
+                    <Checkbox id="events-show-past" v-model="localFilters.show_past" binary />
+                    <span class="text-sm text-slate-600 dark:text-slate-300">Mostrar eventos passados na lista</span>
+                </div>
             </div>
         </BoFilterBar>
 

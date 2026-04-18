@@ -19,6 +19,13 @@ const props = defineProps({ contents: Object, filters: Object, platforms: Array,
 
 const viewMode = ref('list');
 
+const viewModeOptions = [
+    { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
+    { label: 'Programação da semana', value: 'calendar', icon: 'mdi:calendar-week' },
+    { label: 'Calendário completo', value: 'full_calendar', icon: 'mdi:calendar-month' },
+    { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
+];
+
 const statusLabels = {
     queued: 'Na fila',
     in_production: 'Em produção',
@@ -112,6 +119,26 @@ const paginate = (event) => {
 };
 
 const removeContent = (id) => router.delete(route('contents.destroy', id), { preserveScroll: true });
+
+const publishMeta = (content) => {
+    const isPublished = content?.status === 'published' && !!content?.published_at;
+
+    if (isPublished) {
+        return {
+            value: content.published_at,
+            icon: 'mdi:calendar-check',
+            severity: 'success',
+            label: 'Publicado',
+        };
+    }
+
+    return {
+        value: content?.planned_publish_at,
+        icon: 'mdi:calendar',
+        severity: 'warning',
+        label: 'Programado',
+    };
+};
 
 const calendarColumns = computed(() => {
     const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -296,15 +323,17 @@ const applyContentChartPeriod = () => {
                     <SelectButton
                         v-model="viewMode"
                         size="small"
-                        :options="[
-                            { label: 'Lista', value: 'list' },
-                            { label: 'Programação da semana', value: 'calendar' },
-                            { label: 'Calendário completo', value: 'full_calendar' },
-                            { label: 'Gráficos', value: 'charts' },
-                        ]"
+                        :options="viewModeOptions"
                         option-label="label"
                         option-value="value"
-                    />
+                    >
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-2">
+                                <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </SelectButton>
                 </div>
                 <Link :href="route('contents.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo conteúdo" />
@@ -317,15 +346,16 @@ const applyContentChartPeriod = () => {
             <SelectButton
                 v-model="viewMode"
                 size="small"
-                :options="[
-                    { label: 'Lista', value: 'list' },
-                    { label: 'Programação', value: 'calendar' },
-                    { label: 'Calendário', value: 'full_calendar' },
-                    { label: 'Gráficos', value: 'charts' },
-                ]"
+                :options="viewModeOptions"
                 option-label="label"
                 option-value="value"
-            />
+            >
+                <template #option="slotProps">
+                    <div class="flex items-center justify-center gap-1">
+                        <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                    </div>
+                </template>
+            </SelectButton>
         </div>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
@@ -385,19 +415,55 @@ const applyContentChartPeriod = () => {
                             <Link :href="route('contents.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
                         </template>
                     </Column>
-                    <Column header="Plataformas">
+                    <Column field="type.name" header="Tipo" sortable />
+                    <Column header="Categorias">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-1">
-                                <Tag v-for="platform in data.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
+                                <Tag
+                                    v-for="category in data.categories || []"
+                                    :key="category.id"
+                                    severity="secondary"
+                                    class="!px-1.5 !py-0.5"
+                                >
+                                    <template #default>
+                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(data.categories || []).length" class="text-xs text-slate-400">-</span>
                             </div>
                         </template>
                     </Column>
-                    <Column field="type.name" header="Tipo" sortable />
                     <Column header="Estilos">
                         <template #body="{ data }">
                             <div class="flex flex-wrap gap-1">
-                                <Tag v-for="style in data.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                                <Tag
+                                    v-for="style in data.styles || []"
+                                    :key="style.id"
+                                    severity="secondary"
+                                    class="!px-1.5 !py-0.5"
+                                >
+                                    <template #default>
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
                                 <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </template>
+                    </Column>
+                    <Column header="Plataformas">
+                        <template #body="{ data }">
+                            <div class="flex flex-wrap gap-1">
+                                <Tag
+                                    v-for="platform in data.platforms"
+                                    :key="platform.id"
+                                    severity="secondary"
+                                    class="!px-1.5 !py-0.5"
+                                >
+                                    <template #default>
+                                        <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(data.platforms || []).length" class="text-xs text-slate-400">-</span>
                             </div>
                         </template>
                     </Column>
@@ -406,10 +472,16 @@ const applyContentChartPeriod = () => {
                             <BoStatusTag :value="data.status" />
                         </template>
                     </Column>
-                    <Column field="user.name" header="Autor" sortable />
                     <Column header="Publicação" sort-field="planned_publish_at" sortable>
                         <template #body="{ data }">
-                            <BoDateText :value="data.planned_publish_at" mode="datetime" />
+                            <div class="flex items-center gap-2">
+                                <Tag :severity="publishMeta(data).severity" class="!px-1.5 !py-0.5">
+                                    <template #default>
+                                        <iconify-icon :icon="publishMeta(data).icon" width="12" height="12" />
+                                    </template>
+                                </Tag>
+                                <BoDateText :value="publishMeta(data).value" mode="datetime" />
+                            </div>
                         </template>
                     </Column>
                     <Column header="Ações" class="bo-action-col w-28">
@@ -477,14 +549,36 @@ const applyContentChartPeriod = () => {
                     <BoStatusTag :value="content.status" />
                 </div>
                 <div class="mb-2 flex flex-wrap gap-1">
-                    <Tag v-for="platform in content.platforms" :key="platform.id" :value="platform.name" severity="secondary" />
+                    <Tag v-for="category in content.categories || []" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
+                        <template #default>
+                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" />
+                        </template>
+                    </Tag>
                 </div>
-                <p class="text-xs text-slate-500">{{ content.type?.name || '-' }} · {{ content.category?.name || '-' }}</p>
+                <p class="text-xs text-slate-500">{{ content.type?.name || '-' }}</p>
                 <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="style in content.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                    <Tag v-for="style in content.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
+                        <template #default>
+                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                        </template>
+                    </Tag>
                 </div>
-                <p class="text-xs text-slate-500">Autor: {{ content.user?.name || '-' }}</p>
-                <p class="text-xs text-slate-500">Publicação: <BoDateText :value="content.planned_publish_at" mode="datetime" /></p>
+                <div class="mt-2 flex flex-wrap gap-1">
+                    <Tag v-for="platform in content.platforms" :key="platform.id" severity="secondary" class="!px-1.5 !py-0.5">
+                        <template #default>
+                            <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" />
+                        </template>
+                    </Tag>
+                </div>
+                <p class="text-xs text-slate-500">
+                    Publicação:
+                    <Tag :severity="publishMeta(content).severity" class="mx-1 !px-1.5 !py-0.5 align-middle">
+                        <template #default>
+                            <iconify-icon :icon="publishMeta(content).icon" width="12" height="12" />
+                        </template>
+                    </Tag>
+                    <BoDateText :value="publishMeta(content).value" mode="datetime" />
+                </p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('contents.show', content.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
@@ -549,7 +643,7 @@ const applyContentChartPeriod = () => {
                             ]"
                             option-label="label"
                             option-value="value"
-                            class="w-48"
+                            class="w-full sm:w-48"
                         />
                         <Select
                             v-model="selectedContentChartPeriod"
@@ -562,7 +656,7 @@ const applyContentChartPeriod = () => {
                             ]"
                             option-label="label"
                             option-value="value"
-                            class="w-36"
+                            class="w-full sm:w-36"
                             @change="applyContentChartPeriod"
                         />
                     </div>
@@ -585,9 +679,9 @@ const applyContentChartPeriod = () => {
                 <div class="h-[350px] md:h-[400px]">
                     <Chart v-if="selectedContentChart === 'line'" class="bo-chart-fill" type="line" :data="contentLineChartData" :options="chartOptions" />
                     <Chart v-else-if="selectedContentChart === 'types'" class="bo-chart-fill" type="doughnut" :data="contentTypesChartData" :options="doughnutChartOptions" />
-                    <Chart v-else-if="selectedContentChart === 'categories'" class="bo-chart-fill" type="doughnut" :data="contentCategoriesChartData" :options="doughnutChartOptions" />
-                    <Chart v-else-if="selectedContentChart === 'styles'" class="bo-chart-fill" type="doughnut" :data="contentStylesChartData" :options="doughnutChartOptions" />
-                    <Chart v-else-if="selectedContentChart === 'statuses'" class="bo-chart-fill" type="bar" :data="contentStatusesChartData" :options="chartWithoutLegendOptions" />
+                    <Chart v-else-if="selectedContentChart === 'categories'" class="bo-chart-fill" type="bar" :data="contentCategoriesChartData" :options="chartWithoutLegendOptions" />
+                    <Chart v-else-if="selectedContentChart === 'styles'" class="bo-chart-fill" type="bar" :data="contentStylesChartData" :options="chartWithoutLegendOptions" />
+                    <Chart v-else-if="selectedContentChart === 'statuses'" class="bo-chart-fill" type="doughnut" :data="contentStatusesChartData" :options="doughnutChartOptions" />
                     <Chart v-else class="bo-chart-fill" type="bar" :data="contentPlatformsChartData" :options="chartWithoutLegendOptions" />
                 </div>
             </template>

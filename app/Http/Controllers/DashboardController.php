@@ -79,7 +79,7 @@ class DashboardController extends Controller
         ];
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
-        $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SATURDAY);
+        $weekEnd = (clone $weekStart)->addWeek()->endOfDay();
 
         $weeklyTasks = Task::query()
             ->where(fn (Builder $query) => $query

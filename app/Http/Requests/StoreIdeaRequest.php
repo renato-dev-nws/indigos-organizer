@@ -29,6 +29,8 @@ class StoreIdeaRequest extends FormRequest
             'is_private' => ['boolean'],
             'voter_users' => ['nullable', 'array'],
             'voter_users.*' => ['uuid', 'exists:users,id'],
+            'collaborator_ids' => ['nullable', 'array'],
+            'collaborator_ids.*' => ['uuid', 'exists:users,id'],
             'references' => ['nullable', 'array'],
             'references.*.title' => ['required_with:references', 'string', 'max:255'],
             'references.*.description' => ['nullable', 'string'],
@@ -50,6 +52,10 @@ class StoreIdeaRequest extends FormRequest
 
                 if ($this->boolean('is_private') && ! in_array($this->input('status'), ['in_drawer', 'trash'], true)) {
                     $validator->errors()->add('is_private', 'Ideia privada só pode estar na gaveta ou no lixo.');
+                }
+
+                if ($this->boolean('is_private') && filled($this->input('collaborator_ids'))) {
+                    $validator->errors()->add('collaborator_ids', 'Ideias privadas não podem ter colaboradores.');
                 }
             },
         ];

@@ -25,11 +25,11 @@ class ContentController extends Controller
         [$chartStart, $chartEnd, $chartMeta] = $this->resolveChartPeriod();
 
         $query = Content::query()
-            ->with(['platforms', 'type', 'category', 'styles', 'idea', 'user'])
+            ->with(['platforms', 'type', 'categories', 'styles', 'idea', 'user'])
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('content_platform_id'), fn ($q, $platformId) => $q->whereHas('platforms', fn ($q2) => $q2->where('content_platforms.id', $platformId)))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
-            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->whereHas('categories', fn ($q2) => $q2->where('idea_categories.id', $categoryId)))
             ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
 
@@ -98,7 +98,7 @@ class ContentController extends Controller
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('content_platform_id'), fn ($q, $platformId) => $q->whereHas('platforms', fn ($q2) => $q2->where('content_platforms.id', $platformId)))
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
-            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->whereHas('categories', fn ($q2) => $q2->where('idea_categories.id', $categoryId)))
             ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
 
@@ -144,7 +144,9 @@ class ContentController extends Controller
             ->get(['id', 'name'])
             ->map(fn (IdeaCategory $category) => [
                 'name' => $category->name,
-                'total' => (int) (clone $periodBase)->where('idea_category_id', $category->id)->count(),
+                'total' => (int) (clone $periodBase)
+                    ->whereHas('categories', fn ($query) => $query->where('idea_categories.id', $category->id))
+                    ->count(),
             ]);
 
         $styleCounts = VenueStyle::query()
@@ -230,13 +232,17 @@ class ContentController extends Controller
 
     public function store(StoreContentRequest $request): RedirectResponse
     {
+        $payload = $this->preparePublishPayload($request->safe()->except(['links', 'content_platform_ids', 'venue_style_ids', 'idea_category_ids']));
+        $categoryIds = $this->extractCategoryIds($request);
+
         $content = Content::create([
-            ...$request->safe()->except(['links', 'content_platform_ids', 'venue_style_ids']),
+            ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
 
         $content->platforms()->sync($request->input('content_platform_ids', []));
         $content->styles()->sync($request->input('venue_style_ids', []));
+        $content->categories()->sync($categoryIds);
 
         foreach ($request->input('links', []) as $link) {
             $content->links()->create($link);
@@ -248,29 +254,34 @@ class ContentController extends Controller
     public function show(Content $content): Response
     {
         return Inertia::render('Contents/Show', [
-            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'files', 'links', 'idea', 'plan', 'user']),
+            'content' => $content->load(['platforms', 'type', 'categories', 'styles', 'files', 'links', 'idea', 'plan', 'user']),
         ]);
     }
 
     public function edit(Content $content): Response
     {
         return Inertia::render('Contents/Edit', [
-            'content' => $content->load(['platforms', 'type', 'category', 'styles', 'links', 'files', 'plan']),
+            'content' => $content->load(['platforms', 'type', 'categories', 'styles', 'links', 'files', 'plan']),
             'platforms' => ContentPlatform::query()->orderBy('name')->get(),
             'types' => IdeaType::query()->orderBy('name')->get(),
             'categories' => IdeaCategory::query()->orderBy('name')->get(),
             'styles' => VenueStyle::query()->where('domain', VenueStyle::DOMAIN_CONTENT)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'ideas' => Idea::query()->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->orderBy('title')->get(['id', 'title']),
+            'ideaCategoryIds' => $content->categories()->pluck('idea_categories.id')->all(),
             'venueStyleIds' => $content->styles()->pluck('venue_styles.id')->all(),
         ]);
     }
 
     public function update(UpdateContentRequest $request, Content $content): RedirectResponse
     {
-        $content->update($request->safe()->except(['links', 'content_platform_ids', 'venue_style_ids']));
+        $payload = $this->preparePublishPayload($request->safe()->except(['links', 'content_platform_ids', 'venue_style_ids', 'idea_category_ids']));
+        $categoryIds = $this->extractCategoryIds($request);
+
+        $content->update($payload);
         $content->platforms()->sync($request->input('content_platform_ids', []));
         $content->styles()->sync($request->input('venue_style_ids', []));
+        $content->categories()->sync($categoryIds);
 
         $content->links()->delete();
         foreach ($request->input('links', []) as $link) {
@@ -278,6 +289,44 @@ class ContentController extends Controller
         }
 
         return redirect()->route('contents.index')->with('success', 'Conteudo atualizado com sucesso.');
+    }
+
+    private function extractCategoryIds(StoreContentRequest|UpdateContentRequest $request): array
+    {
+        $legacyCategoryId = $request->input('idea_category_id');
+        $categoryIds = $request->input('idea_category_ids', []);
+
+        if (filled($legacyCategoryId)) {
+            $categoryIds[] = $legacyCategoryId;
+        }
+
+        return collect($categoryIds)
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function preparePublishPayload(array $payload): array
+    {
+        if (($payload['status'] ?? null) !== 'published') {
+            return $payload;
+        }
+
+        if (filled($payload['published_at'] ?? null)) {
+            return $payload;
+        }
+
+        if (filled($payload['planned_publish_at'] ?? null)) {
+            $payload['published_at'] = $payload['planned_publish_at'];
+
+            return $payload;
+        }
+
+        $payload['published_at'] = now();
+
+        return $payload;
     }
 
     public function destroy(Content $content): RedirectResponse

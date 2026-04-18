@@ -22,6 +22,8 @@ class StoreEventRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'event_date' => ['required', 'date'],
             'event_time' => ['nullable', 'date_format:H:i'],
+            'end_date' => ['nullable', 'date'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'ticket_link' => ['nullable', 'url', 'max:255'],
             'ticket_price_first_batch' => ['nullable', 'numeric', 'min:0'],
             'ticket_price_second_batch' => ['nullable', 'numeric', 'min:0'],

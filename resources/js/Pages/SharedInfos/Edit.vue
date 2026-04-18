@@ -22,16 +22,26 @@ const removeLink = (index) => form.links.splice(index, 1);
 const submit = () => form.post(route('shared-infos.update', props.sharedInfo.id), { forceFormData: true });
 const uploadFile = (files) => { form.documents = files; };
 const removeDocument = (id) => router.delete(route('shared-infos.documents.destroy', [props.sharedInfo.id, id]), { preserveScroll: true });
+
+const goBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+        window.history.back();
+    }
+};
 </script>
 
 <template>
     <div class="space-y-6">
         <BoPageHeader title="Editar informação" supratitle="INFORMAÇÕES" subtitle="" icon="mdi:circle-edit-outline">
             <template #actions>
-                <Link :href="route('shared-infos.show', sharedInfo.id)">
-                    <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
-                    <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
-                </Link>
+                <div class="flex items-center gap-2">
+                    <Button class="!hidden md:!inline-flex" label="Voltar" outlined severity="secondary" icon="pi pi-arrow-left" @click="goBack" />
+                    <Button class="!inline-flex md:!hidden" icon="pi pi-arrow-left" rounded outlined severity="secondary" aria-label="Voltar" @click="goBack" />
+                    <Link :href="route('shared-infos.show', sharedInfo.id)">
+                        <Button class="!hidden md:!inline-flex" label="Visualizar" icon="pi pi-eye" outlined severity="secondary" />
+                        <Button class="!inline-flex md:!hidden" icon="pi pi-eye" rounded outlined severity="secondary" aria-label="Visualizar" />
+                    </Link>
+                </div>
             </template>
         </BoPageHeader>
 
