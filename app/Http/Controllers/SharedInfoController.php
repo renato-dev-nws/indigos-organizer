@@ -18,6 +18,8 @@ class SharedInfoController extends Controller
     {
         $infos = SharedInfo::query()
             ->with(['user', 'documents', 'links', 'categories'])
+            ->when(request('title'), fn ($query, $title) => $query->where('title', 'ilike', "%{$title}%"))
+            ->when(request('shared_info_category_id'), fn ($query, $categoryId) => $query->whereHas('categories', fn ($categoryQuery) => $categoryQuery->where('shared_info_categories.id', $categoryId)))
             ->when(request('search'), function ($query, $search) {
                 $query->where(function ($inner) use ($search): void {
                     $inner
@@ -37,7 +39,8 @@ class SharedInfoController extends Controller
 
         return Inertia::render('SharedInfos/Index', [
             'sharedInfos' => $infos,
-            'filters' => request()->only(['search']),
+            'categories' => SharedInfoCategory::query()->orderBy('name')->get(['id', 'name', 'icon']),
+            'filters' => request()->only(['title', 'shared_info_category_id', 'search']),
         ]);
     }
 

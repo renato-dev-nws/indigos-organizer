@@ -18,7 +18,7 @@ class StoreContactRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'whatsapp' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:255'],
             'venue_id' => ['nullable', 'uuid', 'exists:venues,id'],
         ];
     }

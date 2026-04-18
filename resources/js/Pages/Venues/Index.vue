@@ -10,7 +10,7 @@ import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ venues: Object, sizes: Array, types: Array, filters: Object, mapPoints: Array, venueCharts: Object });
+const props = defineProps({ venues: Object, sizes: Array, types: Array, categories: Array, styles: Array, filters: Object, mapPoints: Array, venueCharts: Object });
 
 const viewMode = ref('list');
 const quickSearch = ref(props.filters?.search ?? '');
@@ -44,6 +44,8 @@ const DARK_MAP_STYLES = [
 
 const localFilters = reactive({
     venue_type_id: props.filters?.venue_type_id ?? null,
+    venue_category_id: props.filters?.venue_category_id ?? null,
+    venue_style_id: props.filters?.venue_style_id ?? null,
     status: props.filters?.status ?? null,
     city: props.filters?.city ?? '',
     has_performed: props.filters?.has_performed ?? null,
@@ -53,6 +55,8 @@ const localFilters = reactive({
 
 const syncLocalFiltersFromProps = () => {
     localFilters.venue_type_id = props.filters?.venue_type_id ?? null;
+    localFilters.venue_category_id = props.filters?.venue_category_id ?? null;
+    localFilters.venue_style_id = props.filters?.venue_style_id ?? null;
     localFilters.status = props.filters?.status ?? null;
     localFilters.city = props.filters?.city ?? '';
     localFilters.has_performed = props.filters?.has_performed ?? null;
@@ -67,7 +71,18 @@ const filterChips = computed(() => {
         const type = props.types?.find((s) => s.id === localFilters.venue_type_id);
         if (type) chips.push({ key: 'venue_type_id', label: type.name });
     }
-    if (localFilters.status) chips.push({ key: 'status', label: localFilters.status });
+    if (localFilters.venue_category_id) {
+        const category = props.categories?.find((item) => item.id === localFilters.venue_category_id);
+        if (category) chips.push({ key: 'venue_category_id', label: category.name });
+    }
+    if (localFilters.venue_style_id) {
+        const style = props.styles?.find((item) => item.id === localFilters.venue_style_id);
+        if (style) chips.push({ key: 'venue_style_id', label: style.name });
+    }
+    if (localFilters.status) {
+        const status = statusOptions.find((item) => item.value === localFilters.status);
+        chips.push({ key: 'status', label: status?.label || localFilters.status });
+    }
     if (localFilters.city) chips.push({ key: 'city', label: localFilters.city });
     if (localFilters.has_performed !== null) chips.push({ key: 'has_performed', label: localFilters.has_performed ? 'Já tocou' : 'Nunca tocou' });
     if (localFilters.rating) chips.push({ key: 'rating', label: `${localFilters.rating} estrelas` });
@@ -80,6 +95,8 @@ const submitFilters = () => {
 
 const resetFilters = () => {
     localFilters.venue_type_id = null;
+    localFilters.venue_category_id = null;
+    localFilters.venue_style_id = null;
     localFilters.status = null;
     localFilters.city = '';
     localFilters.has_performed = null;
@@ -277,6 +294,29 @@ const formatRatingStars = (rating) => {
     const normalized = Math.max(0, Math.min(5, Number(rating) || 0));
     return `${'★'.repeat(normalized)}${'☆'.repeat(5 - normalized)}`;
 };
+
+const performancesLabel = (count) => {
+    if (count === null || count === undefined || count === '') {
+        return 'Não informado';
+    }
+
+    const value = Number(count);
+    if (!Number.isFinite(value)) {
+        return 'Não informado';
+    }
+
+    if (value <= 0) {
+        return 'Nenhuma';
+    }
+
+    if (value === 1) {
+        return '1 vez';
+    }
+
+    return `${value} vezes`;
+};
+
+const shouldShowMobileStatus = (status) => ['contacted', 'negotiating', 'open_doors'].includes(status);
 
 const normalizedMapPoints = computed(() => (props.mapPoints || []).map((point) => {
     const lat = Number(point?.lat);
@@ -767,6 +807,14 @@ onUnmounted(() => {
                 <Select v-model="localFilters.venue_type_id" :options="types" option-label="name" option-value="id" placeholder="Todos os tipos" show-clear />
             </div>
             <div class="space-y-2">
+                <label class="text-sm font-medium">Categoria</label>
+                <Select v-model="localFilters.venue_category_id" :options="categories" option-label="name" option-value="id" placeholder="Todas" show-clear />
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Estilo</label>
+                <Select v-model="localFilters.venue_style_id" :options="styles" option-label="name" option-value="id" placeholder="Todos" show-clear />
+            </div>
+            <div class="space-y-2">
                 <label class="text-sm font-medium">Status</label>
                 <Select v-model="localFilters.status" :options="statusOptions" option-label="label" option-value="value" placeholder="Todos" show-clear />
             </div>
@@ -804,16 +852,58 @@ onUnmounted(() => {
                         </template>
                     </Column>
                     <Column field="type.name" header="Tipo" sortable />
-                    <Column field="city" header="Cidade" sortable />
+                    <Column field="category.name" header="Categoria" sortable />
+                    <Column header="Estilos">
+                        <template #body="{ data }">
+                            <div class="flex flex-wrap gap-1">
+                                <Tag
+                                    v-for="style in data.styles || []"
+                                    :key="style.id"
+                                    severity="secondary"
+                                    class="!px-1.5 !py-0.5"
+                                >
+                                    <template #default>
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </template>
+                    </Column>
+                    <Column header="Avaliação" sortable>
+                        <template #body="{ data }">
+                            <span class="text-amber-500">{{ formatRatingStars(data.rating) }}</span>
+                        </template>
+                    </Column>
+                    <Column header="WhatsApp">
+                        <template #body="{ data }">
+                            <a
+                                v-if="data.whatsapp"
+                                :href="`https://wa.me/${String(data.whatsapp).replace(/\D/g, '')}`"
+                                target="_blank"
+                                rel="noopener"
+                                class="text-emerald-600 underline dark:text-emerald-400"
+                            >
+                                {{ data.whatsapp }}
+                            </a>
+                            <span v-else>-</span>
+                        </template>
+                    </Column>
+                    <Column header="Cidade/UF" sortable>
+                        <template #body="{ data }">
+                            {{ [data.city, data.state].filter(Boolean).join('/') || '-' }}
+                        </template>
+                    </Column>
+                    <Column header="Apresentou" sortable>
+                        <template #body="{ data }">
+                            {{ performancesLabel(data.performances_count) }}
+                        </template>
+                    </Column>
                     <Column field="status" header="Status" sortable>
                         <template #body="{ data }">
                             <Tag :value="statusLabels[data.status] || data.status || '-'" :style="{ backgroundColor: statusColors[data.status] || '#64748b', color: 'white' }" rounded />
                         </template>
                     </Column>
-                    <Column field="rating" header="Avaliação" sortable />
-                    <Column field="contact_name" header="Contato" sortable />
-                    <Column field="phone" header="Telefone" />
-                    <Column field="email" header="E-mail" />
                     <Column header="Ações" class="bo-action-col w-24">
                         <template #body="{ data }">
                             <div class="flex gap-1">
@@ -837,12 +927,43 @@ onUnmounted(() => {
                         <div v-for="venue in venues.data" :key="venue.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div class="flex items-start justify-between gap-2">
                                 <Link :href="route('venues.show', venue.id)" class="font-semibold hover:underline">{{ venue.name }}</Link>
-                                <Tag :value="statusLabels[venue.status] || venue.status || '-'" :style="{ backgroundColor: statusColors[venue.status] || '#64748b', color: 'white' }" rounded />
+                                <Tag v-if="shouldShowMobileStatus(venue.status)" :value="statusLabels[venue.status] || venue.status || '-'" :style="{ backgroundColor: statusColors[venue.status] || '#64748b', color: 'white' }" rounded />
                             </div>
                             <p class="mt-1 text-xs text-slate-500">Tipo: {{ venue.type?.name || '-' }}</p>
-                            <p class="text-xs text-slate-500">Cidade: {{ venue.city || '-' }}</p>
-                            <p class="text-xs text-slate-500">Contato: {{ venue.contact_name || '-' }}</p>
-                            <p class="text-xs text-slate-500">Telefone: {{ venue.phone || '-' }}</p>
+                            <p class="text-xs text-slate-500">Categoria: {{ venue.category?.name || '-' }}</p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Tag
+                                    v-for="style in venue.styles || []"
+                                    :key="style.id"
+                                    severity="secondary"
+                                    class="!px-1.5 !py-0.5"
+                                >
+                                    <template #default>
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(venue.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                            <p class="text-xs text-slate-500">Avaliação: <span class="text-amber-500">{{ formatRatingStars(venue.rating) }}</span></p>
+                            <p class="text-xs text-slate-500">
+                                WhatsApp:
+                                <a
+                                    v-if="venue.whatsapp"
+                                    :href="`https://wa.me/${String(venue.whatsapp).replace(/\D/g, '')}`"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="text-emerald-600 underline dark:text-emerald-400"
+                                >
+                                    {{ venue.whatsapp }}
+                                </a>
+                                <span v-else>-</span>
+                            </p>
+                            <p class="text-xs text-slate-500">Cidade/UF: {{ [venue.city, venue.state].filter(Boolean).join('/') || '-' }}</p>
+                            <p class="text-xs text-slate-500">Apresentou: {{ performancesLabel(venue.performances_count) }}</p>
+                            <p class="text-xs text-slate-500">
+                                <iconify-icon icon="mdi:map-marker" class="mr-1 align-[-2px]" />
+                                {{ [venue.address_line, venue.address_number, venue.neighborhood, [venue.city, venue.state].filter(Boolean).join('/'), venue.postal_code].filter(Boolean).join(', ') || 'Endereço não informado' }}
+                            </p>
                             <div class="mt-3 flex justify-end gap-1">
                                 <Link :href="route('venues.show', venue.id)">
                                     <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" />

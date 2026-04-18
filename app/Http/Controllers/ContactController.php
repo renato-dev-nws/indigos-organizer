@@ -17,6 +17,7 @@ class ContactController extends Controller
     {
         $contacts = Contact::query()
             ->with('venue:id,name')
+            ->when(request('name'), fn ($query, $name) => $query->where('name', 'ilike', "%{$name}%"))
             ->when(request('search'), fn ($query, $search) => $query
                 ->where(function ($innerQuery) use ($search) {
                     $innerQuery
@@ -35,7 +36,7 @@ class ContactController extends Controller
         return Inertia::render('Contacts/Index', [
             'contacts' => $contacts,
             'venues' => Venue::query()->orderBy('name')->get(['id', 'name']),
-            'filters' => request()->only(['search', 'venue_id']),
+            'filters' => request()->only(['name', 'search', 'venue_id']),
         ]);
     }
 

@@ -68,9 +68,9 @@ class VenueController extends Controller
             'sizes' => collect(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'color']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'color']),
-            'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'color']),
+            'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'color', 'icon']),
             'mapPoints' => $mapPoints,
-            'filters' => request()->only(['venue_type_id', 'status', 'city', 'has_performed', 'rating', 'search']),
+            'filters' => request()->only(['venue_type_id', 'venue_category_id', 'venue_style_id', 'status', 'city', 'has_performed', 'rating', 'search']),
         ]);
     }
 
@@ -129,6 +129,8 @@ class VenueController extends Controller
     {
         return $query
             ->when(request('venue_type_id'), fn ($q, $typeId) => $q->where('venue_type_id', $typeId))
+            ->when(request('venue_category_id'), fn ($q, $categoryId) => $q->where('venue_category_id', $categoryId))
+            ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($styleQuery) => $styleQuery->where('venue_styles.id', $styleId)))
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('city'), fn ($q, $city) => $q->where('city', 'ilike', "%{$city}%"))
             ->when(request()->has('has_performed') && request('has_performed') !== null, function ($q) {
@@ -152,6 +154,7 @@ class VenueController extends Controller
                         ->orWhere('state', 'ilike', "%{$search}%")
                         ->orWhere('contact_name', 'ilike', "%{$search}%")
                         ->orWhere('email', 'ilike', "%{$search}%")
+                        ->orWhere('whatsapp', 'ilike', "%{$search}%")
                         ->orWhere('description', 'ilike', "%{$search}%");
                 });
             });
@@ -235,6 +238,9 @@ class VenueController extends Controller
 
     public function edit(Venue $venue): Response
     {
+        $venue->load('styles:id');
+        $venue->setAttribute('venue_style_ids', $venue->styles->pluck('id')->values());
+
         return Inertia::render('Venues/Edit', [
             'venue' => $venue,
             'sizes' => collect(),

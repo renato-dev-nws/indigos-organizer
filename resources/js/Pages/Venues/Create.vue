@@ -28,7 +28,7 @@ const form = useForm({
     venue_size_id: null,
     venue_type_id: null,
     venue_category_id: null,
-    venue_style_id: null,
+    venue_style_ids: [],
     place_id: '',
     address_line: '',
     address_number: '',
@@ -175,7 +175,7 @@ const submit = () => form.post(route('venues.store'));
 
                 <div class="space-y-2">
                     <label for="venue-style">Estilo</label>
-                    <Select id="venue-style" v-model="form.venue_style_id" :options="styles" option-label="name" option-value="id" show-clear fluid />
+                    <MultiSelect id="venue-style" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" placeholder="Selecione estilos" fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -218,7 +218,7 @@ const submit = () => form.post(route('venues.store'));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-performances">Vezes que já tocou</label>
+                    <label for="venue-performances">Vezes que se apresentou</label>
                     <InputNumber id="venue-performances" v-model="form.performances_count" :min="0" fluid />
                 </div>
 

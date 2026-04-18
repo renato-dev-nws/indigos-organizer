@@ -7,20 +7,52 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
 defineOptions({ layout: AppLayout });
-const props = defineProps({ sharedInfos: Object, filters: Object });
+const props = defineProps({ sharedInfos: Object, categories: Array, filters: Object });
 
-const localFilters = reactive({ search: props.filters?.search ?? '' });
+const localFilters = reactive({
+    title: props.filters?.title ?? '',
+    shared_info_category_id: props.filters?.shared_info_category_id ?? null,
+    search: props.filters?.search ?? '',
+});
 const quickSearch = ref(props.filters?.search ?? '');
 const quickSearchTimer = ref(null);
 const syncLocalFiltersFromProps = () => {
+    localFilters.title = props.filters?.title ?? '';
+    localFilters.shared_info_category_id = props.filters?.shared_info_category_id ?? null;
     localFilters.search = props.filters?.search ?? '';
     quickSearch.value = props.filters?.search ?? '';
 };
-const filterChips = computed(() => []);
+
+const filterChips = computed(() => {
+    const chips = [];
+    if (localFilters.title) {
+        chips.push({ key: 'title', label: `Título: ${localFilters.title}` });
+    }
+    if (localFilters.shared_info_category_id) {
+        const category = (props.categories || []).find((item) => item.id === localFilters.shared_info_category_id);
+        if (category) {
+            chips.push({ key: 'shared_info_category_id', label: category.name });
+        }
+    }
+
+    return chips;
+});
 
 const submitFilters = () => router.get(route('shared-infos.index'), localFilters, { preserveState: true, preserveScroll: true, replace: true });
-const resetFilters = () => { localFilters.search = ''; quickSearch.value = ''; submitFilters(); };
-const removeChip = () => { localFilters.search = ''; quickSearch.value = ''; submitFilters(); };
+const resetFilters = () => {
+    localFilters.title = '';
+    localFilters.shared_info_category_id = null;
+    localFilters.search = '';
+    quickSearch.value = '';
+    submitFilters();
+};
+const removeChip = (key) => {
+    localFilters[key] = ['title', 'search'].includes(key) ? '' : null;
+    if (key === 'search') {
+        quickSearch.value = '';
+    }
+    submitFilters();
+};
 const cancelFilters = () => { syncLocalFiltersFromProps(); };
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 watch(quickSearch, (value) => {
@@ -53,15 +85,36 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
         </BoPageHeader>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
-            <div class="space-y-2">
-                <label class="text-sm font-medium">Busca rápida</label>
-                <IconField>
-                    <InputIcon class="pi pi-search" />
-                    <InputText v-model="quickSearch" placeholder="Título, categoria, descrição, links e arquivos" />
-                </IconField>
-                <div class="mt-1 flex justify-end">
-                    <Button v-if="quickSearch" type="button" size="small" text label="Limpar" @click="quickSearch = ''" />
+            <template #right-actions>
+                <div class="relative">
+                    <InputText v-model="quickSearch" class="w-72 pr-8" placeholder="Busca rápida de informações" />
+                    <button
+                        v-if="quickSearch"
+                        type="button"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        aria-label="Limpar busca"
+                        @click="quickSearch = ''"
+                    >
+                        <i class="pi pi-times-circle" />
+                    </button>
                 </div>
+            </template>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Título</label>
+                <InputText v-model="localFilters.title" placeholder="Filtrar por título" />
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Categoria</label>
+                <Select
+                    v-model="localFilters.shared_info_category_id"
+                    :options="categories || []"
+                    option-label="name"
+                    option-value="id"
+                    show-clear
+                    placeholder="Todas"
+                />
             </div>
         </BoFilterBar>
 

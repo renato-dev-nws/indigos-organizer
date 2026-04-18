@@ -122,8 +122,8 @@ const submit = () => {
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                    <label>Descrição</label>
-                    <Textarea v-model="form.description" rows="4" fluid />
+                    <label>Descrição rápida</label>
+                    <InputText v-model="form.description" fluid />
                 </div>
             </div>
 

@@ -17,6 +17,7 @@ const props = defineProps({
 });
 
 const localFilters = reactive({
+    name: props.filters?.name ?? '',
     search: props.filters?.search ?? '',
     venue_id: props.filters?.venue_id ?? null,
 });
@@ -27,6 +28,7 @@ const showFormModal = ref(false);
 const selectedContact = ref(null);
 
 const syncLocalFiltersFromProps = () => {
+    localFilters.name = props.filters?.name ?? '';
     localFilters.search = props.filters?.search ?? '';
     localFilters.venue_id = props.filters?.venue_id ?? null;
     quickSearch.value = props.filters?.search ?? '';
@@ -52,6 +54,10 @@ watch(quickSearch, (value) => {
 const filterChips = computed(() => {
     const chips = [];
 
+    if (localFilters.name) {
+        chips.push({ key: 'name', label: `Nome: ${localFilters.name}` });
+    }
+
     if (localFilters.venue_id) {
         const venue = props.venues?.find((item) => item.id === localFilters.venue_id);
         if (venue) {
@@ -67,6 +73,7 @@ const submitFilters = () => {
 };
 
 const resetFilters = () => {
+    localFilters.name = '';
     localFilters.search = '';
     localFilters.venue_id = null;
     quickSearch.value = '';
@@ -74,7 +81,7 @@ const resetFilters = () => {
 };
 
 const removeChip = (key) => {
-    localFilters[key] = key === 'search' ? '' : null;
+    localFilters[key] = ['name', 'search'].includes(key) ? '' : null;
     if (key === 'search') {
         quickSearch.value = '';
     }
@@ -116,15 +123,24 @@ const refreshContacts = () => {
         </BoPageHeader>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
-            <div class="space-y-2">
-                <label class="text-sm font-medium">Busca rápida</label>
-                <IconField>
-                    <InputIcon class="pi pi-search" />
-                    <InputText v-model="quickSearch" placeholder="Nome, email, descrição ou local" />
-                </IconField>
-                <div class="mt-1 flex justify-end">
-                    <Button v-if="quickSearch" type="button" size="small" text label="Limpar" @click="quickSearch = ''" />
+            <template #right-actions>
+                <div class="relative">
+                    <InputText v-model="quickSearch" class="w-72 pr-8" placeholder="Busca rápida de contatos" />
+                    <button
+                        v-if="quickSearch"
+                        type="button"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        aria-label="Limpar busca"
+                        @click="quickSearch = ''"
+                    >
+                        <i class="pi pi-times-circle" />
+                    </button>
                 </div>
+            </template>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium">Nome</label>
+                <InputText v-model="localFilters.name" placeholder="Filtrar por nome" />
             </div>
 
             <div class="space-y-2">

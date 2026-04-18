@@ -16,7 +16,7 @@ const form = useForm({
     venue_size_id: props.venue.venue_size_id,
     venue_type_id: props.venue.venue_type_id,
     venue_category_id: props.venue.venue_category_id,
-    venue_style_id: props.venue.venue_style_id,
+    venue_style_ids: props.venue.venue_style_ids ?? props.venue.styles?.map((style) => style.id) ?? [],
     place_id: props.venue.place_id,
     address_line: props.venue.address_line,
     address_number: props.venue.address_number,
@@ -170,7 +170,7 @@ const submit = () => form.put(route('venues.update', props.venue.id));
 
                 <div class="space-y-2">
                     <label for="venue-style">Estilo</label>
-                    <Select id="venue-style" v-model="form.venue_style_id" :options="styles" option-label="name" option-value="id" show-clear fluid />
+                    <MultiSelect id="venue-style" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" placeholder="Selecione estilos" fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -213,7 +213,7 @@ const submit = () => form.put(route('venues.update', props.venue.id));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-performances">Vezes que já tocou</label>
+                    <label for="venue-performances">Vezes que se apresentou</label>
                     <InputNumber id="venue-performances" v-model="form.performances_count" :min="0" fluid />
                 </div>
 
