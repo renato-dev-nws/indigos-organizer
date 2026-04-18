@@ -1,10 +1,47 @@
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
     visible: { type: Boolean, default: false },
     task: { type: Object, default: null },
 });
 
 const emit = defineEmits(['update:visible']);
+
+const assigneeLabel = computed(() => {
+    const assignees = props.task?.assigned_users || props.task?.assignedUsers || [];
+    if (!assignees.length) {
+        return 'Todos';
+    }
+
+    return assignees.map((user) => user.name).join(', ');
+});
+
+const formatDateTime = (value) => {
+    if (!value) {
+        return '-';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleString('pt-BR');
+};
+
+const formatDate = (value) => {
+    if (!value) {
+        return '-';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return String(value);
+    }
+
+    return date.toLocaleDateString('pt-BR');
+};
 </script>
 
 <template>
@@ -21,8 +58,8 @@ const emit = defineEmits(['update:visible']);
                     <p class="font-medium">{{ task.status?.name || '-' }}</p>
                 </div>
                 <div>
-                    <p class="text-xs text-slate-500">Responsável</p>
-                    <p class="font-medium">{{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</p>
+                    <p class="text-xs text-slate-500">Responsáveis</p>
+                    <p class="font-medium">{{ assigneeLabel }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Prioridade</p>
@@ -30,15 +67,15 @@ const emit = defineEmits(['update:visible']);
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Agendado para</p>
-                    <p class="font-medium">{{ task.scheduled_for || '-' }}</p>
+                    <p class="font-medium">{{ formatDateTime(task.scheduled_for) }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Prazo</p>
-                    <p class="font-medium">{{ task.due_date || '-' }}</p>
+                    <p class="font-medium">{{ formatDate(task.due_date) }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Lembrete</p>
-                    <p class="font-medium">{{ task.reminder_at || '-' }}</p>
+                    <p class="font-medium">{{ formatDateTime(task.reminder_at) }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Evento</p>

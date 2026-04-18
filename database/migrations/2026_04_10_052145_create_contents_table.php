@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('title');
             $table->longText('script')->nullable();
             $table->foreignUuid('idea_type_id')->nullable()->constrained('idea_types')->nullOnDelete();
-            $table->foreignUuid('idea_category_id')->nullable()->constrained('idea_categories')->nullOnDelete();
             $table->enum('status', ['queued', 'in_production', 'finalized', 'cancelled', 'paused', 'published'])->default('queued');
             $table->timestamp('planned_publish_at')->nullable();
             $table->timestamp('published_at')->nullable();

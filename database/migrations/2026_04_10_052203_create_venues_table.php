@@ -18,10 +18,8 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('contact_name')->nullable();
-            $table->foreignUuid('venue_size_id')->nullable()->constrained('venue_sizes')->nullOnDelete();
             $table->foreignUuid('venue_type_id')->nullable()->constrained('venue_types')->nullOnDelete();
             $table->foreignUuid('venue_category_id')->nullable()->constrained('venue_categories')->nullOnDelete();
-            $table->foreignUuid('venue_style_id')->nullable()->constrained('venue_styles')->nullOnDelete();
             $table->string('place_id')->nullable();
             $table->string('address_line')->nullable();
             $table->string('address_number')->nullable();

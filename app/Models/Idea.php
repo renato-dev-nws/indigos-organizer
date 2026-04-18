@@ -78,6 +78,11 @@ class Idea extends Model
         return $this->belongsToMany(User::class, 'idea_voter_users');
     }
 
+    public function collaborators(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'idea_collaborator');
+    }
+
     public function votes(): HasMany
     {
         return $this->hasMany(IdeaVote::class);

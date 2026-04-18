@@ -15,7 +15,8 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'assigned_user_id' => ['nullable', 'uuid', 'exists:users,id'],
+            'assigned_user_ids' => ['nullable', 'array'],
+            'assigned_user_ids.*' => ['uuid', 'exists:users,id'],
             'related_type' => ['required', 'in:content,plan,event,administrative'],
             'content_id' => ['nullable', 'uuid', 'exists:contents,id'],
             'plan_id' => ['nullable', 'uuid', 'exists:plans,id'],

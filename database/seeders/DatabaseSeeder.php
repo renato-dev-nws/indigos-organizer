@@ -16,7 +16,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             'Database\\Seeders\\UserSeeder',
-            'Database\\Seeders\\VenueSizeSeeder',
             'Database\\Seeders\\IdeaTypeSeeder',
             'Database\\Seeders\\IdeaCategorySeeder',
             'Database\\Seeders\\ContentPlatformSeeder',

@@ -18,11 +18,12 @@ class DispatchTaskReminderNotificationsJob implements ShouldQueue
         $tasks = Task::query()
             ->whereNotNull('reminder_at')
             ->where('reminder_at', '<=', now())
+            ->with('assignedUsers:id')
             ->get();
 
         foreach ($tasks as $task) {
-            $targets = $task->assigned_user_id
-                ? User::query()->where('id', $task->assigned_user_id)->get()
+            $targets = $task->assignedUsers->isNotEmpty()
+                ? $task->assignedUsers
                 : User::query()->get();
 
             foreach ($targets as $user) {

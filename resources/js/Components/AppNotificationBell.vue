@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 import Popover from 'primevue/popover';
 
@@ -77,6 +77,14 @@ async function markRead(id) {
         credentials: 'same-origin',
     });
 }
+
+const openNotification = async (notification) => {
+    await markRead(notification.id);
+
+    if (notification.url) {
+        router.visit(notification.url);
+    }
+};
 
 // ─── Mark all as read ────────────────────────────────────────────────────────
 async function markAllRead() {
@@ -178,7 +186,7 @@ onUnmounted(() => {
                     :key="n.id"
                     class="flex cursor-pointer gap-3 px-3 py-2.5 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     :class="{ 'bg-indigo-50/60 dark:bg-indigo-950/20': !n.read_at }"
-                    @click="markRead(n.id)"
+                    @click="openNotification(n)"
                 >
                     <!-- Icon -->
                     <div

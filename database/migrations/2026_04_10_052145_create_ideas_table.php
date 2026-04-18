@@ -34,6 +34,14 @@ return new class extends Migration
                 ->on('ideas')
                 ->nullOnDelete();
         });
+
+            Schema::create('idea_collaborator', function (Blueprint $table) {
+                $table->uuid('idea_id');
+                $table->uuid('user_id');
+                $table->primary(['idea_id', 'user_id']);
+                $table->foreign('idea_id')->references('id')->on('ideas')->cascadeOnDelete();
+                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            });
     }
 
     /**
@@ -44,6 +52,8 @@ return new class extends Migration
         Schema::table('contents', function (Blueprint $table) {
             $table->dropForeign(['idea_id']);
         });
+
+            Schema::dropIfExists('idea_collaborator');
 
         Schema::dropIfExists('ideas');
     }

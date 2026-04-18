@@ -19,11 +19,12 @@ class DispatchDueSoonTasksNotificationsJob implements ShouldQueue
             ->whereNotNull('due_date')
             ->whereDate('due_date', '>=', now()->toDateString())
             ->whereDate('due_date', '<=', now()->addDay()->toDateString())
+            ->with('assignedUsers:id')
             ->get();
 
         foreach ($tasks as $task) {
-            $targets = $task->assigned_user_id
-                ? User::query()->where('id', $task->assigned_user_id)->get()
+            $targets = $task->assignedUsers->isNotEmpty()
+                ? $task->assignedUsers
                 : User::query()->get();
 
             foreach ($targets as $user) {

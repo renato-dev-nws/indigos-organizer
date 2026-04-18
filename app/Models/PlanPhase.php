@@ -23,12 +23,16 @@ class PlanPhase extends Model
         'description',
         'order',
         'completed',
+        'estimated_start_date',
+        'estimated_end_date',
     ];
 
     protected function casts(): array
     {
         return [
             'completed' => 'boolean',
+                    'estimated_start_date' => 'date',
+                    'estimated_end_date' => 'date',
         ];
     }
 

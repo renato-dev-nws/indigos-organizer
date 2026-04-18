@@ -24,7 +24,6 @@ class Content extends Model
         'title',
         'script',
         'idea_type_id',
-        'idea_category_id',
         'status',
         'planned_publish_at',
         'published_at',
@@ -63,9 +62,9 @@ class Content extends Model
         return $this->belongsTo(IdeaType::class, 'idea_type_id');
     }
 
-    public function category(): BelongsTo
+    public function categories(): BelongsToMany
     {
-        return $this->belongsTo(IdeaCategory::class, 'idea_category_id');
+        return $this->belongsToMany(IdeaCategory::class, 'content_idea_category');
     }
 
     public function files(): HasMany

@@ -9,12 +9,14 @@ class TaskObserver
 {
     public function created(Task $task): void
     {
-        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        if ($task->syncLegacyAssignedUsersIfPending()) {
+            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        }
     }
 
     public function updated(Task $task): void
     {
-        if ($task->wasChanged('assigned_user_id')) {
+        if ($task->syncLegacyAssignedUsersIfPending()) {
             DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
         }
     }

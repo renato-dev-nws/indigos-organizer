@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class IdeaCategory extends Model
@@ -27,8 +28,8 @@ class IdeaCategory extends Model
         return $this->hasMany(Idea::class);
     }
 
-    public function contents(): HasMany
+    public function contents(): BelongsToMany
     {
-        return $this->hasMany(Content::class);
+        return $this->belongsToMany(Content::class, 'content_idea_category');
     }
 }

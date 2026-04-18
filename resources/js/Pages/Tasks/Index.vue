@@ -26,6 +26,9 @@ const confirm = useConfirm();
 const viewMode = ref('list');
 const tableRows = ref(15);
 const tablePage = ref(0);
+const weeklyBaseDate = new Date();
+weeklyBaseDate.setHours(0, 0, 0, 0);
+const todayDate = ref(weeklyBaseDate);
 
 const relatedTypeLabels = { content: 'Conteúdo', plan: 'Plano', event: 'Evento', administrative: 'Administrativo' };
 
@@ -306,15 +309,34 @@ const isOverWip = (column) => {
     return limit > 0 && column.tasks.length > limit;
 };
 
-const taskAssigneeKey = (task) => task.assigned_user_id ?? task.assigned_user?.id ?? task.assignedUser?.id ?? null;
-const taskAssigneeLabel = (task) => task.assigned_user?.name ?? task.assignedUser?.name ?? 'Todos';
+const taskAssigneeIds = (task) => {
+    const list = task.assigned_users || task.assignedUsers || [];
+    return list.map((user) => user.id);
+};
+
+const taskAssigneeLabel = (task) => {
+    const list = task.assigned_users || task.assignedUsers || [];
+    if (!list.length) {
+        return 'Todos';
+    }
+
+    return list.map((user) => user.name).join(', ');
+};
 
 const assignees = computed(() => {
     const map = new Map();
     for (const task of boardTasks.value) {
-        const key = taskAssigneeKey(task);
-        if (!map.has(key)) {
-            map.set(key, taskAssigneeLabel(task));
+        const ids = taskAssigneeIds(task);
+        if (!ids.length) {
+            map.set(null, 'Todos');
+            continue;
+        }
+
+        for (const id of ids) {
+            if (!map.has(id)) {
+                const user = props.users.find((item) => item.id === id);
+                map.set(id, user?.name || 'Responsável');
+            }
         }
     }
 
@@ -335,14 +357,35 @@ const swimlaneRows = computed(() =>
             id: col.id,
             name: col.name,
             color: col.color,
-            tasks: col.tasks.filter((task) => taskAssigneeKey(task) === assignee.id),
+            tasks: col.tasks.filter((task) => {
+                if (assignee.id === null) {
+                    return !taskAssigneeIds(task).length;
+                }
+
+                return taskAssigneeIds(task).includes(assignee.id);
+            }),
         })),
     })),
 );
 
 const weekColumns = computed(() => {
-    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const grouped = labels.map((label, dayIndex) => ({ label, dayIndex, items: [] }));
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Próximo domingo'];
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const grouped = Array.from({ length: 8 }).map((_, index) => {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + index);
+
+        return {
+            index,
+            label: labels[index],
+            date,
+            items: [],
+        };
+    });
 
     for (const task of props.weeklyTaskItems || []) {
         const sourceDate = task.scheduled_for || task.due_date;
@@ -350,14 +393,19 @@ const weekColumns = computed(() => {
             continue;
         }
 
-        const day = new Date(sourceDate).getDay();
-        grouped[day].items.push(task);
+        const itemDate = new Date(sourceDate);
+        itemDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((itemDate.getTime() - weekStart.getTime()) / 86_400_000);
+
+        if (diffDays >= 0 && diffDays <= 7) {
+            grouped[diffDays].items.push(task);
+        }
     }
 
     return grouped;
 });
 
-const weekColumnsCarousel = computed(() => weekColumns.value.map((column) => ({ ...column })));
+const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
 
 const taskWeekDate = (task) => task.scheduled_for || task.due_date;
 
@@ -435,8 +483,14 @@ const taskStatusChartData = computed(() => ({
     labels: props.taskCharts?.statusCounts?.labels ?? [],
     datasets: [
         {
+            label: 'Total',
             backgroundColor: props.taskCharts?.statusCounts?.colors ?? [],
             data: props.taskCharts?.statusCounts?.data ?? [],
+        },
+        {
+            label: 'Atrasadas',
+            backgroundColor: '#ef4444',
+            data: props.taskCharts?.statusCounts?.overdue ?? [],
         },
     ],
 }));
@@ -478,15 +532,22 @@ const taskByUserChartData = computed(() => {
                         v-model="viewMode"
                         size="small"
                         :options="[
-                            { label: 'Lista', value: 'list' },
-                            { label: 'Kanban', value: 'kanban' },
-                            { label: 'Programação da semana', value: 'weekly' },
-                            { label: 'Calendário completo', value: 'full_calendar' },
-                            { label: 'Gráficos', value: 'charts' },
+                            { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
+                            { label: 'Kanban', value: 'kanban', icon: 'mdi:view-column' },
+                            { label: 'Programação da semana', value: 'weekly', icon: 'mdi:calendar-week' },
+                            { label: 'Calendário completo', value: 'full_calendar', icon: 'mdi:calendar-month' },
+                            { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
                         ]"
                         option-label="label"
                         option-value="value"
-                    />
+                    >
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-1.5">
+                                <iconify-icon :icon="slotProps.option.icon" width="14" height="14" />
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </SelectButton>
                 </div>
                 <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Nova tarefa" @click="openCreateModal" />
                 <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Nova tarefa" @click="openCreateModal" />
@@ -498,14 +559,22 @@ const taskByUserChartData = computed(() => {
                 v-model="viewMode"
                 size="small"
                 :options="[
-                    { label: 'Lista', value: 'list' },
-                    { label: 'Programação', value: 'weekly' },
-                    { label: 'Calendário', value: 'full_calendar' },
-                    { label: 'Gráficos', value: 'charts' },
+                    { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
+                    { label: 'Kanban', value: 'kanban', icon: 'mdi:view-column' },
+                    { label: 'Programação', value: 'weekly', icon: 'mdi:calendar-week' },
+                    { label: 'Calendário', value: 'full_calendar', icon: 'mdi:calendar-month' },
+                    { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
                 ]"
                 option-label="label"
                 option-value="value"
-            />
+            >
+                <template #option="slotProps">
+                    <div class="flex items-center justify-center">
+                        <iconify-icon :icon="slotProps.option.icon" width="16" height="16" />
+                        <span class="sr-only">{{ slotProps.option.label }}</span>
+                    </div>
+                </template>
+            </SelectButton>
         </div>
 
         <BoFilterBar :chips="filterChips" @submit="submitFilters" @reset="resetFilters" @remove-chip="removeChip" @cancel="cancelFilters">
@@ -597,8 +666,8 @@ const taskByUserChartData = computed(() => {
                         <Column header="Relacionada a">
                             <template #body="{ data }">{{ relatedTypeLabels[data.related_type] || data.related_type }}</template>
                         </Column>
-                        <Column header="Responsável">
-                            <template #body="{ data }">{{ data.assigned_user?.name || data.assignedUser?.name || 'Todos' }}</template>
+                        <Column header="Responsáveis">
+                            <template #body="{ data }">{{ taskAssigneeLabel(data) }}</template>
                         </Column>
                         <Column header="Prioridade">
                             <template #body="{ data }">
@@ -661,7 +730,7 @@ const taskByUserChartData = computed(() => {
                             <span>Status:</span>
                             <BoTaskStatusTag :status="task.status" />
                         </div>
-                        <p class="text-xs text-slate-500">Responsável: {{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</p>
+                        <p class="text-xs text-slate-500">Responsáveis: {{ taskAssigneeLabel(task) }}</p>
                         <p class="text-xs text-slate-500">Agendado: <BoDateText :value="task.scheduled_for" mode="datetime" /></p>
                         <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
                         <div class="mt-3 flex justify-end gap-1">
@@ -696,7 +765,7 @@ const taskByUserChartData = computed(() => {
             </template>
         </Card>
 
-        <div v-else-if="viewMode === 'kanban'" class="hidden gap-4 md:grid xl:grid-cols-4">
+        <div v-else-if="viewMode === 'kanban'" class="hidden gap-4 md:grid xl:grid-cols-5">
             <Card v-for="column in kanbanColumns" :key="column.id" class="xl:col-span-1">
                 <template #title>
                     <div class="flex items-center justify-between gap-2">
@@ -747,7 +816,7 @@ const taskByUserChartData = computed(() => {
             <Card class="mb-4">
                 <template #title>Programação da semana</template>
                 <template #content>
-                    <div class="hidden gap-3 md:grid lg:grid-cols-7">
+                    <div class="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-4">
                         <Card v-for="column in weekColumns" :key="column.label" class="lg:col-span-1">
                             <template #title>{{ column.label }}</template>
                             <template #content>
@@ -766,7 +835,7 @@ const taskByUserChartData = computed(() => {
                                             <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
                                             {{ task.title }}
                                         </p>
-                                        <div class="mt-1 flex items-center justify-between gap-1">
+                                        <div class="mt-1 flex flex-col items-end gap-1">
                                             <BoTaskStatusTag :status="task.status" />
                                             <span class="text-[10px] text-slate-500">
                                                 <BoDateText :value="taskWeekDate(task)" mode="datetime" />
@@ -779,36 +848,39 @@ const taskByUserChartData = computed(() => {
                     </div>
 
                     <div class="md:hidden">
-                        <Carousel :value="weekColumnsCarousel" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
-                            <template #item="{ data: column }">
-                                <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                                    <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
-                                    <div class="space-y-2">
-                                        <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                                            Sem tarefas.
-                                        </div>
-                                        <button
-                                            v-for="task in column.items"
-                                            :key="task.id"
-                                            type="button"
-                                            class="w-full rounded-lg border border-slate-200 p-2 text-left dark:border-slate-700"
-                                            @click="openViewModal(task)"
-                                        >
-                                            <p class="truncate text-xs font-semibold">
-                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
-                                                {{ task.title }}
-                                            </p>
-                                            <div class="mt-1 flex items-center justify-between gap-1">
-                                                <BoTaskStatusTag :status="task.status" />
-                                                <span class="text-[10px] text-slate-500">
-                                                    <BoDateText :value="taskWeekDate(task)" mode="datetime" />
-                                                </span>
-                                            </div>
-                                        </button>
+                        <div class="space-y-2">
+                            <details
+                                v-for="column in weekColumns"
+                                :key="column.label"
+                                :open="isWeeklyColumnOpenByDefault(column)"
+                                class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                            >
+                                <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">{{ column.label }}</summary>
+                                <div class="space-y-2 border-t border-slate-100 px-3 py-3 dark:border-slate-800">
+                                    <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                        Sem tarefas.
                                     </div>
+                                    <button
+                                        v-for="task in column.items"
+                                        :key="task.id"
+                                        type="button"
+                                        class="w-full rounded-lg border border-slate-200 p-2 text-left dark:border-slate-700"
+                                        @click="openViewModal(task)"
+                                    >
+                                        <p class="truncate text-xs font-semibold">
+                                            <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                            {{ task.title }}
+                                        </p>
+                                        <div class="mt-1 flex flex-col items-end gap-1">
+                                            <BoTaskStatusTag :status="task.status" />
+                                            <span class="text-[10px] text-slate-500">
+                                                <BoDateText :value="taskWeekDate(task)" mode="datetime" />
+                                            </span>
+                                        </div>
+                                    </button>
                                 </div>
-                            </template>
-                        </Carousel>
+                            </details>
+                        </div>
                     </div>
                 </template>
             </Card>
@@ -837,7 +909,7 @@ const taskByUserChartData = computed(() => {
                                 ]"
                                 option-label="label"
                                 option-value="value"
-                                class="w-44"
+                                class="w-full md:w-52"
                             />
                             <Select
                                 v-if="selectedTaskChart === 'user_status'"
@@ -846,7 +918,7 @@ const taskByUserChartData = computed(() => {
                                 :options="taskCharts?.tasksByUserStatus?.users || []"
                                 option-label="name"
                                 option-value="id"
-                                class="w-40"
+                                class="w-full md:w-52"
                             />
                         </div>
                     </div>

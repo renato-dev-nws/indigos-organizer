@@ -53,11 +53,10 @@ class EventSeeder extends Seeder
             ['title' => 'Mapa do local', 'url' => 'https://maps.google.com/?q=-23.5505,-46.6333'],
         ]);
 
-        Task::updateOrCreate(
+        $task = Task::updateOrCreate(
             ['title' => 'Fechar rider técnico do evento', 'event_id' => $event->id],
             [
                 'user_id' => $user->id,
-                'assigned_user_id' => $user->id,
                 'related_type' => 'event',
                 'content_id' => null,
                 'plan_id' => null,
@@ -68,5 +67,7 @@ class EventSeeder extends Seeder
                 'due_date' => Carbon::now()->addDays(8)->toDateString(),
             ]
         );
+
+        $task->assignedUsers()->sync([$user->id]);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\Event;
 use App\Models\Task;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -42,9 +43,9 @@ class GeneralCalendarController extends Controller
         $currentUserId = (string) Auth::id();
 
         $userTaskItems = Task::query()
-            ->where(fn ($query) => $query
-                ->where('assigned_user_id', $currentUserId)
-                ->orWhereNull('assigned_user_id')
+            ->where(fn (Builder $query) => $query
+                ->whereHas('assignedUsers', fn (Builder $assignedUsers) => $assignedUsers->where('users.id', $currentUserId))
+                ->orWhereDoesntHave('assignedUsers')
             )
             ->with('status:id,name')
             ->get(['id', 'title', 'task_status_id', 'scheduled_for', 'due_date']);

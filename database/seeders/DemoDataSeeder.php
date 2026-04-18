@@ -76,11 +76,15 @@ class DemoDataSeeder extends Seeder
                 'title' => $row['title'],
                 'script' => '<p>Roteiro inicial de exemplo.</p>',
                 'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
-                'idea_category_id' => $ideaCategories[$index % $ideaCategories->count()]?->id,
                 'status' => $row['status'],
                 'planned_publish_at' => $planned,
                 'published_at' => $publishedAt,
             ]);
+
+            $categoryId = $ideaCategories[$index % max($ideaCategories->count(), 1)]?->id;
+            if ($categoryId) {
+                $content->categories()->sync([$categoryId]);
+            }
 
             $platformId = $platforms[$index % max($platforms->count(), 1)]?->id;
             if ($platformId) {
@@ -103,7 +107,6 @@ class DemoDataSeeder extends Seeder
         foreach (range(1, 8) as $index) {
             $task = Task::create([
                 'user_id' => $user->id,
-                'assigned_user_id' => $assignableUsers[($index - 1) % $assignableUsers->count()]?->id,
                 'related_type' => $index % 3 === 0 ? 'administrative' : 'content',
                 'content_id' => $index <= 4 ? $contents[$index % $contents->count()]?->id : null,
                 'plan_id' => null,
@@ -116,25 +119,26 @@ class DemoDataSeeder extends Seeder
                 'due_date' => Carbon::now()->addDays($index),
             ]);
 
+            $assignedUser = $assignableUsers[($index - 1) % $assignableUsers->count()]?->id;
+            if ($assignedUser) {
+                $task->assignedUsers()->sync([$assignedUser]);
+            }
+
             $task->subtasks()->createMany([
                 ['title' => 'Subtarefa A '.$index, 'completed' => false, 'order' => 1],
                 ['title' => 'Subtarefa B '.$index, 'completed' => $index % 2 === 0, 'order' => 2],
             ]);
         }
 
-        $sizes = \App\Models\VenueSize::orderBy('name')->get();
-
         foreach (range(1, 3) as $index) {
-            Venue::create([
+            $venue = Venue::create([
                 'user_id' => $user->id,
                 'name' => 'Casa '.$index,
                 'email' => 'contato'.$index.'@casa.com',
                 'phone' => '(11) 99999-000'.$index,
                 'contact_name' => 'Produtor '.$index,
-                'venue_size_id' => $sizes[$index % $sizes->count()]?->id,
                 'venue_type_id' => $venueTypes[$index % max($venueTypes->count(), 1)]?->id,
                 'venue_category_id' => $venueCategories[$index % max($venueCategories->count(), 1)]?->id,
-                'venue_style_id' => $venueStyles[$index % max($venueStyles->count(), 1)]?->id,
                 'address_line' => 'Rua Exemplo '.$index,
                 'address_number' => (string) (100 + $index),
                 'neighborhood' => 'Centro',
@@ -156,6 +160,11 @@ class DemoDataSeeder extends Seeder
                 'notes' => 'Possui boa estrutura tecnica',
                 'description' => 'Local de show de exemplo',
             ]);
+
+            $styleId = $venueStyles[$index % max($venueStyles->count(), 1)]?->id;
+            if ($styleId) {
+                $venue->styles()->sync([$styleId]);
+            }
         }
 
     }

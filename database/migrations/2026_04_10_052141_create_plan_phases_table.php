@@ -16,6 +16,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('order')->default(0);
             $table->boolean('completed')->default(false);
+                        $table->date('estimated_start_date')->nullable();
+                        $table->date('estimated_end_date')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

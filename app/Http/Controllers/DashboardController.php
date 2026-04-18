@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Venue;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -38,10 +39,10 @@ class DashboardController extends Controller
 
         $taskScope = Task::query()
             ->where(fn (Builder $query) => $query
-                ->where('assigned_user_id', $userId)
-                ->orWhereNull('assigned_user_id')
+                ->whereHas('assignedUsers', fn (Builder $assignedUsers) => $assignedUsers->where('users.id', $userId))
+                ->orWhereDoesntHave('assignedUsers')
             )
-            ->with(['status:id,name,color', 'assignedUser:id,name']);
+            ->with(['status:id,name,color', 'assignedUsers:id,name']);
 
         $summary = [
             'tasksTotal' => (clone $taskScope)->count(),
@@ -51,11 +52,11 @@ class DashboardController extends Controller
                 ->count(),
             'tasksMine' => (clone $taskScope)
                 ->whereIn('id', $activeTaskIds)
-                ->where('assigned_user_id', $userId)
+                ->whereHas('assignedUsers', fn (Builder $assignedUsers) => $assignedUsers->where('users.id', $userId))
                 ->count(),
             'tasksEveryone' => (clone $taskScope)
                 ->whereIn('id', $activeTaskIds)
-                ->whereNull('assigned_user_id')
+                ->whereDoesntHave('assignedUsers')
                 ->count(),
             'tasksOverdue' => (clone $taskScope)
                 ->whereIn('id', $activeTaskIds)
@@ -82,8 +83,8 @@ class DashboardController extends Controller
 
         $weeklyTasks = Task::query()
             ->where(fn (Builder $query) => $query
-                ->where('assigned_user_id', $userId)
-                ->orWhereNull('assigned_user_id')
+                ->whereHas('assignedUsers', fn (Builder $assignedUsers) => $assignedUsers->where('users.id', $userId))
+                ->orWhereDoesntHave('assignedUsers')
             )
             ->where('archived', false)
             ->with(['status:id,name,color'])
@@ -222,11 +223,22 @@ class DashboardController extends Controller
     {
         $statuses = TaskStatus::query()->orderBy('order')->get(['id', 'name', 'color']);
         $users = User::query()->orderBy('name')->get(['id', 'name']);
-        $rows = Task::query()
-            ->whereBetween('created_at', [$start, $end])
-            ->selectRaw('coalesce(assigned_user_id::text, ?) as user_key, task_status_id, count(*) as total', ['__unassigned__'])
-            ->groupBy('user_key', 'task_status_id')
+
+        $assignedRows = DB::table('task_user')
+            ->join('tasks', 'tasks.id', '=', 'task_user.task_id')
+            ->whereBetween('tasks.created_at', [$start, $end])
+            ->selectRaw('task_user.user_id::text as user_key, tasks.task_status_id, count(*) as total')
+            ->groupBy('task_user.user_id', 'tasks.task_status_id')
             ->get();
+
+        $unassignedRows = Task::query()
+            ->whereBetween('created_at', [$start, $end])
+            ->whereDoesntHave('assignedUsers')
+            ->selectRaw('? as user_key, task_status_id, count(*) as total', ['__unassigned__'])
+            ->groupBy('task_status_id')
+            ->get();
+
+        $rows = $assignedRows->concat($unassignedRows);
 
         $userOptions = collect([
             ['id' => '__all__', 'name' => 'TODOS'],

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('tasks', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignUuid('assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('related_type', ['content', 'plan', 'event', 'administrative'])->default('administrative');
             $table->foreignUuid('content_id')->nullable()->constrained('contents')->nullOnDelete();
             $table->foreignUuid('plan_id')->nullable()->constrained('plans')->nullOnDelete();
@@ -34,6 +33,14 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+            Schema::create('task_user', function (Blueprint $table) {
+                $table->uuid('task_id');
+                $table->uuid('user_id');
+                $table->primary(['task_id', 'user_id']);
+                $table->foreign('task_id')->references('id')->on('tasks')->cascadeOnDelete();
+                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            });
     }
 
     /**
@@ -41,6 +48,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+            Schema::dropIfExists('task_user');
         Schema::dropIfExists('tasks');
     }
 };

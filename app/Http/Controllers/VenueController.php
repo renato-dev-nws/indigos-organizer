@@ -7,7 +7,6 @@ use App\Http\Requests\UpdateVenueRequest;
 use App\Models\Contact;
 use App\Models\Venue;
 use App\Models\VenueCategory;
-use App\Models\VenueSize;
 use App\Models\VenueStyle;
 use App\Models\VenueType;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +21,7 @@ class VenueController extends Controller
     public function index(): Response
     {
         $venues = $this->applyVenueFilters(Venue::query())
-            ->with(['size', 'user', 'type', 'category', 'style'])
+            ->with(['user', 'type', 'category', 'styles'])
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -66,7 +65,7 @@ class VenueController extends Controller
         return Inertia::render('Venues/Index', [
             'venues' => $venues,
             'venueCharts' => $this->buildVenueCharts(),
-            'sizes' => VenueSize::orderBy('name')->get(),
+            'sizes' => collect(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'color']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'color']),
             'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'color']),
@@ -113,7 +112,7 @@ class VenueController extends Controller
             ],
             'styles' => [
                 'labels' => $styles->pluck('name')->values(),
-                'data' => $styles->map(fn (VenueStyle $style) => (int) (clone $scope)->where('venue_style_id', $style->id)->count())->values(),
+                'data' => $styles->map(fn (VenueStyle $style) => (int) (clone $scope)->whereHas('styles', fn ($styleQuery) => $styleQuery->where('venue_styles.id', $style->id))->count())->values(),
             ],
             'states' => [
                 'labels' => $stateCounts->pluck('state')->values(),
@@ -161,7 +160,7 @@ class VenueController extends Controller
     public function create(): Response
     {
         return Inertia::render('Venues/Create', [
-            'sizes' => VenueSize::orderBy('name')->get(),
+            'sizes' => collect(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
             'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'icon']),
@@ -171,12 +170,17 @@ class VenueController extends Controller
     public function store(StoreVenueRequest $request): RedirectResponse
     {
         $payload = $request->validated();
+        $styleIds = $this->extractStyleIds($payload);
+
+        unset($payload['venue_style_id'], $payload['venue_style_ids']);
         $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
 
         $venue = Venue::create([
             ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
+
+        $venue->styles()->sync($styleIds);
 
         $this->syncContactFromVenue($venue);
 
@@ -186,12 +190,18 @@ class VenueController extends Controller
     public function quickStore(StoreVenueRequest $request): JsonResponse
     {
         $payload = $request->validated();
+        $styleIds = $this->extractStyleIds($payload);
+
+        unset($payload['venue_style_id'], $payload['venue_style_ids']);
         $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
 
         $venue = Venue::create([
             ...$payload,
             'user_id' => (string) Auth::id(),
-        ])->load(['type:id,name,icon,color', 'category:id,name', 'style:id,name']);
+        ]);
+
+        $venue->styles()->sync($styleIds);
+        $venue->load(['type:id,name,icon,color', 'category:id,name', 'styles:id,name']);
 
         $this->syncContactFromVenue($venue);
 
@@ -201,7 +211,8 @@ class VenueController extends Controller
                 'name' => $venue->name,
                 'type' => $venue->type,
                 'category' => $venue->category,
-                'style' => $venue->style,
+                'style' => $venue->styles->first(),
+                'styles' => $venue->styles,
                 'latitude' => $venue->latitude,
                 'longitude' => $venue->longitude,
                 'address' => collect([
@@ -218,7 +229,7 @@ class VenueController extends Controller
     public function show(Venue $venue): Response
     {
         return Inertia::render('Venues/Show', [
-            'venue' => $venue->load(['size', 'user', 'type', 'category', 'style']),
+            'venue' => $venue->load(['user', 'type', 'category', 'styles']),
         ]);
     }
 
@@ -226,7 +237,7 @@ class VenueController extends Controller
     {
         return Inertia::render('Venues/Edit', [
             'venue' => $venue,
-            'sizes' => VenueSize::orderBy('name')->get(),
+            'sizes' => collect(),
             'types' => VenueType::orderBy('name')->get(['id', 'name', 'icon']),
             'categories' => VenueCategory::orderBy('name')->get(['id', 'name', 'icon']),
             'styles' => VenueStyle::where('domain', VenueStyle::DOMAIN_VENUES)->orderBy('name')->get(['id', 'name', 'icon']),
@@ -236,9 +247,13 @@ class VenueController extends Controller
     public function update(UpdateVenueRequest $request, Venue $venue): RedirectResponse
     {
         $payload = $request->validated();
+        $styleIds = $this->extractStyleIds($payload);
+
+        unset($payload['venue_style_id'], $payload['venue_style_ids']);
         $payload['equipment_tags'] = array_values(array_filter($payload['equipment_tags'] ?? [], fn ($tag) => filled($tag)));
 
         $venue->update($payload);
+        $venue->styles()->sync($styleIds);
         $venue->refresh();
 
         $this->syncContactFromVenue($venue);
@@ -284,5 +299,22 @@ class VenueController extends Controller
         $venue->delete();
 
         return redirect()->route('venues.index')->with('success', 'Local removido com sucesso.');
+    }
+
+    private function extractStyleIds(array $payload): array
+    {
+        $legacyStyleId = $payload['venue_style_id'] ?? null;
+        $styleIds = $payload['venue_style_ids'] ?? [];
+
+        if (filled($legacyStyleId)) {
+            $styleIds[] = $legacyStyleId;
+        }
+
+        return collect($styleIds)
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

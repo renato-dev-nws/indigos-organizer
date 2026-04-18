@@ -27,6 +27,8 @@ class Event extends Model
         'description',
         'event_date',
         'event_time',
+        'end_date',
+        'end_time',
         'ticket_link',
         'ticket_price_first_batch',
         'ticket_price_second_batch',
@@ -40,6 +42,7 @@ class Event extends Model
     {
         return [
             'event_date' => 'date',
+            'end_date' => 'date',
             'is_online' => 'boolean',
             'ticket_price_first_batch' => 'decimal:2',
             'ticket_price_second_batch' => 'decimal:2',

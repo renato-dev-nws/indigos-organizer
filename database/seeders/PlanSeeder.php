@@ -80,11 +80,10 @@ class PlanSeeder extends Seeder
             );
 
             foreach ($phaseData['tasks'] as $index => $title) {
-                Task::updateOrCreate(
+                $task = Task::updateOrCreate(
                     ['plan_phase_id' => $phase->id, 'title' => $title],
                     [
                         'user_id' => $user->id,
-                        'assigned_user_id' => $assignableUsers[$index % $assignableUsers->count()]?->id,
                         'related_type' => 'plan',
                         'plan_id' => $plan->id,
                         'content_id' => null,
@@ -95,6 +94,10 @@ class PlanSeeder extends Seeder
                         'due_date' => null,
                     ]
                 );
+
+                $task->assignedUsers()->sync(array_filter([
+                    $assignableUsers[$index % $assignableUsers->count()]?->id,
+                ]));
             }
         }
     }

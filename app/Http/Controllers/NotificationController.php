@@ -22,6 +22,7 @@ class NotificationController extends Controller
                 'title' => $n->data['title'] ?? null,
                 'message' => $n->data['message'] ?? null,
                 'data' => $n->data,
+                'url' => $this->resolveNotificationUrl($n->data ?? []),
                 'read_at' => $n->read_at?->toIso8601String(),
                 'created_at' => $n->created_at->toIso8601String(),
             ]);
@@ -53,5 +54,18 @@ class NotificationController extends Controller
         $user = $request->user();
 
         return $user;
+    }
+
+    private function resolveNotificationUrl(array $data): ?string
+    {
+        if (! empty($data['task_id'])) {
+            return route('tasks.edit', $data['task_id']);
+        }
+
+        if (! empty($data['idea_id'])) {
+            return route('ideas.show', $data['idea_id']);
+        }
+
+        return null;
     }
 }

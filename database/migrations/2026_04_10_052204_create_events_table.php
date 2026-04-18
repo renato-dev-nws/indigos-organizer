@@ -19,6 +19,8 @@ return new class extends Migration
             $table->longText('description')->nullable();
             $table->date('event_date');
             $table->time('event_time')->nullable();
+                        $table->date('end_date')->nullable();
+                        $table->time('end_time')->nullable();
             $table->string('ticket_link')->nullable();
             $table->decimal('ticket_price_first_batch', 10, 2)->nullable();
             $table->decimal('ticket_price_second_batch', 10, 2)->nullable();

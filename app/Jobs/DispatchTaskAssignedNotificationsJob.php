@@ -19,14 +19,14 @@ class DispatchTaskAssignedNotificationsJob implements ShouldQueue
 
     public function handle(): void
     {
-        $task = Task::query()->find($this->taskId);
+        $task = Task::query()->with('assignedUsers:id')->find($this->taskId);
 
         if (! $task) {
             return;
         }
 
-        $targets = $task->assigned_user_id
-            ? User::query()->where('id', $task->assigned_user_id)->get()
+        $targets = $task->assignedUsers->isNotEmpty()
+            ? $task->assignedUsers
             : User::query()->get();
 
         foreach ($targets as $user) {

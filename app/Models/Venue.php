@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venue extends Model
@@ -22,10 +23,8 @@ class Venue extends Model
         'email',
         'phone',
         'contact_name',
-        'venue_size_id',
         'venue_type_id',
         'venue_category_id',
-        'venue_style_id',
         'place_id',
         'address_line',
         'address_number',
@@ -68,11 +67,6 @@ class Venue extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function size(): BelongsTo
-    {
-        return $this->belongsTo(VenueSize::class, 'venue_size_id');
-    }
-
     public function type(): BelongsTo
     {
         return $this->belongsTo(VenueType::class, 'venue_type_id');
@@ -83,9 +77,9 @@ class Venue extends Model
         return $this->belongsTo(VenueCategory::class, 'venue_category_id');
     }
 
-    public function style(): BelongsTo
+    public function styles(): BelongsToMany
     {
-        return $this->belongsTo(VenueStyle::class, 'venue_style_id');
+        return $this->belongsToMany(VenueStyle::class, 'venue_venue_style');
     }
 
     public function events(): HasMany

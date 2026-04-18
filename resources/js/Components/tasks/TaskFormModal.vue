@@ -23,7 +23,7 @@ const form = useForm({
     event_id: null,
     title: '',
     description: '',
-    assigned_user_id: null,
+    assigned_user_ids: [],
     priority: 'medium',
     archived: false,
     scheduled_for: '',
@@ -64,7 +64,7 @@ const hydrateForm = () => {
             event_id: null,
             title: '',
             description: '',
-            assigned_user_id: null,
+            assigned_user_ids: [],
             priority: 'medium',
             archived: false,
             scheduled_for: '',
@@ -86,7 +86,7 @@ const hydrateForm = () => {
         event_id: props.task.event_id,
         title: props.task.title,
         description: props.task.description,
-        assigned_user_id: props.task.assigned_user_id,
+        assigned_user_ids: (props.task.assigned_users || props.task.assignedUsers || []).map((user) => user.id),
         priority: props.task.priority,
         archived: !!props.task.archived,
         scheduled_for: props.task.scheduled_for,
@@ -229,9 +229,18 @@ const submit = () => {
                 </div>
 
                 <div class="space-y-2">
-                    <label>Responsável</label>
-                    <Select v-model="form.assigned_user_id" :options="[{ id: null, name: 'Todos' }, ...users]" option-label="name" option-value="id" show-clear :invalid="!!form.errors.assigned_user_id" fluid />
-                    <Message v-if="form.errors.assigned_user_id" severity="error" size="small" variant="simple">{{ form.errors.assigned_user_id }}</Message>
+                    <label>Responsáveis</label>
+                    <MultiSelect
+                        v-model="form.assigned_user_ids"
+                        :options="users"
+                        option-label="name"
+                        option-value="id"
+                        display="chip"
+                        placeholder="Todos"
+                        :invalid="!!form.errors.assigned_user_ids"
+                        fluid
+                    />
+                    <Message v-if="form.errors.assigned_user_ids" severity="error" size="small" variant="simple">{{ form.errors.assigned_user_ids }}</Message>
                 </div>
 
                 <div class="space-y-2">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\DispatchTaskAssignedNotificationsJob;
 use App\Models\Event;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
@@ -29,13 +30,13 @@ class TaskController extends Controller
         $boardQuery = $this->applyTaskFilters(Task::query(), true);
 
         $tasks = (clone $baseQuery)
-            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
+            ->with(['status', 'content', 'subtasks', 'assignedUsers', 'plan', 'planPhase', 'event'])
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
         $boardTasks = (clone $boardQuery)
-            ->with(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event'])
+            ->with(['status', 'content', 'subtasks', 'assignedUsers', 'plan', 'planPhase', 'event'])
             ->latest()
             ->get();
 
@@ -112,10 +113,10 @@ class TaskController extends Controller
                 }
 
                 if ($user['id'] === '__unassigned__') {
-                    return (int) $query->whereNull('assigned_user_id')->count();
+                    return (int) $query->whereDoesntHave('assignedUsers')->count();
                 }
 
-                return (int) $query->where('assigned_user_id', $user['id'])->count();
+                return (int) $query->whereHas('assignedUsers', fn ($q) => $q->where('users.id', $user['id']))->count();
             })->values();
 
             return [
@@ -131,6 +132,18 @@ class TaskController extends Controller
                 'labels' => $statuses->pluck('name')->values(),
                 'colors' => $statuses->pluck('color')->values(),
                 'data' => $statuses->map(fn (TaskStatus $status) => (int) ($statusCounts[$status->id] ?? 0))->values(),
+                'overdue' => $statuses->map(function (TaskStatus $status) {
+                    if ($this->isCompletedStatusName($status->name)) {
+                        return 0;
+                    }
+
+                    return (int) Task::query()
+                        ->where('task_status_id', $status->id)
+                        ->where('archived', false)
+                        ->whereNotNull('due_date')
+                        ->whereDate('due_date', '<', Carbon::today()->toDateString())
+                        ->count();
+                })->values(),
             ],
             'tasksByUserStatus' => [
                 'users' => $usersData,
@@ -154,19 +167,19 @@ class TaskController extends Controller
             ->when(
                 $assignedUserFilter === null,
                 fn ($q) => $q->where(fn ($inner) => $inner
-                    ->where('assigned_user_id', $currentUserId)
-                    ->orWhereNull('assigned_user_id')
+                    ->whereHas('assignedUsers', fn ($innerUsers) => $innerUsers->where('users.id', $currentUserId))
+                    ->orWhereDoesntHave('assignedUsers')
                 )
             )
             ->when(
                 $assignedUserFilter && $assignedUserFilter !== '__all__',
                 function ($q) use ($assignedUserFilter) {
                     if ($assignedUserFilter === '__unassigned__') {
-                        $q->whereNull('assigned_user_id');
+                        $q->whereDoesntHave('assignedUsers');
                         return;
                     }
 
-                    $q->where('assigned_user_id', $assignedUserFilter);
+                    $q->whereHas('assignedUsers', fn ($usersQuery) => $usersQuery->where('users.id', $assignedUserFilter));
                 }
             )
             ->when(request('priority'), fn ($q, $priority) => $q->where('priority', $priority))
@@ -232,13 +245,14 @@ class TaskController extends Controller
     public function show(Task $task): JsonResponse
     {
         return response()->json([
-            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUser', 'plan', 'planPhase', 'event']),
+            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUsers', 'plan', 'planPhase', 'event']),
         ]);
     }
 
     public function store(StoreTaskRequest $request): RedirectResponse
     {
         $payload = $request->safe()->all();
+        unset($payload['assigned_user_ids']);
         if (($payload['related_type'] ?? null) !== 'content') {
             $payload['content_id'] = null;
         }
@@ -254,6 +268,9 @@ class TaskController extends Controller
             ...$payload,
             'user_id' => (string) Auth::id(),
         ]);
+
+        $task->assignedUsers()->sync($request->input('assigned_user_ids', []));
+        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
 
         $subtasks = collect($request->input('subtasks', []))
             ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))
@@ -276,7 +293,7 @@ class TaskController extends Controller
     public function edit(Task $task): Response
     {
         return Inertia::render('Tasks/Edit', [
-            'task' => $task->load('subtasks'),
+            'task' => $task->load(['subtasks', 'assignedUsers']),
             'statuses' => TaskStatus::query()->orderBy('order')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
@@ -289,6 +306,7 @@ class TaskController extends Controller
     {
         $oldPlanId = $task->plan_id;
         $payload = $request->safe()->all();
+        unset($payload['assigned_user_ids']);
         if (($payload['related_type'] ?? null) !== 'content') {
             $payload['content_id'] = null;
         }
@@ -301,6 +319,8 @@ class TaskController extends Controller
         }
 
         $task->update($payload);
+        $task->assignedUsers()->sync($request->input('assigned_user_ids', []));
+        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
 
         $subtasks = collect($request->input('subtasks', []))
             ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))
