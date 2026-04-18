@@ -30,6 +30,15 @@ const cancelFilters = () => { syncLocalFiltersFromProps(); };
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
 const paginate = (event) => router.get(route('plans.index'), { ...localFilters, page: event.page + 1 }, { preserveState: true, preserveScroll: true, replace: true });
 const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveScroll: true });
+
+const relatedTasksCount = (plan) => {
+    const direct = Number(plan?.direct_tasks_count || 0);
+    const phaseTasks = (plan?.phases || []).reduce((sum, phase) => sum + Number(phase?.tasks_count || 0), 0);
+
+    return direct + phaseTasks;
+};
+
+const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0);
 </script>
 
 <template>
@@ -72,6 +81,8 @@ const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveS
                         <Column field="title" header="Título" />
                         <Column header="Status"><template #body="{ data }"><BoStatusTag :value="data.status" /></template></Column>
                         <Column header="Progresso"><template #body="{ data }"><ProgressBar :value="data.progress" style="height:0.5rem" /></template></Column>
+                        <Column header="Tarefas Relacionadas"><template #body="{ data }">{{ relatedTasksCount(data) }}</template></Column>
+                        <Column header="Conteúdos Relacionados"><template #body="{ data }">{{ relatedContentsCount(data) }}</template></Column>
                         <Column header="Início"><template #body="{ data }"><BoDateText :value="data.start_date" mode="date" /></template></Column>
                         <Column header="Fim"><template #body="{ data }"><BoDateText :value="data.end_date" mode="date" /></template></Column>
                         <Column header="Fases"><template #body="{ data }">{{ data.phases?.length || 0 }}</template></Column>
@@ -100,6 +111,8 @@ const removePlan = (id) => router.delete(route('plans.destroy', id), { preserveS
                 <p class="mt-2 text-xs text-slate-500">Início: <BoDateText :value="plan.start_date" mode="date" /></p>
                 <p class="text-xs text-slate-500">Fim: <BoDateText :value="plan.end_date" mode="date" /></p>
                 <p class="mt-2 text-xs text-slate-500">Fases: {{ plan.phases?.length || 0 }}</p>
+                <p class="text-xs text-slate-500">Tarefas relacionadas: {{ relatedTasksCount(plan) }}</p>
+                <p class="text-xs text-slate-500">Conteúdos relacionados: {{ relatedContentsCount(plan) }}</p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('plans.show', plan.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('plans.edit', plan.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>

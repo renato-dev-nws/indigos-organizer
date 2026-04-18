@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +20,16 @@ class PlanController extends Controller
     public function index(): Response
     {
         $plans = Plan::query()
-            ->with(['user', 'phases'])
+            ->with([
+                'user',
+                'phases' => fn ($query) => $query
+                    ->select(['id', 'plan_id'])
+                    ->withCount('tasks'),
+            ])
+            ->withCount([
+                'tasks as direct_tasks_count',
+                'contents as related_contents_count',
+            ])
             ->when(request('status'), fn ($q, $status) => $q->where('status', $status))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
             ->latest()
@@ -39,19 +50,27 @@ class PlanController extends Controller
     public function store(StorePlanRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request): void {
+            $phases = collect($request->input('phases', []));
+            $planPayload = $this->buildPlanPayload(
+                $request->safe()->except(['phases', 'progress']),
+                $phases,
+            );
+
             $plan = Plan::create([
-                ...$request->safe()->except(['phases', 'progress']),
+                ...$planPayload,
                 'user_id' => (string) Auth::id(),
                 'progress' => 0,
             ]);
 
-            foreach ($request->input('phases', []) as $index => $phase) {
+            foreach ($phases as $index => $phase) {
                 $plan->phases()->create([
                     'user_id' => (string) Auth::id(),
                     'title' => $phase['title'],
                     'description' => $phase['description'] ?? null,
-                    'order' => $phase['order'] ?? ($index + 1),
+                    'order' => $index + 1,
                     'completed' => (bool) ($phase['completed'] ?? false),
+                    'estimated_start_date' => $this->normalizeDate($phase['estimated_start_date'] ?? null),
+                    'estimated_end_date' => $this->normalizeDate($phase['estimated_end_date'] ?? null),
                 ]);
             }
 
@@ -66,12 +85,14 @@ class PlanController extends Controller
         return Inertia::render('Plans/Show', [
             'plan' => $plan->load([
                 'phases.tasks.status',
-                'phases.tasks.assignedUser',
+                'phases.tasks.assignedUsers',
                 'phases.tasks.subtasks',
                 'tasks.status',
-                'tasks.assignedUser',
+                'tasks.assignedUsers',
                 'tasks.subtasks',
-                'contents:id,plan_id,title,status,planned_publish_at,published_at',
+                'contents:id,plan_id,title,status,planned_publish_at,published_at,idea_type_id',
+                'contents.type:id,name',
+                'contents.categories:id,name,icon',
                 'user',
             ]),
         ]);
@@ -80,21 +101,39 @@ class PlanController extends Controller
     public function edit(Plan $plan): Response
     {
         return Inertia::render('Plans/Edit', [
-            'plan' => $plan->load('phases'),
+            'plan' => $plan->load([
+                'phases' => fn ($query) => $query
+                    ->withCount('tasks')
+                    ->orderBy('order'),
+            ]),
         ]);
     }
 
     public function update(UpdatePlanRequest $request, Plan $plan): RedirectResponse
     {
         DB::transaction(function () use ($request, $plan): void {
-            $plan->update($request->safe()->except(['phases', 'progress']));
-
             $incoming = collect($request->input('phases', []));
             $incomingIds = $incoming->pluck('id')->filter()->values();
+            $phasesToDelete = $plan->phases()
+                ->when($incomingIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $incomingIds))
+                ->when($incomingIds->isEmpty(), fn ($query) => $query)
+                ->get();
 
-            $plan->phases()->when($incomingIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $incomingIds))->delete();
-            if ($incomingIds->isEmpty()) {
-                $plan->phases()->delete();
+            $blockedDeletion = $phasesToDelete->first(fn (PlanPhase $phase) => $phase->tasks()->exists());
+            if ($blockedDeletion) {
+                throw ValidationException::withMessages([
+                    'phases' => 'Nao e possivel excluir fase com tarefas relacionadas! Remova o relacionamento de tarefas para excluir uma fase do planejamento.',
+                ]);
+            }
+
+            $planPayload = $this->buildPlanPayload(
+                $request->safe()->except(['phases', 'progress']),
+                $incoming,
+            );
+            $plan->update($planPayload);
+
+            if ($phasesToDelete->isNotEmpty()) {
+                $plan->phases()->whereIn('id', $phasesToDelete->pluck('id'))->delete();
             }
 
             foreach ($incoming as $index => $phase) {
@@ -102,8 +141,10 @@ class PlanController extends Controller
                     'user_id' => (string) Auth::id(),
                     'title' => $phase['title'],
                     'description' => $phase['description'] ?? null,
-                    'order' => $phase['order'] ?? ($index + 1),
+                    'order' => $index + 1,
                     'completed' => (bool) ($phase['completed'] ?? false),
+                    'estimated_start_date' => $this->normalizeDate($phase['estimated_start_date'] ?? null),
+                    'estimated_end_date' => $this->normalizeDate($phase['estimated_end_date'] ?? null),
                 ];
 
                 if (! empty($phase['id'])) {
@@ -141,5 +182,40 @@ class PlanController extends Controller
         $plan->refreshProgress();
 
         return back()->with('success', 'Fase atualizada com sucesso.');
+    }
+
+    private function buildPlanPayload(array $payload, Collection $phases): array
+    {
+        $payload['start_date'] = $this->normalizeDate($payload['start_date'] ?? null);
+        $payload['end_date'] = $this->normalizeDate($payload['end_date'] ?? null);
+
+        $firstPhaseStart = $phases
+            ->pluck('estimated_start_date')
+            ->filter(fn ($value) => filled($value))
+            ->first();
+
+        $lastPhaseEnd = $phases
+            ->pluck('estimated_end_date')
+            ->filter(fn ($value) => filled($value))
+            ->last();
+
+        if (filled($firstPhaseStart)) {
+            $payload['start_date'] = $firstPhaseStart;
+        }
+
+        if (filled($lastPhaseEnd)) {
+            $payload['end_date'] = $lastPhaseEnd;
+        }
+
+        return $payload;
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        if (! filled($value)) {
+            return null;
+        }
+
+        return date('Y-m-d', strtotime((string) $value));
     }
 }

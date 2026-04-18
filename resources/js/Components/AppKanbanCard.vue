@@ -40,6 +40,15 @@ const isTaskOverdue = () => {
 
     return dueDate.getTime() < Date.now();
 };
+
+const assigneeLabel = () => {
+    const assignees = props.task?.assigned_users || props.task?.assignedUsers || [];
+    if (!assignees.length) {
+        return 'Todos';
+    }
+
+    return assignees.map((user) => user.name).join(', ');
+};
 </script>
 
 <template>
@@ -70,7 +79,7 @@ const isTaskOverdue = () => {
 
         <div class="mb-2 flex items-center justify-between gap-2">
             <BoPriorityTag :value="task.priority" />
-            <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ task.assigned_user?.name || task.assignedUser?.name || 'Todos' }}</span>
+            <span class="truncate text-xs text-slate-500 dark:text-slate-400">{{ assigneeLabel() }}</span>
         </div>
 
         <ProgressBar :value="completion()" style="height: 0.4rem" />

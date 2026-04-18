@@ -179,6 +179,15 @@ const programItemIcon = (item) => item.kind === 'task' ? 'ph:check-square-bold' 
 
 const isTaskProgramItem = (item) => item.kind === 'task';
 
+const taskAssigneeLabel = (task) => {
+    const assignees = task?.assigned_users || task?.assignedUsers || [];
+    if (!assignees.length) {
+        return 'Todos';
+    }
+
+    return assignees.map((user) => user.name).join(', ');
+};
+
 const programFilterOptions = [
     { label: 'Todos', value: 'all', icon: 'ph:circles-three-bold' },
     { label: 'Tarefas', value: 'tasks', icon: 'ph:check-square-bold' },
@@ -459,7 +468,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                         <iconify-icon :icon="programItemIcon(item)" width="12" height="12" class="mr-1 align-[-2px]" />
                                         {{ item.title }}
                                     </p>
-                                    <div class="mt-1 flex items-center justify-between gap-1">
+                                    <div class="mt-1 flex flex-col items-end gap-1">
                                         <BoTaskStatusTag v-if="isTaskProgramItem(item)" :status="item.status" />
                                         <BoStatusTag v-else :value="item.status" />
                                         <span class="text-[10px] text-slate-500">
@@ -642,7 +651,7 @@ const goWeeklyProgramToIndicator = (index) => {
                             </template>
                         </Column>
                         <Column header="Responsável">
-                            <template #body="{ data }">{{ data.assigned_user?.name || data.assignedUser?.name || 'Todos' }}</template>
+                            <template #body="{ data }">{{ taskAssigneeLabel(data) }}</template>
                         </Column>
                         <Column header="Agendado"><template #body="{ data }"><BoDateText :value="data.scheduled_for" mode="datetime" /></template></Column>
                     </DataTable>

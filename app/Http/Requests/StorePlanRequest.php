@@ -26,6 +26,8 @@ class StorePlanRequest extends FormRequest
             'phases.*.description' => ['nullable', 'string'],
             'phases.*.order' => ['nullable', 'integer'],
             'phases.*.completed' => ['nullable', 'boolean'],
+            'phases.*.estimated_start_date' => ['nullable', 'date'],
+            'phases.*.estimated_end_date' => ['nullable', 'date'],
         ];
     }
 }

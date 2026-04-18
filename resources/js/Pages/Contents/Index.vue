@@ -18,6 +18,9 @@ defineOptions({ layout: AppLayout });
 const props = defineProps({ contents: Object, filters: Object, platforms: Array, types: Array, categories: Array, styles: Array, contentCharts: Object, contentChartPeriod: Object });
 
 const viewMode = ref('list');
+const weeklyBaseDate = new Date();
+weeklyBaseDate.setHours(0, 0, 0, 0);
+const todayDate = ref(weeklyBaseDate);
 
 const viewModeOptions = [
     { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
@@ -141,8 +144,23 @@ const publishMeta = (content) => {
 };
 
 const calendarColumns = computed(() => {
-    const weekDays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    const grouped = weekDays.map((label) => ({ label, items: [] }));
+    const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Próximo domingo'];
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    const grouped = Array.from({ length: 8 }).map((_, index) => {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + index);
+
+        return {
+            index,
+            label: labels[index],
+            date,
+            items: [],
+        };
+    });
 
     for (const item of props.contents.data || []) {
         if (!item.planned_publish_at) {
@@ -150,12 +168,19 @@ const calendarColumns = computed(() => {
         }
 
         const date = new Date(item.planned_publish_at);
-        const day = date.getDay();
-        grouped[day].items.push(item);
+        date.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.round((date.getTime() - weekStart.getTime()) / 86_400_000);
+        if (diffDays >= 0 && diffDays <= 7) {
+            grouped[diffDays].items.push(item);
+        }
     }
 
     return grouped;
 });
+
+const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
+const contentWeekDate = (content) => content.planned_publish_at;
 
 const fullCalendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -512,7 +537,7 @@ const applyContentChartPeriod = () => {
                 </template>
             </Card>
 
-            <div v-else-if="viewMode === 'calendar'" class="grid gap-4 lg:grid-cols-7">
+            <div v-else-if="viewMode === 'calendar'" class="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-4">
                 <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
                     <template #title>{{ column.label }}</template>
                     <template #content>
@@ -527,7 +552,12 @@ const applyContentChartPeriod = () => {
                                 class="block rounded-xl border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                             >
                                 <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
-                                <BoStatusTag :value="content.status" />
+                                <div class="mt-1 flex flex-col items-end gap-1">
+                                    <BoStatusTag :value="content.status" />
+                                    <span class="text-[10px] text-slate-500">
+                                        <BoDateText :value="contentWeekDate(content)" mode="datetime" />
+                                    </span>
+                                </div>
                             </Link>
                         </div>
                     </template>
@@ -588,35 +618,38 @@ const applyContentChartPeriod = () => {
         </div>
 
         <div v-else-if="viewMode === 'calendar'" class="md:hidden">
-            <Carousel :value="calendarColumns" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
-                <template #item="{ data: column }">
-                    <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
-                        <p class="mb-2 text-sm font-semibold">{{ column.label }}</p>
-                        <div class="space-y-2">
-                            <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                                Sem publicações.
-                            </div>
-                            <Link
-                                v-for="content in column.items"
-                                :key="content.id"
-                                :href="route('contents.show', content.id)"
-                                class="block rounded-lg border border-slate-200 p-2 dark:border-slate-700"
-                            >
-                                <p class="truncate text-xs font-semibold">
-                                    <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
-                                    {{ content.title }}
-                                </p>
-                                <div class="mt-1 flex items-center justify-between gap-1">
-                                    <BoStatusTag :value="content.status" />
-                                    <span class="text-[10px] text-slate-500">
-                                        <BoDateText :value="content.planned_publish_at" mode="datetime" />
-                                    </span>
-                                </div>
-                            </Link>
+            <div class="space-y-2">
+                <details
+                    v-for="column in calendarColumns"
+                    :key="column.label"
+                    :open="isWeeklyColumnOpenByDefault(column)"
+                    class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                >
+                    <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">{{ column.label }}</summary>
+                    <div class="space-y-2 border-t border-slate-100 px-3 py-3 dark:border-slate-800">
+                        <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                            Sem publicações.
                         </div>
+                        <Link
+                            v-for="content in column.items"
+                            :key="content.id"
+                            :href="route('contents.show', content.id)"
+                            class="block rounded-lg border border-slate-200 p-2 dark:border-slate-700"
+                        >
+                            <p class="truncate text-xs font-semibold">
+                                <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                {{ content.title }}
+                            </p>
+                            <div class="mt-1 flex flex-col items-end gap-1">
+                                <BoStatusTag :value="content.status" />
+                                <span class="text-[10px] text-slate-500">
+                                    <BoDateText :value="contentWeekDate(content)" mode="datetime" />
+                                </span>
+                            </div>
+                        </Link>
                     </div>
-                </template>
-            </Carousel>
+                </details>
+            </div>
         </div>
 
         <Card v-else-if="viewMode === 'full_calendar'" class="bo-content-mobile-calendar md:hidden">
