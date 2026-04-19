@@ -182,6 +182,15 @@ const calendarColumns = computed(() => {
 const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
 const contentWeekDate = (content) => content.planned_publish_at;
 
+const formatWeekDate = (value) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleDateString('pt-BR');
+};
+
 const contentCalendarLegend = [
     { key: 'queued', label: statusLabels.queued, color: statusColors.queued },
     { key: 'in_production', label: statusLabels.in_production, color: statusColors.in_production },
@@ -452,7 +461,7 @@ const applyContentChartPeriod = () => {
                     <Column field="type.name" header="Tipo" sortable />
                     <Column header="Categorias">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-1">
+                            <div class="flex justify-center gap-1">
                                 <Tag
                                     v-for="category in data.categories || []"
                                     :key="category.id"
@@ -460,7 +469,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" />
+                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" :title="category.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.categories || []).length" class="text-xs text-slate-400">-</span>
@@ -469,7 +478,7 @@ const applyContentChartPeriod = () => {
                     </Column>
                     <Column header="Estilos">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-1">
+                            <div class="flex justify-center gap-1">
                                 <Tag
                                     v-for="style in data.styles || []"
                                     :key="style.id"
@@ -477,7 +486,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" :title="style.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
@@ -486,7 +495,7 @@ const applyContentChartPeriod = () => {
                     </Column>
                     <Column header="Plataformas">
                         <template #body="{ data }">
-                            <div class="flex flex-wrap gap-1">
+                            <div class="flex justify-center gap-1">
                                 <Tag
                                     v-for="platform in data.platforms"
                                     :key="platform.id"
@@ -494,7 +503,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" />
+                                        <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" :title="platform.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.platforms || []).length" class="text-xs text-slate-400">-</span>
@@ -548,7 +557,14 @@ const applyContentChartPeriod = () => {
 
             <div v-else-if="viewMode === 'calendar'" class="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-4">
                 <Card v-for="column in calendarColumns" :key="column.label" class="lg:col-span-1">
-                    <template #title>{{ column.label }}</template>
+                    <template #title>
+                        <div class="flex items-center gap-2">
+                            <span>{{ column.label }}</span>
+                            <small class="rounded-full border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                                {{ formatWeekDate(column.date) }}
+                            </small>
+                        </div>
+                    </template>
                     <template #content>
                         <div class="space-y-2">
                             <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-3 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -560,12 +576,14 @@ const applyContentChartPeriod = () => {
                                 :href="route('contents.show', content.id)"
                                 class="block rounded-xl border border-slate-200 p-3 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                             >
-                                <p class="mb-2 text-sm font-semibold">{{ content.title }}</p>
-                                <div class="mt-1 flex flex-col items-end gap-1">
-                                    <BoStatusTag :value="content.status" />
-                                    <span class="text-[10px] text-slate-500">
-                                        <BoDateText :value="contentWeekDate(content)" mode="datetime" />
-                                    </span>
+                                <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                    <p class="line-clamp-2 text-xs font-semibold leading-4">{{ content.title }}</p>
+                                    <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
+                                        <BoStatusTag :value="content.status" class="bo-weekly-status-tag" />
+                                        <small class="text-[10px] text-slate-500">
+                                            <BoDateText :value="contentWeekDate(content)" mode="datetime" />
+                                        </small>
+                                    </div>
                                 </div>
                             </Link>
                         </div>
@@ -644,7 +662,14 @@ const applyContentChartPeriod = () => {
                     :open="isWeeklyColumnOpenByDefault(column)"
                     class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                 >
-                    <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">{{ column.label }}</summary>
+                    <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">
+                        <div class="inline-flex items-center gap-2">
+                            <span>{{ column.label }}</span>
+                            <small class="rounded-full border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                                {{ formatWeekDate(column.date) }}
+                            </small>
+                        </div>
+                    </summary>
                     <div class="space-y-2 border-t border-slate-100 px-3 py-3 dark:border-slate-800">
                         <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                             Sem publicações.
@@ -655,15 +680,17 @@ const applyContentChartPeriod = () => {
                             :href="route('contents.show', content.id)"
                             class="block rounded-lg border border-slate-200 p-2 dark:border-slate-700"
                         >
-                            <p class="truncate text-xs font-semibold">
-                                <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
-                                {{ content.title }}
-                            </p>
-                            <div class="mt-1 flex flex-col items-end gap-1">
-                                <BoStatusTag :value="content.status" />
-                                <span class="text-[10px] text-slate-500">
-                                    <BoDateText :value="contentWeekDate(content)" mode="datetime" />
-                                </span>
+                            <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                <p class="line-clamp-2 text-xs font-semibold leading-4">
+                                    <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                    {{ content.title }}
+                                </p>
+                                <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
+                                    <BoStatusTag :value="content.status" class="bo-weekly-status-tag" />
+                                    <small class="text-[10px] text-slate-500">
+                                        <BoDateText :value="contentWeekDate(content)" mode="datetime" />
+                                    </small>
+                                </div>
                             </div>
                         </Link>
                     </div>

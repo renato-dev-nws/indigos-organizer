@@ -75,16 +75,23 @@ class Task extends Model
         $this->hasLegacyAssignedUserUpdate = true;
     }
 
-    public function syncLegacyAssignedUsersIfPending(): bool
+    public function syncLegacyAssignedUsersIfPending(): array
     {
         if (! $this->hasLegacyAssignedUserUpdate) {
-            return false;
+            return [];
         }
 
-        $this->assignedUsers()->sync(array_filter([$this->legacyAssignedUserId]));
+        $beforeAssignedUserIds = $this->assignedUsers()
+            ->pluck('users.id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        $newAssignedUserIds = array_values(array_filter([$this->legacyAssignedUserId]));
+
+        $this->assignedUsers()->sync($newAssignedUserIds);
         $this->hasLegacyAssignedUserUpdate = false;
 
-        return true;
+        return array_values(array_diff($newAssignedUserIds, $beforeAssignedUserIds));
     }
 
     public function assignedUsers(): BelongsToMany

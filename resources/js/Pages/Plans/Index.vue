@@ -79,13 +79,13 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
                 <template #content>
                     <DataTable :value="plans.data" data-key="id" striped-rows>
                         <Column field="title" header="Título" />
+                        <Column header="Fases"><template #body="{ data }">{{ data.phases?.length || 0 }}</template></Column>
                         <Column header="Status"><template #body="{ data }"><BoStatusTag :value="data.status" /></template></Column>
                         <Column header="Progresso"><template #body="{ data }"><ProgressBar :value="data.progress" style="height:0.5rem" /></template></Column>
                         <Column header="Tarefas Relacionadas"><template #body="{ data }">{{ relatedTasksCount(data) }}</template></Column>
                         <Column header="Conteúdos Relacionados"><template #body="{ data }">{{ relatedContentsCount(data) }}</template></Column>
                         <Column header="Início"><template #body="{ data }"><BoDateText :value="data.start_date" mode="date" /></template></Column>
                         <Column header="Fim"><template #body="{ data }"><BoDateText :value="data.end_date" mode="date" /></template></Column>
-                        <Column header="Fases"><template #body="{ data }">{{ data.phases?.length || 0 }}</template></Column>
                         <Column header="Ações" class="bo-action-col w-28">
                             <template #body="{ data }">
                                 <div class="flex gap-1">

@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
-import BoPriorityTag from '@/Components/ui/BoPriorityTag.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
 import BoTaskStatusTag from '@/Components/ui/BoTaskStatusTag.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
@@ -14,11 +13,9 @@ const props = defineProps({
     dashboardCharts: Object,
     dashboardChartPeriods: Object,
     boardIdeas: Array,
-    nextScheduledTasks: Array,
-    deadlineSoonTasks: Array,
+    nextTasks: Array,
     nextEvents: Array,
-    contentsInProduction: Array,
-    plansQueue: Array,
+    nextContents: Array,
     weeklyProgramItems: Array,
 });
 const page = usePage();
@@ -116,10 +113,15 @@ const weeklyProgramColumns = computed(() => {
         if (programFilter.value === 'content' && item.kind !== 'content') {
             continue;
         }
+        if (programFilter.value === 'events' && item.kind !== 'event') {
+            continue;
+        }
 
         const baseDate = item.kind === 'task'
             ? (item.scheduled_for || item.due_date)
-            : item.planned_publish_at;
+            : item.kind === 'content'
+                ? item.planned_publish_at
+                : item.starts_at;
 
         if (!baseDate) {
             continue;
@@ -189,11 +191,49 @@ watch(
 
 const programItemDate = (item) => item.kind === 'task'
     ? (item.scheduled_for || item.due_date)
-    : item.planned_publish_at;
+    : item.kind === 'content'
+        ? item.planned_publish_at
+        : item.starts_at;
 
-const programItemIcon = (item) => item.kind === 'task' ? 'ph:check-square-bold' : 'ph:video-camera-bold';
+const programItemIcon = (item) => {
+    if (item.kind === 'task') {
+        return 'ph:check-square-bold';
+    }
+
+    if (item.kind === 'content') {
+        return 'ph:video-camera-bold';
+    }
+
+    return 'ph:calendar-star-bold';
+};
 
 const isTaskProgramItem = (item) => item.kind === 'task';
+const isContentProgramItem = (item) => item.kind === 'content';
+const isEventProgramItem = (item) => item.kind === 'event';
+
+const eventPresenceIcon = (mode) => mode === 'participant' ? 'mdi:microphone-variant' : 'mdi:seat';
+const eventPresenceLabel = (mode) => mode === 'participant' ? 'Participante' : 'Público/Audiência';
+
+const programItemAccentColor = (item) => {
+    if (item.kind === 'task') {
+        return '#6366f1';
+    }
+
+    if (item.kind === 'content') {
+        return '#a855f7';
+    }
+
+    return '#f97316';
+};
+
+const formatWeekDate = (value) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleDateString('pt-BR');
+};
 
 const taskAssigneeLabel = (task) => {
     const assignees = task?.assigned_users || task?.assignedUsers || [];
@@ -208,7 +248,25 @@ const programFilterOptions = [
     { label: 'Todos', value: 'all', icon: 'ph:circles-three-bold' },
     { label: 'Tarefas', value: 'tasks', icon: 'ph:check-square-bold' },
     { label: 'Conteúdo', value: 'content', icon: 'ph:video-camera-bold' },
+    { label: 'Eventos', value: 'events', icon: 'ph:calendar-star-bold' },
 ];
+
+const nextTaskDateMode = (task) => task?.date_type === 'scheduled' ? 'datetime' : 'date';
+const nextTaskDateClass = (task) => task?.date_type === 'scheduled' ? 'text-blue-500' : 'text-red-500';
+const taskDeadlineTooltip = (task) => task?.due_date ? `Deadline: ${new Date(task.due_date).toLocaleDateString('pt-BR')}` : 'Deadline';
+
+const contentPlannedLate = (content) => {
+    if (!content?.planned_publish_at || content?.status === 'published') {
+        return false;
+    }
+
+    const planned = new Date(content.planned_publish_at);
+    if (Number.isNaN(planned.getTime())) {
+        return false;
+    }
+
+    return planned.getTime() < Date.now();
+};
 
 const dashboardTaskByUserPeriod = ref(props.dashboardChartPeriods?.taskByUserStatus?.period ?? '7d');
 const dashboardContentsLinePeriod = ref(props.dashboardChartPeriods?.contentsLine?.period ?? '7d');
@@ -490,7 +548,12 @@ const goWeeklyProgramToIndicator = (index) => {
                 >
                     <template #item="{ data: column }">
                         <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900 mx-1">
-                            <p class="mb-2 text-sm font-semibold bg-slate-300 dark:bg-slate-700 px-2 py-1 rounded-full">{{ column.label }}</p>
+                            <div class="mb-2 flex items-center gap-2 rounded-full bg-slate-300 px-2 py-1 dark:bg-slate-700">
+                                <p class="text-sm font-semibold">{{ column.label }}</p>
+                                <small class="rounded-full border border-slate-400/40 bg-white/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-700 dark:border-slate-500/40 dark:bg-slate-800/70 dark:text-slate-200">
+                                    {{ formatWeekDate(column.date) }}
+                                </small>
+                            </div>
                             <div class="space-y-2">
                                 <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                     Sem itens.
@@ -500,17 +563,36 @@ const goWeeklyProgramToIndicator = (index) => {
                                     :key="`${item.kind}-${item.id}`"
                                     :href="item.url"
                                     class="block rounded-lg border border-slate-200 p-2 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                                    :style="{ borderLeftWidth: '4px', borderLeftColor: programItemAccentColor(item) }"
                                 >
-                                    <p class="truncate text-xs font-semibold">
-                                        <iconify-icon :icon="programItemIcon(item)" width="12" height="12" class="mr-1 align-[-2px]" />
-                                        {{ item.title }}
-                                    </p>
-                                    <div class="mt-1 flex flex-col items-end gap-1">
-                                        <BoTaskStatusTag v-if="isTaskProgramItem(item)" :status="item.status" />
-                                        <BoStatusTag v-else :value="item.status" />
-                                        <span class="text-[10px] text-slate-500">
-                                            <BoDateText :value="programItemDate(item)" mode="datetime" />
-                                        </span>
+                                    <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                        <p class="line-clamp-2 text-xs font-semibold leading-4">
+                                            <iconify-icon :icon="programItemIcon(item)" width="12" height="12" class="mr-1 align-[-2px]" />
+                                            {{ item.title }}
+                                        </p>
+                                        <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
+                                            <BoTaskStatusTag v-if="isTaskProgramItem(item)" :status="item.status" class="bo-weekly-status-tag" />
+                                            <BoStatusTag v-else-if="isContentProgramItem(item)" :value="item.status" class="bo-weekly-status-tag" />
+                                            <div v-else-if="isEventProgramItem(item)" class="flex items-center gap-1">
+                                                <iconify-icon
+                                                    :icon="eventPresenceIcon(item.attendance_mode)"
+                                                    width="14"
+                                                    height="14"
+                                                    :title="eventPresenceLabel(item.attendance_mode)"
+                                                />
+                                                <iconify-icon
+                                                    v-if="item.is_online"
+                                                    icon="mdi:presentation-play"
+                                                    width="14"
+                                                    height="14"
+                                                    class="text-emerald-500"
+                                                    title="Evento online"
+                                                />
+                                            </div>
+                                            <small class="text-[10px] text-slate-500">
+                                                <BoDateText :value="programItemDate(item)" mode="datetime" />
+                                            </small>
+                                        </div>
                                     </div>
                                 </Link>
                             </div>
@@ -680,60 +762,62 @@ const goWeeklyProgramToIndicator = (index) => {
         <div class="hidden gap-4 xl:grid xl:grid-cols-2">
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Próximas tarefas agendadas</h3>
-                    <DataTable :value="nextScheduledTasks" data-key="id" size="small" striped-rows>
+                    <h3 class="mb-3 text-lg text-orange-700 dark:text-orange-300 font-semibold">
+                        <iconify-icon icon="mdi:format-list-checks" class="me-1 -mb-[0.2rem]" />
+                        Próximas Tarefas
+                    </h3>
+                    <hr class="-mt-2 mb-2" />
+                    <DataTable :value="nextTasks" data-key="id" size="small" striped-rows class="text-sm">
                         <Column header="Título">
                             <template #body="{ data }">
-                                <Link :href="route('tasks.edit', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                                <div class="inline-flex items-center gap-1.5">
+                                    <Link :href="data.url" class="font-medium hover:underline">{{ data.title }}</Link>
+                                    <iconify-icon
+                                        v-if="data.is_deadline_soon"
+                                        icon="mdi:skull"
+                                        width="13"
+                                        height="13"
+                                        class="text-red-500"
+                                        :title="taskDeadlineTooltip(data)"
+                                    />
+                                </div>
                             </template>
                         </Column>
                         <Column header="Responsável">
                             <template #body="{ data }">{{ taskAssigneeLabel(data) }}</template>
                         </Column>
-                        <Column header="Agendado"><template #body="{ data }"><BoDateText :value="data.scheduled_for" mode="datetime" /></template></Column>
-                    </DataTable>
-                </template>
-            </Card>
-
-            <Card>
-                <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Tarefas próximas de deadline</h3>
-                    <DataTable :value="deadlineSoonTasks" data-key="id" size="small" striped-rows>
-                        <Column header="Título">
+                        <Column header="Data">
                             <template #body="{ data }">
-                                <Link :href="route('tasks.edit', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                                <span :class="nextTaskDateClass(data)">
+                                    <BoDateText :value="data.display_date" :mode="nextTaskDateMode(data)" />
+                                </span>
                             </template>
                         </Column>
-                        <Column header="Prioridade">
-                            <template #body="{ data }"><BoPriorityTag :value="data.priority" /></template>
-                        </Column>
-                        <Column header="Prazo"><template #body="{ data }"><BoDateText :value="data.due_date" mode="date" /></template></Column>
                     </DataTable>
                 </template>
             </Card>
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Próximos eventos</h3>
-                    <DataTable :value="nextEvents" data-key="id" size="small" striped-rows>
+                    <h3 class="mb-3 text-lg text-blue-700 dark:text-blue-300 font-semibold">
+                        <iconify-icon icon="mdi:movie-open-star" class="me-1 -mb-[0.2rem]" />
+                        Próximos Conteúdos
+                    </h3>
+                    <hr class="-mt-2 mb-2" />
+                    <DataTable :value="nextContents" data-key="id" size="small" striped-rows class="text-sm">
                         <Column header="Título">
                             <template #body="{ data }">
-                                <Link :href="route('events.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
-                            </template>
-                        </Column>
-                        <Column header="Tipo"><template #body="{ data }">{{ data.type?.name || '-' }}</template></Column>
-                        <Column header="Data"><template #body="{ data }"><BoDateText :value="data.starts_at" mode="datetime" /></template></Column>
-                    </DataTable>
-                </template>
-            </Card>
-
-            <Card>
-                <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Conteúdos em produção</h3>
-                    <DataTable :value="contentsInProduction" data-key="id" size="small" striped-rows>
-                        <Column header="Título">
-                            <template #body="{ data }">
-                                <Link :href="route('contents.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                                <div class="inline-flex items-center gap-1.5">
+                                    <Link :href="route('contents.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                                    <iconify-icon
+                                        v-if="contentPlannedLate(data)"
+                                        icon="mdi:emoticon-sad"
+                                        width="14"
+                                        height="14"
+                                        class="text-red-500"
+                                        title="Publicação planejada ultrapassada"
+                                    />
+                                </div>
                             </template>
                         </Column>
                         <Column header="Status"><template #body="{ data }"><BoStatusTag :value="data.status" /></template></Column>
@@ -744,22 +828,50 @@ const goWeeklyProgramToIndicator = (index) => {
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Planejamentos</h3>
-                    <DataTable :value="plansQueue" data-key="id" size="small" striped-rows>
+                    <h3 class="mb-3 text-lg text-emerald-700 dark:text-emerald-300 font-semibold">
+                        <iconify-icon icon="mdi:event-clock" class="me-1 -mb-[0.2rem]" />
+                        Próximos eventos
+                    </h3>
+                    <hr class="-mt-2 mb-2" />
+                    <DataTable :value="nextEvents" data-key="id" size="small" striped-rows class="text-sm">
                         <Column header="Título">
                             <template #body="{ data }">
-                                <Link :href="route('plans.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
+                                <Link :href="route('events.show', data.id)" class="font-medium hover:underline">{{ data.title }}</Link>
                             </template>
                         </Column>
-                        <Column header="Status"><template #body="{ data }"><BoStatusTag :value="data.status" /></template></Column>
-                        <Column header="Atualização"><template #body="{ data }"><BoDateText :value="data.updated_at" mode="datetime" /></template></Column>
+                        <Column header="Tipo"><template #body="{ data }">{{ data.type?.name || '-' }}</template></Column>
+                        <Column header="Data"><template #body="{ data }"><BoDateText :value="data.starts_at" mode="datetime" /></template></Column>
+                        <Column header="Presença">
+                            <template #body="{ data }">
+                                <div class="inline-flex items-center gap-1.5">
+                                    <iconify-icon
+                                        :icon="eventPresenceIcon(data.attendance_mode)"
+                                        width="15"
+                                        height="15"
+                                        :title="eventPresenceLabel(data.attendance_mode)"
+                                    />
+                                    <iconify-icon
+                                        v-if="data.is_online"
+                                        icon="mdi:presentation-play"
+                                        width="15"
+                                        height="15"
+                                        class="text-green-500"
+                                        title="Evento online"
+                                    />
+                                </div>
+                            </template>
+                        </Column>
                     </DataTable>
                 </template>
             </Card>
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-sm font-semibold">Votação</h3>
+                    <h3 class="mb-3 text-lg text-blue-700 dark:text-blue-300 font-semibold">
+                        <iconify-icon icon="mdi:vote" class="me-1 -mb-[0.2rem]" />
+                        Votação
+                    </h3>
+                    <hr class="-mt-2 mb-2" />
                     <div v-if="boardIdeas.length" class="space-y-3">
                         <div v-for="idea in boardIdeas" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                             <div class="mb-2 flex items-start justify-between gap-2">

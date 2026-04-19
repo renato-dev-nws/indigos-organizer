@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('place_id')->nullable();
             $table->string('address_line')->nullable();
             $table->string('address_number')->nullable();
+            $table->string('address_complement')->nullable();
             $table->string('neighborhood')->nullable();
             $table->string('city')->nullable();
             $table->string('state')->nullable();

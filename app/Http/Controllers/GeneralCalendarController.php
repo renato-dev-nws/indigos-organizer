@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\Event;
 use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -70,9 +70,11 @@ class GeneralCalendarController extends Controller
                     return false;
                 }
 
-                $statusName = Str::of($task->status?->name ?? '')->ascii()->lower()->toString();
+                if (! filled($task->scheduled_for)) {
+                    return true;
+                }
 
-                return Str::contains($statusName, ['execucao', 'executando', 'running']);
+                return Carbon::parse($task->due_date)->lt(Carbon::today());
             })
             ->map(fn (Task $task) => [
                 'id' => 'task-deadline-'.$task->id,

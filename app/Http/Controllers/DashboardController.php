@@ -80,6 +80,7 @@ class DashboardController extends Controller
 
         $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
         $weekEnd = (clone $weekStart)->addWeek()->endOfDay();
+        $deadlineWindowEnd = Carbon::today()->addDays(3);
 
         $weeklyTasks = Task::query()
             ->where(fn (Builder $query) => $query
@@ -102,7 +103,7 @@ class DashboardController extends Controller
                 'status' => $task->status,
                 'scheduled_for' => optional($task->scheduled_for)?->toIso8601String(),
                 'due_date' => optional($task->due_date)?->toDateString(),
-                'url' => route('tasks.edit', $task),
+                'url' => route('tasks.show', $task),
             ]);
 
         $weeklyContents = Content::query()
@@ -117,6 +118,84 @@ class DashboardController extends Controller
                 'planned_publish_at' => optional($content->planned_publish_at)?->toIso8601String(),
                 'url' => route('contents.show', $content),
             ]);
+
+        $weeklyEvents = Event::query()
+            ->whereBetween('event_date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->orderBy('event_date')
+            ->orderBy('event_time')
+            ->get(['id', 'title', 'attendance_mode', 'is_online', 'event_date', 'event_time'])
+            ->map(fn (Event $event) => [
+                'id' => $event->id,
+                'kind' => 'event',
+                'title' => $event->title,
+                'attendance_mode' => $event->attendance_mode,
+                'is_online' => (bool) $event->is_online,
+                'event_date' => optional($event->event_date)?->toDateString(),
+                'starts_at' => $event->starts_at,
+                'url' => route('events.show', $event),
+            ]);
+
+        $nextScheduledTasks = (clone $taskScope)
+            ->whereIn('id', $activeTaskIds)
+            ->whereNotNull('scheduled_for')
+            ->where('scheduled_for', '>=', $now)
+            ->orderBy('scheduled_for')
+            ->take(10)
+            ->get(['id', 'title', 'scheduled_for', 'due_date'])
+            ->map(function (Task $task) use ($deadlineWindowEnd) {
+                $dueDate = $task->due_date ? Carbon::parse($task->due_date) : null;
+
+                return [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'assigned_users' => ($task->assignedUsers ?? collect())
+                        ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name])
+                        ->values(),
+                    'scheduled_for' => optional($task->scheduled_for)?->toIso8601String(),
+                    'due_date' => optional($task->due_date)?->toDateString(),
+                    'date_type' => 'scheduled',
+                    'display_date' => optional($task->scheduled_for)?->toIso8601String(),
+                    'is_deadline_soon' => $dueDate?->between(Carbon::today(), $deadlineWindowEnd) ?? false,
+                    'url' => route('tasks.show', $task),
+                    'sort_at' => optional($task->scheduled_for)?->toIso8601String(),
+                ];
+            });
+
+        $deadlineSoonTasks = (clone $taskScope)
+            ->whereIn('id', $activeTaskIds)
+            ->whereNull('scheduled_for')
+            ->whereNotNull('due_date')
+            ->whereDate('due_date', '>=', $today)
+            ->whereDate('due_date', '<=', $deadlineWindowEnd->toDateString())
+            ->orderBy('due_date')
+            ->take(10)
+            ->get(['id', 'title', 'scheduled_for', 'due_date'])
+            ->map(fn (Task $task) => [
+                'id' => $task->id,
+                'title' => $task->title,
+                'assigned_users' => ($task->assignedUsers ?? collect())
+                    ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name])
+                    ->values(),
+                'scheduled_for' => optional($task->scheduled_for)?->toIso8601String(),
+                'due_date' => optional($task->due_date)?->toDateString(),
+                'date_type' => 'deadline',
+                'display_date' => optional($task->due_date)?->toDateString(),
+                'is_deadline_soon' => true,
+                'url' => route('tasks.show', $task),
+                'sort_at' => optional($task->due_date)?->toDateString(),
+            ]);
+
+        $nextTasks = $nextScheduledTasks
+            ->concat($deadlineSoonTasks)
+            ->sortBy('sort_at')
+            ->values()
+            ->take(10)
+            ->map(function (array $task) {
+                unset($task['sort_at']);
+
+                return $task;
+            })
+            ->values();
 
         return Inertia::render('Dashboard', [
             'summary' => $summary,
@@ -142,21 +221,7 @@ class DashboardController extends Controller
                 ->latest('updated_at')
                 ->take(5)
                 ->get(),
-            'nextScheduledTasks' => (clone $taskScope)
-                ->whereIn('id', $activeTaskIds)
-                ->whereNotNull('scheduled_for')
-                ->where('scheduled_for', '>=', $now)
-                ->orderBy('scheduled_for')
-                ->take(5)
-                ->get(),
-            'deadlineSoonTasks' => (clone $taskScope)
-                ->whereIn('id', $activeTaskIds)
-                ->whereNotNull('due_date')
-                ->whereDate('due_date', '>=', $today)
-                ->whereDate('due_date', '<=', Carbon::now()->addDays(3)->toDateString())
-                ->orderBy('due_date')
-                ->take(5)
-                ->get(),
+            'nextTasks' => $nextTasks,
             'nextEvents' => Event::query()
                 ->with('type:id,name,color')
                 ->whereRaw("(event_date + event_time) >= ?", [$now])
@@ -164,19 +229,14 @@ class DashboardController extends Controller
                 ->orderBy('event_time')
                 ->take(5)
                 ->get(),
-            'contentsInProduction' => Content::query()
+            'nextContents' => Content::query()
                 ->with(['platforms:id,name'])
-                ->where('status', 'in_production')
+                ->where('status', '!=', 'published')
+                ->whereNotNull('planned_publish_at')
                 ->orderBy('planned_publish_at')
                 ->take(5)
                 ->get(),
-            'plansQueue' => Plan::query()
-                ->whereIn('status', ['running', 'queued'])
-                ->orderByRaw("case when status = 'running' then 0 else 1 end")
-                ->orderByDesc('updated_at')
-                ->take(5)
-                ->get(),
-            'weeklyProgramItems' => $weeklyTasks->concat($weeklyContents)->values(),
+            'weeklyProgramItems' => $weeklyTasks->concat($weeklyContents)->concat($weeklyEvents)->values(),
         ]);
     }
 

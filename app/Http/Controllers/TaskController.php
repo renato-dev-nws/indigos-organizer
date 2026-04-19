@@ -204,6 +204,8 @@ class TaskController extends Controller
 
     private function buildTaskCalendarItems($tasks)
     {
+        $today = Carbon::today();
+
         $scheduledItems = $tasks
             ->filter(fn (Task $task) => filled($task->scheduled_for))
             ->map(fn (Task $task) => [
@@ -216,7 +218,17 @@ class TaskController extends Controller
             ]);
 
         $deadlineItems = $tasks
-            ->filter(fn (Task $task) => filled($task->due_date))
+            ->filter(function (Task $task) use ($today): bool {
+                if (! filled($task->due_date)) {
+                    return false;
+                }
+
+                if (! filled($task->scheduled_for)) {
+                    return true;
+                }
+
+                return Carbon::parse($task->due_date)->lt($today);
+            })
             ->map(fn (Task $task) => [
                 'id' => 'task-deadline-'.$task->id,
                 'title' => 'Deadline: '.$task->title,
@@ -242,10 +254,16 @@ class TaskController extends Controller
         ]);
     }
 
-    public function show(Task $task): JsonResponse
+    public function show(Task $task): JsonResponse|Response
     {
-        return response()->json([
-            'task' => $task->load(['status', 'content', 'subtasks', 'assignedUsers', 'plan', 'planPhase', 'event']),
+        $task->load(['status', 'content', 'subtasks', 'assignedUsers', 'plan', 'planPhase', 'event']);
+
+        if (request()->expectsJson() || request()->wantsJson()) {
+            return response()->json(['task' => $task]);
+        }
+
+        return Inertia::render('Tasks/Show', [
+            'task' => $task,
         ]);
     }
 
@@ -305,6 +323,18 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
         $oldPlanId = $task->plan_id;
+        $previousAssignedUserIds = $task->assignedUsers()
+            ->pluck('users.id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        $newAssignedUserIds = collect($request->input('assigned_user_ids', []))
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
         $payload = $request->safe()->all();
         unset($payload['assigned_user_ids']);
         if (($payload['related_type'] ?? null) !== 'content') {
@@ -319,8 +349,12 @@ class TaskController extends Controller
         }
 
         $task->update($payload);
-        $task->assignedUsers()->sync($request->input('assigned_user_ids', []));
-        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        $task->assignedUsers()->sync($newAssignedUserIds);
+
+        $newlyAssignedUserIds = array_values(array_diff($newAssignedUserIds, $previousAssignedUserIds));
+        if ($newlyAssignedUserIds !== []) {
+            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, $newlyAssignedUserIds);
+        }
 
         $subtasks = collect($request->input('subtasks', []))
             ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))

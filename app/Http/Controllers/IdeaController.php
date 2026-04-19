@@ -23,16 +23,23 @@ class IdeaController extends Controller
 {
     public function index(): Response
     {
+        $currentUserId = (string) Auth::id();
+
         $baseQuery = $this->applyIdeaFilters(Idea::query())
-            ->with(['type', 'category', 'styles', 'user', 'content', 'plan', 'planPhase'])
+            ->with(['type', 'category', 'categories', 'styles', 'user', 'content', 'plan', 'planPhase'])
+            ->withExists([
+                'collaborators as auth_is_collaborator' => fn ($query) => $query->where('users.id', $currentUserId),
+            ])
             ->orderByDesc('updated_at');
 
         $ideas = (clone $baseQuery)
             ->paginate(15)
             ->withQueryString();
+        $ideas->through(fn (Idea $idea) => $this->withIdeaPermissions($idea, $currentUserId));
 
         $ideaBoardItems = (clone $baseQuery)
-            ->get();
+            ->get()
+            ->map(fn (Idea $idea) => $this->withIdeaPermissions($idea, $currentUserId));
 
         return Inertia::render('Ideas/Index', [
             'ideas' => $ideas,
@@ -58,7 +65,13 @@ class IdeaController extends Controller
                 fn ($q) => $q->where('status', '!=', 'trash')
             )
             ->when(request('idea_type_id'), fn ($q, $typeId) => $q->where('idea_type_id', $typeId))
-            ->when(request('idea_category_id'), fn ($q, $categoryId) => $q->where('idea_category_id', $categoryId))
+            ->when(request('idea_category_id'), function ($q, $categoryId) {
+                $q->where(function ($inner) use ($categoryId) {
+                    $inner
+                        ->whereHas('categories', fn ($categories) => $categories->where('idea_categories.id', $categoryId))
+                        ->orWhere('idea_category_id', $categoryId);
+                });
+            })
             ->when(request('venue_style_id'), fn ($q, $styleId) => $q->whereHas('styles', fn ($q2) => $q2->where('venue_styles.id', $styleId)))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"));
     }
@@ -72,12 +85,15 @@ class IdeaController extends Controller
             'plans' => Plan::query()->whereIn('status', ['queued', 'running'])->with('phases')->orderBy('title')->get(),
             'contents' => Content::query()->whereIn('status', ['queued', 'in_production', 'finalized'])->orderBy('title')->get(['id', 'title']),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'ideaCategoryIds' => [],
         ]);
     }
 
     public function store(StoreIdeaRequest $request): RedirectResponse
     {
-        $payload = $request->safe()->except(['references', 'voter_users', 'collaborator_ids', 'venue_style_ids']);
+        $payload = $request->safe()->except(['references', 'voter_users', 'collaborator_ids', 'venue_style_ids', 'idea_category_ids']);
+        $categoryIds = $this->extractCategoryIds($request);
+        $payload['idea_category_id'] = $categoryIds[0] ?? null;
         if (($payload['related_type'] ?? null) !== 'existing_content') {
             $payload['content_id'] = null;
         }
@@ -97,6 +113,7 @@ class IdeaController extends Controller
 
         $idea->voterUsers()->sync($request->input('voter_users', []));
         $idea->styles()->sync($request->input('venue_style_ids', []));
+    $idea->categories()->sync($categoryIds);
         $idea->collaborators()->sync($idea->is_private ? [] : $request->input('collaborator_ids', []));
 
         return redirect()->route('ideas.index')->with('success', 'Ideia criada com sucesso.');
@@ -106,7 +123,7 @@ class IdeaController extends Controller
     {
         $this->authorize('view', $idea);
 
-        $idea->load(['type', 'category', 'styles', 'references', 'user', 'content', 'plan', 'planPhase', 'votes.user', 'voterUsers']);
+        $idea->load(['type', 'category', 'categories', 'styles', 'references', 'user', 'content', 'plan', 'planPhase', 'votes.user', 'voterUsers']);
         $userVote = $idea->votes()->where('user_id', Auth::id())->first();
 
         return Inertia::render('Ideas/Show', [
@@ -129,6 +146,7 @@ class IdeaController extends Controller
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
             'voterUsers' => $idea->voterUsers()->pluck('users.id')->all(),
             'collaboratorUsers' => $idea->collaborators()->pluck('users.id')->all(),
+            'ideaCategoryIds' => $idea->categories()->pluck('idea_categories.id')->all(),
             'venueStyleIds' => $idea->styles()->pluck('venue_styles.id')->all(),
         ]);
     }
@@ -137,7 +155,9 @@ class IdeaController extends Controller
     {
         $this->authorize('update', $idea);
 
-        $payload = $request->safe()->except(['references', 'voter_users', 'collaborator_ids', 'venue_style_ids']);
+        $payload = $request->safe()->except(['references', 'voter_users', 'collaborator_ids', 'venue_style_ids', 'idea_category_ids']);
+        $categoryIds = $this->extractCategoryIds($request);
+        $payload['idea_category_id'] = $categoryIds[0] ?? null;
         if (($payload['related_type'] ?? null) !== 'existing_content') {
             $payload['content_id'] = null;
         }
@@ -153,6 +173,7 @@ class IdeaController extends Controller
         $idea->references()->delete();
         $idea->voterUsers()->sync($request->input('voter_users', []));
         $idea->styles()->sync($request->input('venue_style_ids', []));
+        $idea->categories()->sync($categoryIds);
         $idea->collaborators()->sync($idea->is_private ? [] : $request->input('collaborator_ids', []));
 
         foreach ($request->input('references', []) as $reference) {
@@ -204,5 +225,33 @@ class IdeaController extends Controller
         $idea->update(['status' => $payload['status']]);
 
         return back()->with('success', 'Status da ideia atualizado.');
+    }
+
+    private function extractCategoryIds(StoreIdeaRequest|UpdateIdeaRequest $request): array
+    {
+        $legacyCategoryId = $request->input('idea_category_id');
+        $categoryIds = $request->input('idea_category_ids', []);
+
+        if (filled($legacyCategoryId)) {
+            $categoryIds[] = $legacyCategoryId;
+        }
+
+        return collect($categoryIds)
+            ->filter(fn ($id) => filled($id))
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function withIdeaPermissions(Idea $idea, string $userId): Idea
+    {
+        $canEdit = (string) $idea->user_id === $userId
+            || (! $idea->is_private && (bool) ($idea->auth_is_collaborator ?? false));
+
+        $idea->setAttribute('can_edit', $canEdit);
+        $idea->setAttribute('can_delete', (string) $idea->user_id === $userId);
+
+        return $idea;
     }
 }

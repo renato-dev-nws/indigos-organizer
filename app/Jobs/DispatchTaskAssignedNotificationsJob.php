@@ -13,7 +13,10 @@ class DispatchTaskAssignedNotificationsJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly string $taskId)
+    public function __construct(
+        private readonly string $taskId,
+        private readonly array $targetUserIds = [],
+    )
     {
     }
 
@@ -28,6 +31,21 @@ class DispatchTaskAssignedNotificationsJob implements ShouldQueue
         $targets = $task->assignedUsers->isNotEmpty()
             ? $task->assignedUsers
             : User::query()->get();
+
+        if ($this->targetUserIds !== []) {
+            $allowedTargetUserIds = collect($this->targetUserIds)
+                ->map(fn ($id) => (string) $id)
+                ->intersect($targets->pluck('id')->map(fn ($id) => (string) $id))
+                ->values();
+
+            if ($allowedTargetUserIds->isEmpty()) {
+                return;
+            }
+
+            $targets = User::query()
+                ->whereIn('id', $allowedTargetUserIds->all())
+                ->get();
+        }
 
         foreach ($targets as $user) {
             $created = TaskUserNotificationLog::query()->firstOrCreate(

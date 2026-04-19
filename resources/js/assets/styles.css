@@ -201,6 +201,13 @@ html:not(.app-dark) body:not(.app-dark) .p-paginator {
     display: block;
 }
 
+.bo-weekly-status-tag.p-tag {
+    font-size: 0.72rem;
+    line-height: 1.2;
+    padding: 0.2rem 0.58rem;
+    font-weight: 600;
+}
+
 @media (max-width: 768px) {
     .p-toast {
         width: calc(100vw - 1rem) !important;

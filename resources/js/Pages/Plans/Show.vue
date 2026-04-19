@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
+import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
@@ -14,6 +15,7 @@ const goBack = () => {
     }
 };
 const props = defineProps({ plan: Object });
+const confirm = useConfirm();
 
 const activeTask = ref(null);
 const taskModalVisible = ref(false);
@@ -84,27 +86,53 @@ const requiresPendingTasksConfirmation = (phase) => {
 const togglePhaseCompletion = (phase, completed) => {
     const shouldComplete = !!completed;
 
-    if (shouldComplete && !phase.completed) {
-        if (requiresPreviousPhaseConfirmation(phase)) {
-            const confirmedPrevious = window.confirm('Fase(s) anterior(es) não concluída(s) ainda! Tem certeza que deseja marcar esta fase como concluída?');
-            if (!confirmedPrevious) {
-                return;
-            }
-        }
+    const applyCompletion = () => {
+        router.patch(
+            route('plans.phases.completion', [props.plan.id, phase.id]),
+            { completed: shouldComplete },
+            { preserveScroll: true },
+        );
+    };
 
-        if (requiresPendingTasksConfirmation(phase)) {
-            const confirmedTasks = window.confirm('Esta fase tem tarefas não concluídas! Tem certeza que deseja marcar a fase como concluída?');
-            if (!confirmedTasks) {
-                return;
-            }
-        }
+    if (!shouldComplete || phase.completed) {
+        applyCompletion();
+        return;
     }
 
-    router.patch(
-        route('plans.phases.completion', [props.plan.id, phase.id]),
-        { completed: shouldComplete },
-        { preserveScroll: true },
-    );
+    const confirmations = [];
+
+    if (requiresPreviousPhaseConfirmation(phase)) {
+        confirmations.push('Fase(s) anterior(es) não concluída(s) ainda! Tem certeza que deseja marcar esta fase como concluída?');
+    }
+
+    if (requiresPendingTasksConfirmation(phase)) {
+        confirmations.push('Esta fase tem tarefas não concluídas! Tem certeza que deseja marcar a fase como concluída?');
+    }
+
+    if (!confirmations.length) {
+        applyCompletion();
+        return;
+    }
+
+    const runConfirmation = (index) => {
+        if (index >= confirmations.length) {
+            applyCompletion();
+            return;
+        }
+
+        confirm.require({
+            header: 'Confirmar conclusão da fase',
+            message: confirmations[index],
+            icon: 'pi pi-exclamation-triangle',
+            rejectLabel: 'Cancelar',
+            acceptLabel: 'Confirmar',
+            acceptClass: 'p-button-sm',
+            rejectClass: 'p-button-text p-button-sm',
+            accept: () => runConfirmation(index + 1),
+        });
+    };
+
+    runConfirmation(0);
 };
 </script>
 

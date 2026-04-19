@@ -149,6 +149,15 @@ const onKanbanChange = (status, event) => {
         },
     );
 };
+
+const ideaCategoriesForDisplay = (idea) => {
+    const multiple = idea?.categories || [];
+    if (multiple.length) {
+        return multiple;
+    }
+
+    return idea?.category ? [idea.category] : [];
+};
 </script>
 
 <template>
@@ -214,11 +223,46 @@ const onKanbanChange = (status, event) => {
                             </template>
                         </Column>
                         <Column field="type.name" header="Tipo" />
-                        <Column field="category.name" header="Categoria" />
+                        <Column header="Categoria" class="w-28">
+                            <template #body="{ data }">
+                                <div class="flex justify-center gap-1">
+                                    <Tag
+                                        v-for="category in ideaCategoriesForDisplay(data)"
+                                        :key="category.id"
+                                        severity="secondary"
+                                        class="!px-1.5 !py-0.5"
+                                    >
+                                        <template #default>
+                                            <iconify-icon
+                                                :icon="category.icon || 'mdi:shape-outline'"
+                                                width="14"
+                                                height="14"
+                                                :title="category.name"
+                                            />
+                                        </template>
+                                    </Tag>
+                                    <span v-if="!ideaCategoriesForDisplay(data).length" class="text-xs text-slate-400">-</span>
+                                </div>
+                            </template>
+                        </Column>
                         <Column header="Estilos">
                             <template #body="{ data }">
-                                <div class="flex flex-wrap gap-1">
-                                    <Tag v-for="style in data.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                                <div class="flex justify-center gap-1">
+                                    <Tag
+                                        v-for="style in data.styles || []"
+                                        :key="style.id"
+                                        severity="secondary"
+                                        class="!px-1.5 !py-0.5"
+                                    >
+                                        <template #default>
+                                            <iconify-icon
+                                                :icon="style.icon || 'mdi:palette-outline'"
+                                                width="14"
+                                                height="14"
+                                                :title="style.name"
+                                            />
+                                        </template>
+                                    </Tag>
                                     <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
                                 </div>
                             </template>
@@ -233,8 +277,8 @@ const onKanbanChange = (status, event) => {
                             <template #body="{ data }">
                                 <div class="flex gap-1">
                                     <Link :href="route('ideas.show', data.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                                    <Link :href="route('ideas.edit', data.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                                    <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(data.id)" />
+                                    <Link v-if="data.can_edit" :href="route('ideas.edit', data.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                                    <BoConfirmButton v-if="data.can_delete" icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(data.id)" />
                                 </div>
                             </template>
                         </Column>
@@ -251,16 +295,27 @@ const onKanbanChange = (status, event) => {
                     <h3 class="font-semibold">{{ idea.title }}</h3>
                     <BoStatusTag :value="idea.status" />
                 </div>
-                <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }} · {{ idea.category?.name || '-' }}</p>
+                <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }}</p>
                 <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="style in idea.styles || []" :key="style.id" :value="style.name" severity="secondary" />
+                    <Tag v-for="category in ideaCategoriesForDisplay(idea)" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
+                        <template #default>
+                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" :title="category.name" />
+                        </template>
+                    </Tag>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                    <Tag v-for="style in idea.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
+                        <template #default>
+                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" :title="style.name" />
+                        </template>
+                    </Tag>
                 </div>
                 <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
                 <p class="text-xs text-slate-500">Atualizado em: <BoDateText :value="idea.updated_at" mode="datetime" /></p>
                 <div class="mt-3 flex justify-end gap-1">
                     <Link :href="route('ideas.show', idea.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                    <Link :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                    <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
+                    <Link v-if="idea.can_edit" :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                    <BoConfirmButton v-if="idea.can_delete" icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
                 </div>
             </div>
         </div>

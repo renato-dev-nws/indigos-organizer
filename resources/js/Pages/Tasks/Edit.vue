@@ -22,7 +22,7 @@ const form = useForm({
     event_id: props.task.event_id,
     title: props.task.title,
     description: props.task.description,
-    assigned_user_id: props.task.assigned_user_id,
+    assigned_user_ids: (props.task.assigned_users || props.task.assignedUsers || []).map((user) => user.id),
     priority: props.task.priority,
     scheduled_for: props.task.scheduled_for,
     due_date: props.task.due_date,
@@ -71,7 +71,7 @@ const submit = () => form.put(route('tasks.update', props.task.id));
             </template>
         </BoPageHeader>
 
-        <form class="space-y-4" @submit.prevent="submit">
+        <form class="mx-auto max-w-[700px] space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados da tarefa" description="Defina vínculo, responsável e prioridade">
                 <div class="space-y-2">
                     <label>Relacionada a</label>
@@ -120,8 +120,16 @@ const submit = () => form.put(route('tasks.update', props.task.id));
                 </div>
 
                 <div class="space-y-2">
-                    <label>Responsável</label>
-                    <Select v-model="form.assigned_user_id" :options="[{ id: null, name: 'Todos' }, ...users]" option-label="name" option-value="id" show-clear fluid />
+                    <label>Responsáveis</label>
+                    <MultiSelect
+                        v-model="form.assigned_user_ids"
+                        :options="users"
+                        option-label="name"
+                        option-value="id"
+                        display="chip"
+                        placeholder="Todos"
+                        fluid
+                    />
                 </div>
 
                 <div class="space-y-2">

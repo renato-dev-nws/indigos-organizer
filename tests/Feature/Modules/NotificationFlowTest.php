@@ -126,6 +126,70 @@ class NotificationFlowTest extends TestCase
         ]);
     }
 
+    public function test_task_update_notifies_only_newly_added_assignees(): void
+    {
+        /** @var Authenticatable $owner */
+        $owner = User::factory()->createOne();
+        $assigneeA = User::factory()->createOne();
+        $assigneeB = User::factory()->createOne();
+
+        $status = TaskStatus::create([
+            'user_id' => $owner->id,
+            'name' => 'Pendente',
+            'color' => '#94a3b8',
+            'order' => 1,
+        ]);
+
+        $task = Task::create([
+            'user_id' => $owner->id,
+            'assigned_user_id' => $assigneeA->id,
+            'related_type' => 'administrative',
+            'title' => 'Tarefa para atualizar',
+            'task_status_id' => $status->id,
+            'priority' => 'medium',
+        ]);
+
+        $this->assertDatabaseCount('notifications', 1);
+
+        $this->actingAs($owner)->put(route('tasks.update', $task), [
+            'assigned_user_ids' => [$assigneeA->id],
+            'related_type' => 'administrative',
+            'title' => 'Tarefa para atualizar - editada',
+            'description' => 'Descricao',
+            'task_status_id' => $status->id,
+            'priority' => 'medium',
+            'archived' => false,
+            'scheduled_for' => null,
+            'due_date' => null,
+            'reminder_at' => null,
+            'subtasks' => [],
+        ])->assertRedirect(route('tasks.index'));
+
+        $this->assertDatabaseCount('notifications', 1);
+
+        $this->actingAs($owner)->put(route('tasks.update', $task), [
+            'assigned_user_ids' => [$assigneeA->id, $assigneeB->id],
+            'related_type' => 'administrative',
+            'title' => 'Tarefa para atualizar - com novo responsavel',
+            'description' => 'Descricao',
+            'task_status_id' => $status->id,
+            'priority' => 'medium',
+            'archived' => false,
+            'scheduled_for' => null,
+            'due_date' => null,
+            'reminder_at' => null,
+            'subtasks' => [],
+        ])->assertRedirect(route('tasks.index'));
+
+        $this->assertDatabaseHas('notifications', [
+            'type' => TaskAssignedNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $assigneeB->id,
+        ]);
+
+        $this->assertDatabaseCount('notifications', 2);
+    }
+
     public function test_idea_on_board_notifies_only_eligible_voters(): void
     {
         $owner = User::factory()->createOne();

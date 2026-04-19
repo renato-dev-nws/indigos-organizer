@@ -35,15 +35,23 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Clipe acustico na rua', 'status' => 'executing'],
             ['title' => 'Campanha pre-save', 'status' => 'executed'],
         ])->map(function ($row, $index) use ($user, $ideaTypes, $ideaCategories) {
-            return Idea::create([
+            $categoryId = $ideaCategories[$index % $ideaCategories->count()]?->id;
+
+            $idea = Idea::create([
                 'user_id' => $user->id,
                 'title' => $row['title'],
                 'description' => 'Descricao de exemplo da ideia '.$row['title'],
                 'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
-                'idea_category_id' => $ideaCategories[$index % $ideaCategories->count()]?->id,
+                'idea_category_id' => $categoryId,
                 'status' => $row['status'],
                 'related_type' => 'none',
             ]);
+
+            if ($categoryId) {
+                $idea->categories()->sync([$categoryId]);
+            }
+
+            return $idea;
         });
 
         $ideas->take(3)->each(function (Idea $idea, int $index) use ($contentStyles): void {

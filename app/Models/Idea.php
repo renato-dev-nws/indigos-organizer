@@ -53,6 +53,11 @@ class Idea extends Model
         return $this->belongsTo(IdeaCategory::class, 'idea_category_id');
     }
 
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(IdeaCategory::class, 'idea_idea_category');
+    }
+
     public function references(): HasMany
     {
         return $this->hasMany(IdeaReference::class);

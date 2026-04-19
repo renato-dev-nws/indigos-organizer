@@ -9,15 +9,19 @@ class TaskObserver
 {
     public function created(Task $task): void
     {
-        if ($task->syncLegacyAssignedUsersIfPending()) {
-            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        $newlyAssignedUserIds = $task->syncLegacyAssignedUsersIfPending();
+
+        if ($newlyAssignedUserIds !== []) {
+            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, $newlyAssignedUserIds);
         }
     }
 
     public function updated(Task $task): void
     {
-        if ($task->syncLegacyAssignedUsersIfPending()) {
-            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        $newlyAssignedUserIds = $task->syncLegacyAssignedUsersIfPending();
+
+        if ($newlyAssignedUserIds !== []) {
+            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, $newlyAssignedUserIds);
         }
     }
 }

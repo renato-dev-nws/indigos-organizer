@@ -22,7 +22,7 @@ const form = useForm({
     event_id: null,
     title: '',
     description: '',
-    assigned_user_id: null,
+    assigned_user_ids: [],
     priority: 'medium',
     scheduled_for: '',
     due_date: '',
@@ -74,7 +74,7 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
             </template>
         </BoPageHeader>
 
-        <form class="space-y-4" @submit.prevent="submit">
+        <form class="mx-auto max-w-[700px] space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados da tarefa" description="Defina vínculo, responsável e prioridade">
                 <div class="space-y-2">
                     <label>Relacionada a</label>
@@ -127,13 +127,14 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
                 </div>
 
                 <div class="space-y-2">
-                    <label>Responsável</label>
-                    <Select
-                        v-model="form.assigned_user_id"
-                        :options="[{ id: null, name: 'Todos' }, ...users]"
+                    <label>Responsáveis</label>
+                    <MultiSelect
+                        v-model="form.assigned_user_ids"
+                        :options="users"
                         option-label="name"
                         option-value="id"
-                        show-clear
+                        display="chip"
+                        placeholder="Todos"
                         fluid
                     />
                 </div>

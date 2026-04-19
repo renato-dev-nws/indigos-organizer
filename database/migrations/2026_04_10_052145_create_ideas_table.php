@@ -35,13 +35,21 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-            Schema::create('idea_collaborator', function (Blueprint $table) {
-                $table->uuid('idea_id');
-                $table->uuid('user_id');
-                $table->primary(['idea_id', 'user_id']);
-                $table->foreign('idea_id')->references('id')->on('ideas')->cascadeOnDelete();
-                $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-            });
+        Schema::create('idea_idea_category', function (Blueprint $table) {
+            $table->uuid('idea_id');
+            $table->uuid('idea_category_id');
+            $table->primary(['idea_id', 'idea_category_id']);
+            $table->foreign('idea_id')->references('id')->on('ideas')->cascadeOnDelete();
+            $table->foreign('idea_category_id')->references('id')->on('idea_categories')->cascadeOnDelete();
+        });
+
+        Schema::create('idea_collaborator', function (Blueprint $table) {
+            $table->uuid('idea_id');
+            $table->uuid('user_id');
+            $table->primary(['idea_id', 'user_id']);
+            $table->foreign('idea_id')->references('id')->on('ideas')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+        });
     }
 
     /**
@@ -53,7 +61,8 @@ return new class extends Migration
             $table->dropForeign(['idea_id']);
         });
 
-            Schema::dropIfExists('idea_collaborator');
+        Schema::dropIfExists('idea_collaborator');
+        Schema::dropIfExists('idea_idea_category');
 
         Schema::dropIfExists('ideas');
     }

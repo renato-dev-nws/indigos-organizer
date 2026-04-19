@@ -32,7 +32,7 @@ const rows = ref(8);
 
 const form = reactive({
     name: '',
-    color: '#4f46e5',
+    color: '4f46e5',
     icon: '',
     order: 1,
 });
@@ -63,7 +63,7 @@ const openCreate = () => {
     editing.value = null;
     clearErrors();
     form.name = '';
-    form.color = '#4f46e5';
+    form.color = '4f46e5';
     form.icon = '';
     form.order = (props.items.at(-1)?.order || 0) + 1;
     dialogVisible.value = true;
@@ -73,7 +73,7 @@ const openEdit = (item) => {
     editing.value = item;
     clearErrors();
     form.name = item.name;
-    form.color = item.color || '#4f46e5';
+    form.color = String(item.color || '#4f46e5').replace('#', '');
     form.icon = item.icon || '';
     form.order = item.order || 1;
     dialogVisible.value = true;
@@ -88,8 +88,8 @@ const validate = () => {
         errors.name = 'Nome deve ter no maximo 255 caracteres.';
     }
 
-    if (props.withColor && !/^#[0-9a-fA-F]{6}$/.test(form.color || '')) {
-        errors.color = 'Cor deve estar no formato #RRGGBB.';
+    if (props.withColor && !/^#?[0-9a-fA-F]{6}$/.test(form.color || '')) {
+        errors.color = 'Cor deve estar no formato RRGGBB.';
     }
 
     if (props.withIcon && form.icon && form.icon.trim().length > 100) {
@@ -114,7 +114,7 @@ const save = () => {
 
     const payload = {
         name: form.name.trim(),
-        ...(props.withColor ? { color: form.color } : {}),
+        ...(props.withColor ? { color: `#${String(form.color || '').replace('#', '')}` } : {}),
         ...(props.withIcon ? { icon: (form.icon || '').trim() || null } : {}),
         ...(props.withOrder ? { order: form.order } : {}),
         ...props.extraPayload,
@@ -215,7 +215,7 @@ const onPage = (event) => {
                                 <div v-if="withColor" class="h-3 w-3 rounded-full" :style="{ backgroundColor: element.color }" />
                                 <span class="text-sm font-medium">{{ index + 1 }}. {{ element.name }}</span>
                             </div>
-                            <div class="flex gap-1">
+                            <div v-if="!readOnly" class="flex gap-1">
                                 <Button v-if="!readOnly" icon="pi pi-pencil" size="small" text rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(element)" />
                                 <BoConfirmButton v-if="!readOnly"
                                     icon="pi pi-trash"
@@ -253,11 +253,11 @@ const onPage = (event) => {
                         </template>
                     </Column>
                     <Column v-if="withOrder" field="order" header="Ordem" class="w-24" />
-                    <Column header="Ações" class="bo-action-col w-20">
+                    <Column v-if="!readOnly" header="Ações" class="bo-action-col w-20">
                         <template #body="{ data }">
                             <div class="flex gap-1">
-                                <Button v-if="!readOnly" icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
-                                <BoConfirmButton v-if="!readOnly"
+                                <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" v-tooltip.top="'Editar'" @click="openEdit(data)" />
+                                <BoConfirmButton
                                     icon="pi pi-trash"
                                     severity="danger"
                                     :disabled="!canDelete(data)"
@@ -306,7 +306,10 @@ const onPage = (event) => {
             </div>
             <div v-if="withColor" class="space-y-2">
                 <label for="settings-color">Cor (hex)</label>
-                <InputText id="settings-color" v-model="form.color" fluid placeholder="#4f46e5" :invalid="!!errors.color" />
+                <div class="flex items-center gap-3">
+                    <ColorPicker id="settings-color" v-model="form.color" format="hex" />
+                    <InputText v-model="form.color" fluid placeholder="4f46e5" :invalid="!!errors.color" />
+                </div>
                 <Message v-if="errors.color" severity="error" size="small" variant="simple">{{ errors.color }}</Message>
             </div>
             <div v-if="withIcon" class="space-y-2">

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
@@ -47,6 +47,9 @@ const form = useForm({
     description: props.venue.description,
 });
 
+const mapsApiKey = String(import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+const mapsApiKeyConfigured = mapsApiKey.length > 0;
+
 const addressSearch = ref([
     props.venue.address_line,
     props.venue.address_number,
@@ -57,7 +60,17 @@ const addressSearch = ref([
     .filter(Boolean)
     .join(', '));
 const addressInput = ref(null);
-const hasPlacesApi = ref(true);
+const hasPlacesApi = ref(mapsApiKeyConfigured);
+const manualAddressMode = ref(!mapsApiKeyConfigured);
+const autocompleteInstance = ref(null);
+const autocompleteInputEl = ref(null);
+let placesScriptPromise = null;
+
+const canUseAutocomplete = computed(() => hasPlacesApi.value && !manualAddressMode.value);
+const showAddressCard = computed(() => canUseAutocomplete.value && !!form.place_id);
+const hasCoordinates = computed(() => form.latitude !== null && form.latitude !== '' && form.longitude !== null && form.longitude !== '');
+const hasManualAddressForMap = computed(() => [form.address_line, form.city, form.state, form.country]
+    .every((value) => String(value || '').trim().length > 0));
 
 const readAddressComponent = (components, wantedType, shortName = false) => {
     const component = components.find((item) => item.types?.includes(wantedType));
@@ -76,7 +89,7 @@ const applyPlace = (place) => {
     form.place_id = place.place_id || '';
     form.address_line = route || place.name || '';
     form.address_number = streetNumber;
-    form.address_complement = readAddressComponent(components, 'subpremise');
+    form.address_complement = '';
     form.neighborhood = readAddressComponent(components, 'sublocality') || readAddressComponent(components, 'neighborhood');
     form.city = readAddressComponent(components, 'administrative_area_level_2') || readAddressComponent(components, 'locality');
     form.state = readAddressComponent(components, 'administrative_area_level_1', true);
@@ -88,7 +101,6 @@ const applyPlace = (place) => {
     const addressChunks = [
         route || place.name,
         streetNumber,
-        form.address_complement,
         form.neighborhood,
         form.city,
         form.state,
@@ -111,9 +123,28 @@ const clearAddressSelection = () => {
     form.longitude = null;
 };
 
+const handleManualAddressToggle = (value) => {
+    manualAddressMode.value = !!value;
+
+    if (manualAddressMode.value) {
+        form.place_id = '';
+        return;
+    }
+
+    initAutocomplete();
+};
+
 const mapEmbedUrl = computed(() => {
-    if (form.latitude !== null && form.latitude !== '' && form.longitude !== null && form.longitude !== '') {
+    if (hasCoordinates.value) {
         return `https://maps.google.com/maps?q=${form.latitude},${form.longitude}&z=15&output=embed`;
+    }
+
+    const canRenderFromAddress = manualAddressMode.value
+        ? hasManualAddressForMap.value
+        : !!form.place_id;
+
+    if (!canRenderFromAddress) {
+        return '';
     }
 
     const query = [
@@ -133,52 +164,103 @@ const mapEmbedUrl = computed(() => {
     return '';
 });
 
+const shouldShowMap = computed(() => {
+    if (manualAddressMode.value) {
+        return !!mapEmbedUrl.value;
+    }
+
+    return !!form.place_id && !!mapEmbedUrl.value;
+});
+
+const mapEmptyStateMessage = computed(() => {
+    if (manualAddressMode.value) {
+        return 'Preencha Logradouro, Cidade, UF e Pais para visualizar o mapa.';
+    }
+
+    return 'Selecione um endereco no autocomplete para visualizar o mapa.';
+});
+
 const loadGooglePlaces = async () => {
     if (window.google?.maps?.places) {
         return true;
     }
 
-    const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!key) {
+    if (!mapsApiKeyConfigured) {
         return false;
     }
 
     try {
-        await new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&loading=async`;
-            script.async = true;
-            script.defer = true;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
+        if (!placesScriptPromise) {
+            placesScriptPromise = new Promise((resolve, reject) => {
+                const existingScript = document.querySelector('script[data-google-places="1"]');
+                if (existingScript) {
+                    existingScript.addEventListener('load', resolve, { once: true });
+                    existingScript.addEventListener('error', reject, { once: true });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.dataset.googlePlaces = '1';
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places&loading=async`;
+                script.async = true;
+                script.defer = true;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        await placesScriptPromise;
     } catch (error) {
+        placesScriptPromise = null;
         return false;
     }
 
     return !!window.google?.maps?.places;
 };
 
+const resolveAddressInputElement = () => {
+    const fromRef = addressInput.value?.$el?.querySelector?.('input');
+    if (fromRef instanceof HTMLInputElement) {
+        return fromRef;
+    }
+
+    const fromDom = document.getElementById('venue-address-search');
+    if (fromDom instanceof HTMLInputElement) {
+        return fromDom;
+    }
+
+    return null;
+};
+
 const initAutocomplete = async () => {
+    if (!canUseAutocomplete.value) {
+        return;
+    }
+
     await nextTick();
-    if (!addressInput.value) {
+    const inputEl = resolveAddressInputElement();
+    if (!inputEl) {
         return;
     }
 
     const ready = await loadGooglePlaces();
-    hasPlacesApi.value = ready;
     if (!ready) {
         return;
     }
 
-    const autocomplete = new window.google.maps.places.Autocomplete(addressInput.value.$el?.querySelector('input') || addressInput.value.$el || addressInput.value, {
+    if (autocompleteInputEl.value === inputEl && autocompleteInstance.value) {
+        return;
+    }
+
+    autocompleteInputEl.value = inputEl;
+    autocompleteInstance.value = new window.google.maps.places.Autocomplete(inputEl, {
         fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id'],
         componentRestrictions: { country: 'br' },
     });
 
-    autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
+    autocompleteInstance.value.addListener('place_changed', () => {
+        const place = autocompleteInstance.value.getPlace();
         if (place) {
             applyPlace(place);
         }
@@ -186,7 +268,15 @@ const initAutocomplete = async () => {
 };
 
 onMounted(() => {
-    initAutocomplete();
+    if (mapsApiKeyConfigured) {
+        initAutocomplete();
+    }
+});
+
+watch(canUseAutocomplete, (enabled) => {
+    if (enabled) {
+        initAutocomplete();
+    }
 });
 
 const submit = () => form.put(route('venues.update', props.venue.id));
@@ -274,85 +364,94 @@ const submit = () => form.put(route('venues.update', props.venue.id));
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-rating">Avaliação</label>
+                    <label for="venue-rating" class="block">Avaliação</label>
                     <Rating id="venue-rating" v-model="form.rating" :cancel="true" />
                 </div>
 
                 <div class="space-y-2">
-                    <label for="venue-equipment">Equipamentos</label>
-                    <Chips id="venue-equipment" v-model="form.equipment_tags" separator="," fluid />
+                    <label for="venue-equipment" class="block">Equipamentos</label>
+                    <Chips id="venue-equipment" v-model="form.equipment_tags" separator="," fluid class="w-full" />
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                    <label for="venue-address-search">Endereço</label>
-                    <div v-if="hasPlacesApi" class="relative">
-                        <InputText id="venue-address-search" ref="addressInput" v-model="addressSearch" placeholder="Digite e selecione um endereço" fluid />
-                        <button
-                            v-if="addressSearch || form.place_id"
-                            type="button"
-                            class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            aria-label="Limpar endereço"
-                            @click="clearAddressSelection"
-                        >
-                            <i class="pi pi-times-circle" />
-                        </button>
+                    <div class="mb-1 flex flex-wrap items-center justify-between gap-3">
+                        <label for="venue-address-search">Endereço</label>
+                        <div v-if="hasPlacesApi" class="flex items-center gap-2">
+                            <Checkbox
+                                input-id="venue-address-manual"
+                                :model-value="manualAddressMode"
+                                binary
+                                @update:model-value="handleManualAddressToggle"
+                            />
+                            <label for="venue-address-manual" class="text-sm text-slate-600 dark:text-slate-300">Preenchimento manual</label>
+                        </div>
                     </div>
-                    <div v-if="hasPlacesApi" class="mt-2 grid gap-2 md:grid-cols-2">
-                        <InputText v-model="form.address_number" placeholder="Número" />
-                        <InputText v-model="form.address_complement" placeholder="Complemento" />
+
+                    <div class="grid gap-4 md:grid-cols-2 md:items-stretch">
+                        <div class="space-y-3">
+                            <div v-if="canUseAutocomplete" class="relative">
+                                <InputText id="venue-address-search" ref="addressInput" v-model="addressSearch" placeholder="Digite e selecione um endereço" fluid @focus="initAutocomplete" />
+                                <button
+                                    v-if="addressSearch || form.place_id"
+                                    type="button"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    aria-label="Limpar endereço"
+                                    @click="clearAddressSelection"
+                                >
+                                    <i class="pi pi-times-circle" />
+                                </button>
+                            </div>
+
+                            <div v-if="manualAddressMode || !hasPlacesApi" class="grid gap-2 md:grid-cols-2">
+                                <InputText class="md:col-span-2" v-model="form.address_line" placeholder="Logradouro (Linha 1)" />
+                                <InputText v-model="form.address_number" placeholder="Número" />
+                                <InputText v-model="form.address_complement" placeholder="Complemento" />
+                                <InputText class="md:col-span-2" v-model="form.neighborhood" placeholder="Bairro" />
+                                <InputText v-model="form.city" placeholder="Cidade" />
+                                <InputText v-model="form.state" placeholder="UF" />
+                                <InputText v-model="form.postal_code" placeholder="CEP" />
+                                <InputText v-model="form.country" placeholder="País" />
+                                <InputNumber v-if="manualAddressMode" v-model="form.latitude" :min-fraction-digits="4" :max-fraction-digits="7" placeholder="Latitude" fluid />
+                                <InputNumber v-if="manualAddressMode" v-model="form.longitude" :min-fraction-digits="4" :max-fraction-digits="7" placeholder="Longitude" fluid />
+                            </div>
+
+                            <div v-else-if="showAddressCard" class="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
+                                <p class="font-semibold">Endereço selecionado</p>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    <p><strong>Logradouro:</strong> {{ form.address_line || '-' }}</p>
+                                    <p><strong>Número:</strong> {{ form.address_number || '-' }}</p>
+                                    <p><strong>Bairro:</strong> {{ form.neighborhood || '-' }}</p>
+                                    <p><strong>Cidade:</strong> {{ form.city || '-' }}</p>
+                                    <p><strong>UF:</strong> {{ form.state || '-' }}</p>
+                                    <p><strong>CEP:</strong> {{ form.postal_code || '-' }}</p>
+                                    <p><strong>País:</strong> {{ form.country || '-' }}</p>
+                                    <p><strong>Latitude/Longitude:</strong> {{ form.latitude || '-' }} / {{ form.longitude || '-' }}</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label for="venue-autocomplete-complement">Complemento</label>
+                                    <InputText id="venue-autocomplete-complement" v-model="form.address_complement" placeholder="Bloco, sala, etc. (opcional)" fluid />
+                                </div>
+                            </div>
+
+                            <small v-if="!hasPlacesApi" class="text-slate-500">Sem API do Maps configurada. Use o preenchimento manual.</small>
+                            <small v-else class="text-slate-500">Ao selecionar um endereço, cidade, estado, CEP e coordenadas são preenchidos automaticamente.</small>
+                        </div>
+
+                        <div class="h-full">
+                            <div v-if="shouldShowMap" class="h-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                                <iframe
+                                    :src="mapEmbedUrl"
+                                    class="h-full min-h-[24rem] w-full"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer-when-downgrade"
+                                />
+                            </div>
+                            <div v-else class="flex h-full min-h-[24rem] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 px-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                <iconify-icon icon="mdi:map-marker-off-outline" width="28" height="28" class="mb-2 text-slate-400 dark:text-slate-500" />
+                                <p>{{ mapEmptyStateMessage }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div v-else class="grid gap-2 md:grid-cols-2">
-                        <InputText v-model="form.address_line" placeholder="Logradouro" />
-                        <InputText v-model="form.address_number" placeholder="Número" />
-                        <InputText v-model="form.address_complement" placeholder="Complemento" />
-                        <InputText v-model="form.neighborhood" placeholder="Bairro" />
-                        <InputText v-model="form.city" placeholder="Cidade" />
-                        <InputText v-model="form.state" placeholder="UF" />
-                        <InputText v-model="form.postal_code" placeholder="CEP" />
-                        <InputText class="md:col-span-2" v-model="form.country" placeholder="País" />
-                    </div>
-                    <small class="text-slate-500">Ao selecionar um endereço, cidade, estado, CEP e coordenadas são preenchidos automaticamente.</small>
-                </div>
-
-                <div class="hidden">
-                    <InputText v-model="form.place_id" />
-                    <InputText v-if="hasPlacesApi" v-model="form.address_line" />
-                    <InputText v-if="hasPlacesApi" v-model="form.address_number" />
-                    <InputText v-if="hasPlacesApi" v-model="form.address_complement" />
-                    <InputText v-if="hasPlacesApi" v-model="form.neighborhood" />
-                    <InputText v-if="hasPlacesApi" v-model="form.city" />
-                    <InputText v-if="hasPlacesApi" v-model="form.state" />
-                    <InputText v-if="hasPlacesApi" v-model="form.postal_code" />
-                    <InputText v-if="hasPlacesApi" v-model="form.country" />
-                </div>
-
-                <div v-if="form.city || form.state || form.latitude || form.longitude" class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-900">
-                    <p class="mb-2 font-semibold">Resumo da localização</p>
-                    <div class="grid gap-2 md:grid-cols-2">
-                        <p><strong>Cidade/UF:</strong> {{ form.city || '-' }} / {{ form.state || '-' }}</p>
-                        <p><strong>CEP:</strong> {{ form.postal_code || '-' }}</p>
-                        <p><strong>País:</strong> {{ form.country || '-' }}</p>
-                        <p><strong>Lat/Lng:</strong> {{ form.latitude || '-' }} / {{ form.longitude || '-' }}</p>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-lat">Latitude</label>
-                    <InputNumber id="venue-lat" v-model="form.latitude" :disabled="!!form.place_id" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="venue-lng">Longitude</label>
-                    <InputNumber id="venue-lng" v-model="form.longitude" :disabled="!!form.place_id" :min-fraction-digits="4" :max-fraction-digits="7" fluid />
-                </div>
-
-                <div v-if="mapEmbedUrl" class="md:col-span-2 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                    <iframe
-                        :src="mapEmbedUrl"
-                        class="h-60 w-full"
-                        loading="lazy"
-                        referrerpolicy="no-referrer-when-downgrade"
-                    />
                 </div>
 
                 <div class="space-y-2">

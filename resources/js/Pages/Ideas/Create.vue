@@ -6,7 +6,7 @@ import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 
-const props = defineProps({ ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array });
+const props = defineProps({ ideaTypes: Array, ideaCategories: Array, venueStyles: Array, plans: Array, contents: Array, users: Array, ideaCategoryIds: Array });
 defineOptions({ layout: AppLayout });
 
 const goBack = () => {
@@ -23,7 +23,7 @@ const form = useForm({
     title: '',
     description: '',
     idea_type_id: null,
-    idea_category_id: null,
+    idea_category_ids: props.ideaCategoryIds ?? [],
     venue_style_ids: [],
     status: 'in_drawer',
     is_private: false,
@@ -120,8 +120,8 @@ const removeReference = (index) => form.references.splice(index, 1);
                 </div>
 
                 <div class="space-y-2">
-                    <label>Categoria</label>
-                    <Select v-model="form.idea_category_id" :options="ideaCategories" option-label="name" option-value="id" show-clear fluid />
+                    <label>Categorias</label>
+                    <MultiSelect v-model="form.idea_category_ids" :options="ideaCategories" option-label="name" option-value="id" display="chip" fluid />
                 </div>
 
                 <div class="md:col-span-2 space-y-2">

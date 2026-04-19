@@ -20,21 +20,31 @@ class EventController extends Controller
     {
         $showPast = request()->boolean('show_past');
 
-        $events = Event::query()
+        $baseQuery = Event::query()
             ->with(['type', 'venue.type', 'user'])
             ->when(request('event_type_id'), fn ($q, $typeId) => $q->where('event_type_id', $typeId))
             ->when(request('attendance_mode'), fn ($q, $mode) => $q->where('attendance_mode', $mode))
+            ->when(request('event_mode') === 'online', fn ($q) => $q->where('is_online', true))
+            ->when(request('event_mode') === 'offline', fn ($q) => $q->where('is_online', false))
             ->when(request('search'), fn ($q, $search) => $q->where('title', 'ilike', "%{$search}%"))
-            ->when(! $showPast, fn ($q) => $q->whereDate('event_date', '>=', Carbon::today()->toDateString()))
+            ->when(! $showPast, fn ($q) => $q->whereDate('event_date', '>=', Carbon::today()->toDateString()));
+
+        $events = (clone $baseQuery)
             ->when($showPast, fn ($q) => $q->orderByDesc('event_date')->orderByDesc('event_time'))
             ->when(! $showPast, fn ($q) => $q->orderBy('event_date')->orderBy('event_time'))
             ->paginate(15)
             ->withQueryString();
 
+        $calendarEvents = (clone $baseQuery)
+            ->when($showPast, fn ($q) => $q->orderByDesc('event_date')->orderByDesc('event_time'))
+            ->when(! $showPast, fn ($q) => $q->orderBy('event_date')->orderBy('event_time'))
+            ->get();
+
         return Inertia::render('Events/Index', [
             'events' => $events,
+            'calendarEvents' => $calendarEvents,
             'types' => EventType::query()->orderBy('name')->get(['id', 'name', 'color', 'icon']),
-            'filters' => request()->only(['event_type_id', 'attendance_mode', 'search', 'show_past']),
+            'filters' => request()->only(['event_type_id', 'attendance_mode', 'event_mode', 'search', 'show_past']),
         ]);
     }
 

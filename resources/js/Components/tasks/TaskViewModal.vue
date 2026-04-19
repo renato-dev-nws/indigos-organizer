@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { useConfirm } from 'primevue/useconfirm';
 
 const props = defineProps({
     visible: { type: Boolean, default: false },
@@ -7,6 +9,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:visible']);
+const confirm = useConfirm();
 
 const assigneeLabel = computed(() => {
     const assignees = props.task?.assigned_users || props.task?.assignedUsers || [];
@@ -42,6 +45,72 @@ const formatDate = (value) => {
 
     return date.toLocaleDateString('pt-BR');
 };
+
+const priorityLabels = {
+    low: 'Baixa',
+    medium: 'Média',
+    high: 'Alta',
+    urgent: 'Urgente',
+};
+
+const priorityLabel = computed(() => {
+    const value = props.task?.priority;
+    return priorityLabels[value] || value || '-';
+});
+
+const relationLabel = computed(() => {
+    if (!props.task?.related_type) {
+        return '';
+    }
+
+    if (props.task.related_type === 'content' && props.task.content?.title) {
+        return `Conteúdo: ${props.task.content.title}`;
+    }
+
+    if (props.task.related_type === 'plan' && props.task.plan?.title) {
+        const phase = props.task.planPhase?.title ? ` / Fase: ${props.task.planPhase.title}` : '';
+        return `Planejamento: ${props.task.plan.title}${phase}`;
+    }
+
+    if (props.task.related_type === 'event' && props.task.event?.title) {
+        return `Evento: ${props.task.event.title}`;
+    }
+
+    if (props.task.related_type === 'administrative') {
+        return 'Administrativo';
+    }
+
+    return '';
+});
+
+const isCompleted = computed(() => {
+    const statusName = String(props.task?.status?.name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    return ['conclu', 'finaliz', 'done', 'completed'].some((token) => statusName.includes(token));
+});
+
+const completeTask = () => {
+    if (!props.task?.id || isCompleted.value) {
+        return;
+    }
+
+    confirm.require({
+        header: 'Confirmar ação',
+        message: 'Confirma concluir esta tarefa?',
+        icon: 'pi pi-question-circle',
+        rejectLabel: 'Cancelar',
+        acceptLabel: 'Confirmar',
+        acceptClass: 'p-button-sm',
+        rejectClass: 'p-button-text p-button-sm',
+        accept: () => {
+            router.patch(route('tasks.quick-action', props.task.id), { action: 'complete' }, { preserveScroll: true });
+            emit('update:visible', false);
+        },
+    });
+};
 </script>
 
 <template>
@@ -63,7 +132,7 @@ const formatDate = (value) => {
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Prioridade</p>
-                    <p class="font-medium">{{ task.priority }}</p>
+                    <p class="font-medium">{{ priorityLabel }}</p>
                 </div>
                 <div>
                     <p class="text-xs text-slate-500">Agendado para</p>
@@ -77,9 +146,9 @@ const formatDate = (value) => {
                     <p class="text-xs text-slate-500">Lembrete</p>
                     <p class="font-medium">{{ formatDateTime(task.reminder_at) }}</p>
                 </div>
-                <div>
-                    <p class="text-xs text-slate-500">Evento</p>
-                    <p class="font-medium">{{ task.event?.title || '-' }}</p>
+                <div v-if="relationLabel" class="md:col-span-2">
+                    <p class="text-xs text-slate-500">Relacionamento</p>
+                    <p class="font-medium">{{ relationLabel }}</p>
                 </div>
             </div>
 
@@ -97,6 +166,13 @@ const formatDate = (value) => {
         </div>
 
         <template #footer>
+            <Button
+                v-if="task && !isCompleted"
+                label="Marcar como concluída"
+                icon="pi pi-check"
+                severity="success"
+                @click="completeTask"
+            />
             <Button label="Fechar" outlined severity="secondary" @click="emit('update:visible', false)" />
         </template>
     </Dialog>

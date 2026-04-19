@@ -410,6 +410,22 @@ const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
 
 const taskWeekDate = (task) => task.scheduled_for || task.due_date;
 
+const formatWeekDate = (value) => {
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleDateString('pt-BR');
+};
+
+const kanbanGridTemplateColumns = computed(() => {
+    const totalColumns = kanbanColumns.value.length || 1;
+    const columnsPerRow = totalColumns <= 5 ? totalColumns : 5;
+
+    return `repeat(${columnsPerRow}, minmax(0, 1fr))`;
+});
+
 const fullCalendarOptions = computed(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     initialView: 'dayGridMonth',
@@ -799,8 +815,8 @@ const taskByUserChartData = computed(() => {
             </template>
         </Card>
 
-        <div v-else-if="viewMode === 'kanban'" class="hidden gap-4 md:grid xl:grid-cols-5">
-            <Card v-for="column in kanbanColumns" :key="column.id" class="xl:col-span-1">
+        <div v-else-if="viewMode === 'kanban'" class="hidden gap-4 md:grid" :style="{ gridTemplateColumns: kanbanGridTemplateColumns }">
+            <Card v-for="column in kanbanColumns" :key="column.id">
                 <template #title>
                     <div class="flex items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
@@ -852,7 +868,14 @@ const taskByUserChartData = computed(() => {
                 <template #content>
                     <div class="hidden gap-3 md:grid md:grid-cols-2 xl:grid-cols-4">
                         <Card v-for="column in weekColumns" :key="column.label" class="lg:col-span-1">
-                            <template #title>{{ column.label }}</template>
+                            <template #title>
+                                <div class="flex items-center gap-2">
+                                    <span>{{ column.label }}</span>
+                                    <small class="rounded-full border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                                        {{ formatWeekDate(column.date) }}
+                                    </small>
+                                </div>
+                            </template>
                             <template #content>
                                 <div class="space-y-2">
                                     <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
@@ -865,15 +888,17 @@ const taskByUserChartData = computed(() => {
                                         class="w-full rounded-lg border border-slate-200 p-2 text-left hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                                         @click="openViewModal(task)"
                                     >
-                                        <p class="truncate text-xs font-semibold">
-                                            <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
-                                            {{ task.title }}
-                                        </p>
-                                        <div class="mt-1 flex flex-col items-end gap-1">
-                                            <BoTaskStatusTag :status="task.status" />
-                                            <span class="text-[10px] text-slate-500">
-                                                <BoDateText :value="taskWeekDate(task)" mode="datetime" />
-                                            </span>
+                                        <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                            <p class="line-clamp-2 text-xs font-semibold leading-4">
+                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                                {{ task.title }}
+                                            </p>
+                                            <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
+                                                <BoTaskStatusTag :status="task.status" class="bo-weekly-status-tag" />
+                                                <small class="text-[10px] text-slate-500">
+                                                    <BoDateText :value="taskWeekDate(task)" mode="datetime" />
+                                                </small>
+                                            </div>
                                         </div>
                                     </button>
                                 </div>
@@ -889,7 +914,14 @@ const taskByUserChartData = computed(() => {
                                 :open="isWeeklyColumnOpenByDefault(column)"
                                 class="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
                             >
-                                <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">{{ column.label }}</summary>
+                                <summary class="cursor-pointer px-3 py-2 text-sm font-semibold">
+                                    <div class="inline-flex items-center gap-2">
+                                        <span>{{ column.label }}</span>
+                                        <small class="rounded-full border border-slate-300 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:border-slate-600 dark:text-slate-300">
+                                            {{ formatWeekDate(column.date) }}
+                                        </small>
+                                    </div>
+                                </summary>
                                 <div class="space-y-2 border-t border-slate-100 px-3 py-3 dark:border-slate-800">
                                     <div v-if="!column.items.length" class="rounded border border-dashed border-slate-300 p-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
                                         Sem tarefas.
@@ -901,15 +933,17 @@ const taskByUserChartData = computed(() => {
                                         class="w-full rounded-lg border border-slate-200 p-2 text-left dark:border-slate-700"
                                         @click="openViewModal(task)"
                                     >
-                                        <p class="truncate text-xs font-semibold">
-                                            <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
-                                            {{ task.title }}
-                                        </p>
-                                        <div class="mt-1 flex flex-col items-end gap-1">
-                                            <BoTaskStatusTag :status="task.status" />
-                                            <span class="text-[10px] text-slate-500">
-                                                <BoDateText :value="taskWeekDate(task)" mode="datetime" />
-                                            </span>
+                                        <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                            <p class="line-clamp-2 text-xs font-semibold leading-4">
+                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                                {{ task.title }}
+                                            </p>
+                                            <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
+                                                <BoTaskStatusTag :status="task.status" class="bo-weekly-status-tag" />
+                                                <small class="text-[10px] text-slate-500">
+                                                    <BoDateText :value="taskWeekDate(task)" mode="datetime" />
+                                                </small>
+                                            </div>
                                         </div>
                                     </button>
                                 </div>
