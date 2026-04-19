@@ -237,7 +237,7 @@ const ideaCategoriesForDisplay = (idea) => {
                                                 :icon="category.icon || 'mdi:shape-outline'"
                                                 width="14"
                                                 height="14"
-                                                :title="category.name"
+                                                v-tooltip.top="category.name"
                                             />
                                         </template>
                                     </Tag>
@@ -259,7 +259,7 @@ const ideaCategoriesForDisplay = (idea) => {
                                                 :icon="style.icon || 'mdi:palette-outline'"
                                                 width="14"
                                                 height="14"
-                                                :title="style.name"
+                                                v-tooltip.top="style.name"
                                             />
                                         </template>
                                     </Tag>
@@ -299,14 +299,14 @@ const ideaCategoriesForDisplay = (idea) => {
                 <div class="mt-2 flex flex-wrap gap-1">
                     <Tag v-for="category in ideaCategoriesForDisplay(idea)" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
                         <template #default>
-                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" :title="category.name" />
+                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" v-tooltip.top="category.name" />
                         </template>
                     </Tag>
                 </div>
                 <div class="mt-2 flex flex-wrap gap-1">
                     <Tag v-for="style in idea.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
                         <template #default>
-                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" :title="style.name" />
+                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" v-tooltip.top="style.name" />
                         </template>
                     </Tag>
                 </div>

@@ -1,5 +1,8 @@
 <script setup>
-defineProps({
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+
+const props = defineProps({
     title: {
         type: String,
         required: true,
@@ -17,6 +20,9 @@ defineProps({
         default: '',
     },
 });
+
+const page = usePage();
+const shouldShowSubtitle = computed(() => page.component === 'Dashboard' && !!props.subtitle);
 </script>
 
 <template>
@@ -27,7 +33,7 @@ defineProps({
                 <span v-if="icon" class="shrink-0 -mb-1"><iconify-icon :icon="icon" width="28" height="28" /></span>
                 {{ title }}
             </h1>
-            <p v-if="subtitle" class="text-sm text-slate-500 dark:text-slate-400">{{ subtitle }}</p>
+            <p v-if="shouldShowSubtitle" class="text-sm text-slate-500 dark:text-slate-400">{{ subtitle }}</p>
         </div>
         <div class="bo-page-header-actions flex items-center gap-2">
             <slot name="actions" />

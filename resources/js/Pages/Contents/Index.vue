@@ -469,7 +469,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" :title="category.name" />
+                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" v-tooltip.top="category.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.categories || []).length" class="text-xs text-slate-400">-</span>
@@ -486,7 +486,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" :title="style.name" />
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" v-tooltip.top="style.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.styles || []).length" class="text-xs text-slate-400">-</span>
@@ -503,7 +503,7 @@ const applyContentChartPeriod = () => {
                                     class="!px-1.5 !py-0.5"
                                 >
                                     <template #default>
-                                        <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" :title="platform.name" />
+                                        <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" v-tooltip.top="platform.name" />
                                     </template>
                                 </Tag>
                                 <span v-if="!(data.platforms || []).length" class="text-xs text-slate-400">-</span>

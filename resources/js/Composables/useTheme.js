@@ -2,10 +2,13 @@ import { ref, onMounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 
 const STORAGE_KEY = 'bo-theme';
+const VALID_THEMES = ['light', 'dark', 'system'];
+
+const normalizeTheme = (theme) => (VALID_THEMES.includes(theme) ? theme : 'system');
 
 // Shared reactive ref so all composable instances stay in sync
 const currentTheme = ref(
-    typeof window !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) ?? 'system') : 'system',
+    typeof window !== 'undefined' ? normalizeTheme(localStorage.getItem(STORAGE_KEY)) : 'system',
 );
 
 export function useTheme() {
@@ -20,13 +23,27 @@ export function useTheme() {
     };
 
     const setTheme = (theme) => {
-        currentTheme.value = theme;
-        localStorage.setItem(STORAGE_KEY, theme);
-        applyTheme(theme);
+        const normalizedTheme = normalizeTheme(theme);
+        const previousTheme = normalizeTheme(currentTheme.value);
+
+        if (previousTheme === normalizedTheme) {
+            applyTheme(normalizedTheme);
+            return;
+        }
+
+        currentTheme.value = normalizedTheme;
+        localStorage.setItem(STORAGE_KEY, normalizedTheme);
+        applyTheme(normalizedTheme);
+
         // Persist to server only when authenticated
         const page = usePage();
         if (page.props.auth?.user) {
-            router.put('/settings/theme', { theme }, { preserveState: true, preserveScroll: true });
+            const serverTheme = normalizeTheme(page.props.auth?.user?.theme);
+            if (serverTheme === normalizedTheme) {
+                return;
+            }
+
+            router.put('/settings/theme', { theme: normalizedTheme }, { preserveState: true, preserveScroll: true, replace: true });
         }
     };
 
@@ -37,8 +54,9 @@ export function useTheme() {
 
         if (!stored && serverTheme) {
             // First session: sync server preference → localStorage
-            localStorage.setItem(STORAGE_KEY, serverTheme);
-            currentTheme.value = serverTheme;
+            const normalizedServerTheme = normalizeTheme(serverTheme);
+            localStorage.setItem(STORAGE_KEY, normalizedServerTheme);
+            currentTheme.value = normalizedServerTheme;
         }
 
         applyTheme(currentTheme.value);

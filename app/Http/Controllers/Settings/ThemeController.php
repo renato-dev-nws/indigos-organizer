@@ -10,7 +10,13 @@ class ThemeController extends Controller
 {
     public function update(UpdateThemeRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $request->user();
+
+        if ($user->theme === $request->theme) {
+            return back();
+        }
+
+        $user->update([
             'theme' => $request->theme,
         ]);
 

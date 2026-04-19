@@ -521,7 +521,7 @@ const goWeeklyProgramToIndicator = (index) => {
                             class="flex items-center justify-center rounded p-1.5 transition-colors"
                             :class="programFilter === opt.value ? 'bg-indigo-500 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
                             :aria-label="opt.label"
-                            :title="opt.label"
+                            v-tooltip.bottom="opt.label"
                             @click="programFilter = opt.value"
                         >
                             <iconify-icon :icon="opt.icon" width="16" height="16" />
@@ -578,7 +578,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                                     :icon="eventPresenceIcon(item.attendance_mode)"
                                                     width="14"
                                                     height="14"
-                                                    :title="eventPresenceLabel(item.attendance_mode)"
+                                                    v-tooltip.top="eventPresenceLabel(item.attendance_mode)"
                                                 />
                                                 <iconify-icon
                                                     v-if="item.is_online"
@@ -586,7 +586,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                                     width="14"
                                                     height="14"
                                                     class="text-emerald-500"
-                                                    title="Evento online"
+                                                    v-tooltip.top="'Evento online'"
                                                 />
                                             </div>
                                             <small class="text-[10px] text-slate-500">
@@ -778,7 +778,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                         width="13"
                                         height="13"
                                         class="text-red-500"
-                                        :title="taskDeadlineTooltip(data)"
+                                        v-tooltip.top="taskDeadlineTooltip(data)"
                                     />
                                 </div>
                             </template>
@@ -815,7 +815,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                         width="14"
                                         height="14"
                                         class="text-red-500"
-                                        title="Publicação planejada ultrapassada"
+                                        v-tooltip.top="'Publicação planejada ultrapassada'"
                                     />
                                 </div>
                             </template>
@@ -848,7 +848,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                         :icon="eventPresenceIcon(data.attendance_mode)"
                                         width="15"
                                         height="15"
-                                        :title="eventPresenceLabel(data.attendance_mode)"
+                                        v-tooltip.top="eventPresenceLabel(data.attendance_mode)"
                                     />
                                     <iconify-icon
                                         v-if="data.is_online"
@@ -856,7 +856,7 @@ const goWeeklyProgramToIndicator = (index) => {
                                         width="15"
                                         height="15"
                                         class="text-green-500"
-                                        title="Evento online"
+                                        v-tooltip.top="'Evento online'"
                                     />
                                 </div>
                             </template>

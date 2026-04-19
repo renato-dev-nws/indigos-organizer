@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue';
-import { Icon } from '@iconify/vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppMenu from './AppMenu.vue';
 
@@ -24,6 +23,8 @@ const emit = defineEmits(['closeMobile']);
 const page = usePage();
 const logoUrl = computed(() => page.props.systemSettings?.logo_url ?? null);
 const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
+const isInlineSvgLogo = computed(() => typeof logoUrl.value === 'string' && logoUrl.value.trim().startsWith('<svg'));
+const mobileIconUrl = computed(() => iconUrl.value || '/icons/io-icon-32x32.png');
 </script>
 
 <template>
@@ -69,7 +70,7 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
                         <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
                     </div> -->
                     <div>
-                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Índigos Organizer</p>
+                        <p class="text-sm font-bold leading-tight text-slate-800 dark:text-slate-100">Indigos Organizer</p>
                         <p class="text-[10px] text-slate-400 dark:text-slate-500">For Creatives</p>
                     </div>
                 </template>
@@ -87,21 +88,18 @@ const iconUrl = computed(() => page.props.systemSettings?.icon_url ?? null);
     >
         <template #header>
             <Link :href="route('dashboard')" class="flex items-center gap-2.5" @click="emit('closeMobile')">
+                <template v-if="logoUrl">
+                    <div v-if="isInlineSvgLogo" class="h-8 max-w-[150px]" v-html="logoUrl" />
+                    <img v-else :src="logoUrl" alt="Logo" class="h-8 max-w-[150px] object-contain" />
+                </template>
                 <img
-                    v-if="iconUrl"
-                    :src="iconUrl"
+                    v-else
+                    :src="mobileIconUrl"
                     alt="Ícone"
                     class="h-8 w-8 rounded-lg object-contain"
                 />
-                <div
-                    v-else
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-500/30"
-                >
-                    <Icon icon="ph:music-notes-bold" class="h-4 w-4 text-white" />
-                </div>
                 <div>
-                    <p class="text-sm font-bold leading-tight">Índigos - Artist Organizer</p>
-                    <p class="text-[10px] text-slate-400">Painel colaborativo</p>
+                    <p class="text-sm font-bold leading-tight">Indigos Organizer</p>
                 </div>
             </Link>
         </template>

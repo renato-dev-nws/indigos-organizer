@@ -236,9 +236,9 @@ const onPage = (event) => {
             <template v-else>
                 <DataTable :value="paginatedItems" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="name" header="Nome" sortable />
-                    <Column v-if="withIcon" field="icon" header="Ícone" class="w-40">
+                    <Column v-if="withIcon" field="icon" header="Ícone" headerClass="flex items-center justify-center">
                         <template #body="{ data }">
-                            <div class="flex items-center justify-center">
+                            <div class="flex w-full items-center justify-center">
                                 <iconify-icon v-if="data.icon" :icon="data.icon" width="18" height="18" />
                                 <span v-else class="text-xs text-slate-400">-</span>
                             </div>
