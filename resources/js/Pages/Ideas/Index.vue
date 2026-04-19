@@ -162,7 +162,7 @@ const ideaCategoriesForDisplay = (idea) => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda" icon="ph:lightbulb-bold">
+        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda" icon="mdi:lightbulb-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

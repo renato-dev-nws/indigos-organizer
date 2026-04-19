@@ -83,7 +83,7 @@ const calendarOptions = (items) => ({
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Calendário geral" subtitle="Agenda unificada de conteúdos e eventos" />
+        <BoPageHeader title="Calendário geral" icon="mdi:calendar-month-outline" subtitle="Agenda unificada de conteúdos e eventos" />
 
         <Card>
             <template #content>

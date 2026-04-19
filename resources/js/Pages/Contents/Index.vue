@@ -360,7 +360,7 @@ const applyContentChartPeriod = () => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial" icon="ph:video-camera-bold">
+        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial" icon="mdi:film-reel">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -682,7 +682,7 @@ const applyContentChartPeriod = () => {
                         >
                             <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                                 <p class="line-clamp-2 text-xs font-semibold leading-4">
-                                    <iconify-icon icon="ph:video-camera-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                    <iconify-icon icon="mdi:film-reel" width="12" height="12" class="mr-1 align-[-2px]" />
                                     {{ content.title }}
                                 </p>
                                 <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">

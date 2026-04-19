@@ -24,8 +24,8 @@ defineProps({
         />
 
         <div class="grid gap-4 lg:grid-cols-4">
-            <BoKpiCard label="Ideias pendentes" :value="summary.pendingIdeas" icon="ph:lightbulb-bold" />
-            <BoKpiCard label="Conteúdos da semana" :value="summary.contentsThisWeek" icon="ph:video-camera-bold" />
+            <BoKpiCard label="Ideias pendentes" :value="summary.pendingIdeas" icon="mdi:lightbulb-multiple-outline" />
+            <BoKpiCard label="Conteúdos da semana" :value="summary.contentsThisWeek" icon="mdi:film-reel" />
             <BoKpiCard label="Tarefas urgentes" :value="summary.urgentOpenTasks" icon="ph:lightning-bold" />
             <BoKpiCard label="Casas de show" :value="summary.venuesCount" icon="ph:music-notes-bold" />
         </div>

@@ -29,7 +29,7 @@ const mobileIconUrl = computed(() => iconUrl.value || '/icons/io-icon-32x32.png'
 
 <template>
     <aside
-        class="bo-sidebar fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-950/95"
+        class="bo-sidebar fixed inset-y-0 left-0 z-40 hidden border-r border-slate-200/60 bg-white/95 px-3 py-4 backdrop-blur-xl md:block dark:border-slate-800/60 dark:bg-slate-900/60"
         :class="collapsed ? 'w-[72px]' : 'w-64'"
     >
         <Link :href="route('dashboard')" class="mb-5 flex items-center gap-2.5 px-2">

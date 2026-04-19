@@ -198,7 +198,7 @@ const noteSummary = (note) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Notas rapidas" subtitle="Anotacoes e listas de acao em um clique" icon="mdi:note-fast-outline">
+        <BoPageHeader title="Notas rapidas" subtitle="Anotacoes e listas de acao em um clique" icon="mdi:notebook-edit-outline">
             <template #actions>
                 <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Nova nota" @click="openCreateModal" />
                 <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Nova nota" @click="openCreateModal" />

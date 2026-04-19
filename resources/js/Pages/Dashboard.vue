@@ -30,7 +30,7 @@ const dashboardCards = computed(() => [
     {
         key: 'tasks',
         title: 'Tarefas',
-        icon: 'ph:check-square-bold',
+        icon: 'mdi:checkbox-multiple-outline',
         colors: 'bg-indigo-300 dark:bg-indigo-500',
         value: props.summary?.tasksTotal || 0,
         subItems: [
@@ -43,7 +43,7 @@ const dashboardCards = computed(() => [
     {
         key: 'contents',
         title: 'Conteúdos',
-        icon: 'ph:video-camera-bold',
+        icon: 'mdi:film-reel',
         colors: 'bg-purple-300 dark:bg-purple-600',
         value: props.summary?.contentsTotal || 0,
         subItems: [
@@ -56,7 +56,7 @@ const dashboardCards = computed(() => [
     {
         key: 'ideas',
         title: 'Ideias',
-        icon: 'ph:lightbulb-bold',
+        icon: 'mdi:lightbulb-multiple-outline',
         colors: 'bg-violet-300 dark:bg-violet-600',
         value: props.summary?.ideasTotal || 0,
         subItems: [
@@ -197,11 +197,11 @@ const programItemDate = (item) => item.kind === 'task'
 
 const programItemIcon = (item) => {
     if (item.kind === 'task') {
-        return 'ph:check-square-bold';
+        return 'mdi:checkbox-multiple-outline';
     }
 
     if (item.kind === 'content') {
-        return 'ph:video-camera-bold';
+        return 'mdi:film-reel';
     }
 
     return 'ph:calendar-star-bold';
@@ -246,8 +246,8 @@ const taskAssigneeLabel = (task) => {
 
 const programFilterOptions = [
     { label: 'Todos', value: 'all', icon: 'ph:circles-three-bold' },
-    { label: 'Tarefas', value: 'tasks', icon: 'ph:check-square-bold' },
-    { label: 'Conteúdo', value: 'content', icon: 'ph:video-camera-bold' },
+    { label: 'Tarefas', value: 'tasks', icon: 'mdi:checkbox-multiple-outline' },
+    { label: 'Conteúdo', value: 'content', icon: 'mdi:film-reel' },
     { label: 'Eventos', value: 'events', icon: 'ph:calendar-star-bold' },
 ];
 

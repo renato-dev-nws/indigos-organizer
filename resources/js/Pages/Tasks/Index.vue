@@ -576,7 +576,7 @@ const taskByUserChartData = computed(() => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda" icon="ph:check-square-bold">
+        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda" icon="mdi:checkbox-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton
@@ -890,7 +890,7 @@ const taskByUserChartData = computed(() => {
                                     >
                                         <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                                             <p class="line-clamp-2 text-xs font-semibold leading-4">
-                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                                <iconify-icon icon="mdi:checkbox-multiple-outline" width="12" height="12" class="mr-1 align-[-2px]" />
                                                 {{ task.title }}
                                             </p>
                                             <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">
@@ -935,7 +935,7 @@ const taskByUserChartData = computed(() => {
                                     >
                                         <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                                             <p class="line-clamp-2 text-xs font-semibold leading-4">
-                                                <iconify-icon icon="ph:check-square-bold" width="12" height="12" class="mr-1 align-[-2px]" />
+                                                <iconify-icon icon="mdi:checkbox-multiple-outline" width="12" height="12" class="mr-1 align-[-2px]" />
                                                 {{ task.title }}
                                             </p>
                                             <div class="flex min-w-[7.5rem] flex-col items-end gap-0.5">

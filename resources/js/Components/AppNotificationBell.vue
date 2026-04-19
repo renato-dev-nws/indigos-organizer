@@ -25,7 +25,7 @@ const typeIcon = {
     task_assigned: 'ph:clipboard-text-bold',
     task_due_soon: 'ph:clock-countdown-bold',
     task_reminder: 'ph:bell-ringing-bold',
-    idea_on_board: 'ph:lightbulb-bold',
+    idea_on_board: 'mdi:lightbulb-multiple-outline',
     idea_voted: 'ph:thumbs-up-bold',
 };
 
