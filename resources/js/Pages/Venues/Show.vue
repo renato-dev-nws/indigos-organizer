@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import 'iconify-icon';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import VenueMapPreview from '@/Components/venues/VenueMapPreview.vue';
 import { buildWhatsAppUrl, formatBrazilPhone } from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
@@ -52,18 +53,6 @@ const fullAddress = computed(() => [
     props.venue?.postal_code,
     props.venue?.country,
 ].filter(Boolean).join(', '));
-
-const mapEmbedUrl = computed(() => {
-    if (props.venue?.latitude && props.venue?.longitude) {
-        return `https://maps.google.com/maps?q=${props.venue.latitude},${props.venue.longitude}&z=15&output=embed`;
-    }
-
-    if (fullAddress.value) {
-        return `https://maps.google.com/maps?q=${encodeURIComponent(fullAddress.value)}&z=14&output=embed`;
-    }
-
-    return '';
-});
 
 const whatsappUrl = computed(() => buildWhatsAppUrl(props.venue?.whatsapp));
 const phoneLabel = (value) => formatBrazilPhone(value) || '-';
@@ -180,12 +169,12 @@ const phoneLabel = (value) => formatBrazilPhone(value) || '-';
                         <p><strong>Lat/Lng:</strong> {{ venue.latitude || '-' }} / {{ venue.longitude || '-' }}</p>
                     </div>
 
-                    <div v-if="mapEmbedUrl" class="mt-3 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-                        <iframe
-                            :src="mapEmbedUrl"
+                    <div class="mt-3 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                        <VenueMapPreview
+                            :latitude="venue.latitude"
+                            :longitude="venue.longitude"
+                            :address-query="fullAddress"
                             class="h-52 w-full"
-                            loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade"
                         />
                     </div>
                 </template>

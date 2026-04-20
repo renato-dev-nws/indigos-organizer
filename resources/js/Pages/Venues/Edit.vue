@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import VenueMapPreview from '@/Components/venues/VenueMapPreview.vue';
 import {
     composePhoneWithCountryCode,
     formatBrazilPhoneInput,
@@ -145,42 +146,24 @@ const handleManualAddressToggle = (value) => {
     initAutocomplete();
 };
 
-const mapEmbedUrl = computed(() => {
-    if (hasCoordinates.value) {
-        return `https://maps.google.com/maps?q=${form.latitude},${form.longitude}&z=15&output=embed`;
-    }
+const mapAddressQuery = computed(() => [
+    form.address_line,
+    form.address_number,
+    form.address_complement,
+    form.neighborhood,
+    [form.city, form.state].filter(Boolean).join('/'),
+    form.postal_code,
+    form.country,
+].filter(Boolean).join(', '));
 
-    const canRenderFromAddress = manualAddressMode.value
-        ? hasManualAddressForMap.value
-        : !!form.place_id;
-
-    if (!canRenderFromAddress) {
-        return '';
-    }
-
-    const query = [
-        form.address_line,
-        form.address_number,
-        form.address_complement,
-        form.neighborhood,
-        [form.city, form.state].filter(Boolean).join('/'),
-        form.postal_code,
-        form.country,
-    ].filter(Boolean).join(', ');
-
-    if (query) {
-        return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=14&output=embed`;
-    }
-
-    return '';
-});
+const hasMapTarget = computed(() => hasCoordinates.value || !!mapAddressQuery.value);
 
 const shouldShowMap = computed(() => {
     if (manualAddressMode.value) {
-        return !!mapEmbedUrl.value;
+        return hasCoordinates.value || hasManualAddressForMap.value;
     }
 
-    return !!form.place_id && !!mapEmbedUrl.value;
+    return !!form.place_id && hasMapTarget.value;
 });
 
 const mapEmptyStateMessage = computed(() => {
@@ -490,11 +473,11 @@ const submit = () => form
 
                         <div class="h-full">
                             <div v-if="shouldShowMap" class="h-full overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                                <iframe
-                                    :src="mapEmbedUrl"
+                                <VenueMapPreview
+                                    :latitude="form.latitude"
+                                    :longitude="form.longitude"
+                                    :address-query="mapAddressQuery"
                                     class="h-full min-h-[24rem] w-full"
-                                    loading="lazy"
-                                    referrerpolicy="no-referrer-when-downgrade"
                                 />
                             </div>
                             <div v-else class="flex h-full min-h-[24rem] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 px-4 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
