@@ -81,6 +81,7 @@ class DashboardController extends Controller
         $weekStart = Carbon::now()->startOfWeek(Carbon::SUNDAY);
         $weekEnd = (clone $weekStart)->addWeek()->endOfDay();
         $deadlineWindowEnd = Carbon::today()->addDays(3);
+        $todayDate = Carbon::today();
 
         $weeklyTasks = Task::query()
             ->where(fn (Builder $query) => $query
@@ -142,7 +143,7 @@ class DashboardController extends Controller
             ->orderBy('scheduled_for')
             ->take(10)
             ->get(['id', 'title', 'scheduled_for', 'due_date'])
-            ->map(function (Task $task) use ($deadlineWindowEnd) {
+            ->map(function (Task $task) use ($deadlineWindowEnd, $todayDate) {
                 $dueDate = $task->due_date ? Carbon::parse($task->due_date) : null;
 
                 return [
@@ -155,7 +156,7 @@ class DashboardController extends Controller
                     'due_date' => optional($task->due_date)?->toDateString(),
                     'date_type' => 'scheduled',
                     'display_date' => optional($task->scheduled_for)?->toIso8601String(),
-                    'is_deadline_soon' => $dueDate?->between(Carbon::today(), $deadlineWindowEnd) ?? false,
+                    'is_deadline_soon' => ($dueDate?->isAfter($todayDate) && $dueDate?->lessThanOrEqualTo($deadlineWindowEnd)) ?? false,
                     'url' => route('tasks.show', $task),
                     'sort_at' => optional($task->scheduled_for)?->toIso8601String(),
                 ];
@@ -165,7 +166,7 @@ class DashboardController extends Controller
             ->whereIn('id', $activeTaskIds)
             ->whereNull('scheduled_for')
             ->whereNotNull('due_date')
-            ->whereDate('due_date', '>=', $today)
+            ->whereDate('due_date', '>', $today)
             ->whereDate('due_date', '<=', $deadlineWindowEnd->toDateString())
             ->orderBy('due_date')
             ->take(10)

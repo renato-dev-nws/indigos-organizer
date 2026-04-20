@@ -87,6 +87,27 @@ const mobileShortcuts = [
     { title: 'Contatos', icon: 'pi pi-address-book', href: route('contacts.index') },
 ];
 
+const parseDashboardDate = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === 'string') {
+        const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (dateOnlyMatch) {
+            const [, year, month, day] = dateOnlyMatch;
+            return new Date(Number(year), Number(month) - 1, Number(day));
+        }
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
 const weeklyProgramColumns = computed(() => {
     const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Próximo domingo'];
     const now = new Date();
@@ -127,9 +148,14 @@ const weeklyProgramColumns = computed(() => {
             continue;
         }
 
-        const itemDate = new Date(baseDate);
-        itemDate.setHours(0, 0, 0, 0);
-        const diffDays = Math.round((itemDate.getTime() - weekStart.getTime()) / 86_400_000);
+        const itemDate = parseDashboardDate(baseDate);
+        if (!itemDate) {
+            continue;
+        }
+
+        const normalizedDate = new Date(itemDate);
+        normalizedDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((normalizedDate.getTime() - weekStart.getTime()) / 86_400_000);
 
         if (diffDays >= 0 && diffDays <= 7) {
             grouped[diffDays].items.push(item);
@@ -227,8 +253,8 @@ const programItemAccentColor = (item) => {
 };
 
 const formatWeekDate = (value) => {
-    const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) {
+    const date = parseDashboardDate(value);
+    if (!date) {
         return '';
     }
 
@@ -253,7 +279,14 @@ const programFilterOptions = [
 
 const nextTaskDateMode = (task) => task?.date_type === 'scheduled' ? 'datetime' : 'date';
 const nextTaskDateClass = (task) => task?.date_type === 'scheduled' ? 'text-blue-500' : 'text-red-500';
-const taskDeadlineTooltip = (task) => task?.due_date ? `Deadline: ${new Date(task.due_date).toLocaleDateString('pt-BR')}` : 'Deadline';
+const taskDeadlineTooltip = (task) => {
+    const dueDate = parseDashboardDate(task?.due_date);
+    if (!dueDate) {
+        return 'Deadline';
+    }
+
+    return `Deadline: ${dueDate.toLocaleDateString('pt-BR')}`;
+};
 
 const contentPlannedLate = (content) => {
     if (!content?.planned_publish_at || content?.status === 'published') {

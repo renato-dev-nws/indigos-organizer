@@ -223,8 +223,10 @@ const submit = () => {
                 </div>
 
                 <div class="space-y-2 md:col-span-2">
-                    <label>Descrição</label>
-                    <AppSpeechTextareaAssist v-model="form.description" />
+                    <div class="flex items-center justify-between gap-2">
+                        <label>Descrição</label>
+                        <AppSpeechTextareaAssist v-model="form.description" />
+                    </div>
                     <Textarea v-model="form.description" rows="4" fluid />
                 </div>
 
@@ -263,18 +265,18 @@ const submit = () => {
 
                 <div class="space-y-2">
                     <label>Agendado para</label>
-                    <DatePicker v-model="form.scheduled_for" show-time hour-format="24" show-clear fluid />
+                    <DatePicker v-model="form.scheduled_for" date-format="dd/mm/yy" show-time hour-format="24" show-clear fluid />
                     <Message v-if="form.errors.scheduled_for" severity="error" size="small" variant="simple">{{ form.errors.scheduled_for }}</Message>
                 </div>
 
                 <div class="space-y-2">
                     <label>Prazo</label>
-                    <DatePicker v-model="form.due_date" fluid />
+                    <DatePicker v-model="form.due_date" date-format="dd/mm/yy" fluid />
                 </div>
 
                 <div class="space-y-2">
                     <label>Lembrete</label>
-                    <DatePicker v-model="form.reminder_at" show-time hour-format="24" fluid />
+                    <DatePicker v-model="form.reminder_at" date-format="dd/mm/yy" show-time hour-format="24" fluid />
                 </div>
 
                 <div class="space-y-2">

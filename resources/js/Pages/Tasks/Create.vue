@@ -157,17 +157,17 @@ const removeSubtask = (index) => form.subtasks.splice(index, 1);
 
                 <div class="space-y-2">
                     <label>Agendado para</label>
-                    <DatePicker v-model="form.scheduled_for" show-time hour-format="24" show-clear fluid />
+                    <DatePicker v-model="form.scheduled_for" date-format="dd/mm/yy" show-time hour-format="24" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">
                     <label>Prazo</label>
-                    <DatePicker v-model="form.due_date" fluid />
+                    <DatePicker v-model="form.due_date" date-format="dd/mm/yy" fluid />
                 </div>
 
                 <div class="space-y-2">
                     <label>Lembrete</label>
-                    <DatePicker v-model="form.reminder_at" show-time hour-format="24" fluid />
+                    <DatePicker v-model="form.reminder_at" date-format="dd/mm/yy" show-time hour-format="24" fluid />
                 </div>
 
                 <div class="space-y-2">
