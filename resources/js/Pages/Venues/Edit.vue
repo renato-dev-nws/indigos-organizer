@@ -4,6 +4,12 @@ import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import {
+    composePhoneWithCountryCode,
+    formatBrazilPhoneInput,
+    normalizeCountryCodeInput,
+    splitPhoneByCountryCode,
+} from '@/Utils/phone';
 
 const props = defineProps({ venue: Object, sizes: Array, types: Array, categories: Array, styles: Array });
 defineOptions({ layout: AppLayout });
@@ -14,10 +20,15 @@ const goBack = () => {
     }
 };
 
+const phoneParts = splitPhoneByCountryCode(props.venue.phone);
+const whatsappParts = splitPhoneByCountryCode(props.venue.whatsapp);
+const phoneCountryCode = ref(phoneParts.countryCode);
+const whatsappCountryCode = ref(whatsappParts.countryCode);
+
 const form = useForm({
     name: props.venue.name,
     email: props.venue.email,
-    phone: props.venue.phone,
+    phone: formatBrazilPhoneInput(phoneParts.localDigits),
     contact_name: props.venue.contact_name,
     venue_size_id: props.venue.venue_size_id,
     venue_type_id: props.venue.venue_type_id,
@@ -41,7 +52,7 @@ const form = useForm({
     instagram_url: props.venue.instagram_url,
     facebook_url: props.venue.facebook_url,
     youtube_url: props.venue.youtube_url,
-    whatsapp: props.venue.whatsapp,
+    whatsapp: formatBrazilPhoneInput(whatsappParts.localDigits),
     website_url: props.venue.website_url,
     notes: props.venue.notes,
     description: props.venue.description,
@@ -279,7 +290,29 @@ watch(canUseAutocomplete, (enabled) => {
     }
 });
 
-const submit = () => form.put(route('venues.update', props.venue.id));
+const updatePhone = (value) => {
+    form.phone = formatBrazilPhoneInput(value);
+};
+
+const updatePhoneCountryCode = (value) => {
+    phoneCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const updateWhatsapp = (value) => {
+    form.whatsapp = formatBrazilPhoneInput(value);
+};
+
+const updateWhatsappCountryCode = (value) => {
+    whatsappCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const submit = () => form
+    .transform((data) => ({
+        ...data,
+        phone: composePhoneWithCountryCode(phoneCountryCode.value, data.phone),
+        whatsapp: composePhoneWithCountryCode(whatsappCountryCode.value, data.whatsapp),
+    }))
+    .put(route('venues.update', props.venue.id));
 </script>
 
 <template>
@@ -326,7 +359,16 @@ const submit = () => form.put(route('venues.update', props.venue.id));
 
                 <div class="space-y-2">
                     <label for="venue-phone">Telefone</label>
-                    <InputText id="venue-phone" v-model="form.phone" fluid />
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="phoneCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updatePhoneCountryCode"
+                        />
+                        <InputText id="venue-phone" :model-value="form.phone" placeholder="(11) 3456-7890" fluid @update:model-value="updatePhone" />
+                    </InputGroup>
                 </div>
 
                 <div class="space-y-2">
@@ -336,7 +378,16 @@ const submit = () => form.put(route('venues.update', props.venue.id));
 
                 <div class="space-y-2">
                     <label for="venue-whatsapp">WhatsApp</label>
-                    <InputText id="venue-whatsapp" v-model="form.whatsapp" fluid />
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="whatsappCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updateWhatsappCountryCode"
+                        />
+                        <InputText id="venue-whatsapp" :model-value="form.whatsapp" placeholder="(11) 98765-4321" fluid @update:model-value="updateWhatsapp" />
+                    </InputGroup>
                 </div>
 
                 <div class="space-y-2">

@@ -1036,53 +1036,52 @@ onUnmounted(() => {
 
                     <div class="space-y-3 md:hidden">
                         <div v-for="venue in venues.data" :key="venue.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                            <div class="flex items-start justify-between gap-2">
-                                <Link :href="route('venues.show', venue.id)" class="font-semibold hover:underline">{{ venue.name }}</Link>
-                                <Tag v-if="shouldShowMobileStatus(venue.status)" :value="statusLabels[venue.status] || venue.status || '-'" :style="{ backgroundColor: statusColors[venue.status] || '#64748b', color: 'white' }" rounded />
-                            </div>
-                            <p class="mt-1 text-xs text-slate-500">Tipo: {{ venue.type?.name || '-' }}</p>
-                            <p class="text-xs text-slate-500">Categoria: {{ venue.category?.name || '-' }}</p>
-                            <div class="mt-1 flex flex-wrap gap-1">
-                                <Tag
-                                    v-for="style in venue.styles || []"
-                                    :key="style.id"
-                                    severity="secondary"
-                                    class="!px-1.5 !py-0.5"
-                                >
-                                    <template #default>
-                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
-                                    </template>
-                                </Tag>
-                                <span v-if="!(venue.styles || []).length" class="text-xs text-slate-400">-</span>
-                            </div>
-                            <p class="text-xs text-slate-500">Avaliação: <span class="text-amber-500">{{ formatRatingStars(venue.rating) }}</span></p>
-                            <p class="text-xs text-slate-500">
-                                WhatsApp:
-                                <a
-                                    v-if="whatsappUrl(venue.whatsapp)"
-                                    :href="whatsappUrl(venue.whatsapp)"
-                                    target="_blank"
-                                    rel="noopener"
-                                    class="text-emerald-600 underline dark:text-emerald-400"
-                                >
-                                    {{ phoneLabel(venue.whatsapp) }}
-                                </a>
-                                <span v-else>-</span>
-                            </p>
-                            <p class="text-xs text-slate-500">Cidade/UF: {{ [venue.city, venue.state].filter(Boolean).join('/') || '-' }}</p>
-                            <p class="text-xs text-slate-500">Apresentou: {{ performancesLabel(venue.performances_count) }}</p>
-                            <p class="text-xs text-slate-500">
-                                <iconify-icon icon="mdi:map-marker" class="mr-1 align-[-2px]" />
-                                {{ [venue.address_line, venue.address_number, venue.address_complement, venue.neighborhood, [venue.city, venue.state].filter(Boolean).join('/'), venue.postal_code].filter(Boolean).join(', ') || 'Endereço não informado' }}
-                            </p>
-                            <div class="mt-3 flex justify-end gap-1">
-                                <Link :href="route('venues.show', venue.id)">
-                                    <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" />
-                                </Link>
-                                <Link :href="route('venues.edit', venue.id)">
-                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" />
-                                </Link>
-                                <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este local?" :rounded="true" @confirm="removeVenue(venue.id)" />
+                            <div class="grid grid-cols-5 gap-3">
+                                <div class="col-span-3 space-y-2">
+                                    <Link :href="route('venues.show', venue.id)" class="block text-base font-semibold leading-5 hover:underline">{{ venue.name }}</Link>
+
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-wide text-slate-500">Tipo</p>
+                                        <p class="text-sm text-slate-700 dark:text-slate-200">{{ venue.type?.name || '-' }}</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-wide text-slate-500">Categoria</p>
+                                        <p class="text-sm text-slate-700 dark:text-slate-200">{{ venue.category?.name || '-' }}</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-wide text-slate-500">Cidade/UF</p>
+                                        <p class="text-sm text-slate-700 dark:text-slate-200">{{ [venue.city, venue.state].filter(Boolean).join('/') || '-' }}</p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-wide text-slate-500">WhatsApp</p>
+                                        <p class="text-sm text-slate-700 dark:text-slate-200">
+                                            <a v-if="whatsappUrl(venue.whatsapp)" :href="whatsappUrl(venue.whatsapp)" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ phoneLabel(venue.whatsapp) }}</a>
+                                            <span v-else>-</span>
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p class="text-[11px] uppercase tracking-wide text-slate-500">Apresentou</p>
+                                        <p class="text-sm text-slate-700 dark:text-slate-200">{{ performancesLabel(venue.performances_count) }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                                    <div class="flex flex-col items-end gap-1">
+                                        <Tag v-if="shouldShowMobileStatus(venue.status)" :value="statusLabels[venue.status] || venue.status || '-'" :style="{ backgroundColor: statusColors[venue.status] || '#64748b', color: 'white' }" rounded />
+                                        <Tag severity="secondary" class="!px-1.5 !py-0.5">{{ formatRatingStars(venue.rating) }}</Tag>
+                                    </div>
+
+                                    <div class="flex flex-wrap justify-end gap-1">
+                                        <Link :href="route('venues.edit', venue.id)">
+                                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" />
+                                        </Link>
+                                        <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este local?" :rounded="true" @confirm="removeVenue(venue.id)" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

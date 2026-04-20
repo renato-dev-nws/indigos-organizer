@@ -291,32 +291,54 @@ const ideaCategoriesForDisplay = (idea) => {
         </div>
 
         <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
-            <div v-for="idea in ideas.data" :key="idea.id" class="flex min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div class="mb-2 flex items-start justify-between gap-2">
-                    <h3 class="font-semibold">{{ idea.title }}</h3>
-                    <BoStatusTag :value="idea.status" />
-                </div>
-                <p class="text-sm text-slate-500">{{ idea.type?.name || '-' }}</p>
-                <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="category in ideaCategoriesForDisplay(idea)" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
-                        <template #default>
-                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" v-tooltip.top="category.name" />
-                        </template>
-                    </Tag>
-                </div>
-                <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="style in idea.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
-                        <template #default>
-                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" v-tooltip.top="style.name" />
-                        </template>
-                    </Tag>
-                </div>
-                <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
-                <p class="text-xs text-slate-500">Atualizado em: <BoDateText :value="idea.updated_at" mode="datetime" /></p>
-                <div class="mt-auto flex justify-end gap-1 pt-3">
-                    <Link :href="route('ideas.show', idea.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                    <Link v-if="idea.can_edit" :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                    <BoConfirmButton v-if="idea.can_delete" icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
+            <div v-for="idea in ideas.data" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="grid grid-cols-5 gap-3">
+                    <div class="col-span-3 space-y-2">
+                        <Link :href="route('ideas.show', idea.id)" class="block text-base font-semibold leading-5 hover:underline">{{ idea.title }}</Link>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Tipo</p>
+                            <p class="text-sm text-slate-700 dark:text-slate-200">{{ idea.type?.name || '-' }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Categorias</p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Tag v-for="category in ideaCategoriesForDisplay(idea)" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
+                                    <template #default>
+                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" v-tooltip.top="category.name" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!ideaCategoriesForDisplay(idea).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Estilos</p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Tag v-for="style in idea.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
+                                    <template #default>
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" v-tooltip.top="style.name" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(idea.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Atualizado em</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="idea.updated_at" mode="datetime" /></p>
+                        </div>
+                    </div>
+
+                    <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                        <BoStatusTag :value="idea.status" />
+
+                        <div class="flex flex-wrap justify-end gap-1">
+                            <Link :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                            <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
+                        </div>
+                    </div>
                 </div>
             </div>
 

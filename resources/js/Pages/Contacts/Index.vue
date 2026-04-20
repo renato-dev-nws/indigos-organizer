@@ -192,19 +192,47 @@ const phoneLabel = (value) => formatBrazilPhone(value) || '-';
 
                 <div class="block space-y-3 md:hidden">
                     <div v-for="contact in contacts.data" :key="contact.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <h3 class="font-semibold">{{ contact.name }}</h3>
-                        <p class="mt-1 text-xs text-slate-500">Telefone: {{ phoneLabel(contact.phone) }}</p>
-                        <p class="text-xs text-slate-500">
-                            WhatsApp:
-                            <a v-if="whatsappUrl(contact.whatsapp)" :href="whatsappUrl(contact.whatsapp)" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ phoneLabel(contact.whatsapp) }}</a>
-                            <span v-else>-</span>
-                        </p>
-                        <p class="text-xs text-slate-500">Email: {{ contact.email || '-' }}</p>
-                        <p class="text-xs text-slate-500">Local: {{ contact.venue?.name || '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ contact.description || 'Sem descrição.' }}</p>
-                        <div class="mt-3 flex justify-end gap-1">
-                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(contact)" />
-                            <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este contato?" :rounded="true" @confirm="removeContact(contact.id)" />
+                        <div class="grid grid-cols-5 gap-3">
+                            <div class="col-span-3 space-y-2">
+                                <h3 class="text-base font-semibold leading-5">{{ contact.name }}</h3>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Telefone</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ phoneLabel(contact.phone) }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">WhatsApp</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">
+                                        <a v-if="whatsappUrl(contact.whatsapp)" :href="whatsappUrl(contact.whatsapp)" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ phoneLabel(contact.whatsapp) }}</a>
+                                        <span v-else>-</span>
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Email</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ contact.email || '-' }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Local</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ contact.venue?.name || '-' }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Descrição</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">{{ contact.description || 'Sem descrição.' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                                <Tag :value="contact.venue?.name ? 'Com local' : 'Sem local'" severity="secondary" class="!px-1.5 !py-0.5" />
+
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(contact)" />
+                                    <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este contato?" :rounded="true" @confirm="removeContact(contact.id)" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

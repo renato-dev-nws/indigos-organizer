@@ -272,18 +272,39 @@ const fullCalendarOptions = computed(() => ({
 
                 <div class="space-y-3 md:hidden">
                     <div v-for="event in events.data" :key="event.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="flex items-start justify-between gap-2">
-                            <Link :href="route('events.show', event.id)" class="font-semibold hover:underline">{{ event.title }}</Link>
-                            <Tag :value="event.type?.name || '-'"></Tag>
-                        </div>
-                        <p class="mt-1 text-xs text-slate-500">Presença: {{ attendanceLabels[event.attendance_mode] || event.attendance_mode }}</p>
-                        <p class="text-xs text-slate-500">Data: <BoDateText :value="event.starts_at" mode="datetime" /></p>
-                        <p class="text-xs text-slate-500">Online: {{ event.is_online ? 'Sim' : 'Não' }}</p>
-                        <p class="text-xs text-slate-500">Local: {{ event.is_online ? 'Evento online' : (event.venue?.name || '-') }}</p>
-                        <div class="mt-3 flex justify-end gap-1">
-                            <Link :href="route('events.show', event.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                            <Link :href="route('events.edit', event.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                            <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover este evento?" @confirm="removeEvent(event.id)" />
+                        <div class="grid grid-cols-5 gap-3">
+                            <div class="col-span-3 space-y-2">
+                                <Link :href="route('events.show', event.id)" class="block text-base font-semibold leading-5 hover:underline">{{ event.title }}</Link>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Presença</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ attendanceLabels[event.attendance_mode] || event.attendance_mode }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Data e hora</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="event.starts_at" mode="datetime" /></p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Online</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ event.is_online ? 'Sim' : 'Não' }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Local</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ event.is_online ? 'Evento online' : (event.venue?.name || '-') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                                <Tag :value="event.type?.name || '-'" />
+
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    <Link :href="route('events.edit', event.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                                    <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover este evento?" @confirm="removeEvent(event.id)" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

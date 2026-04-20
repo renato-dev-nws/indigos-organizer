@@ -93,42 +93,6 @@ const goBack = () => {
 
         <form class="space-y-4" @submit.prevent="submit">
             <BoFormSection title="Dados principais" description="Informações editoriais e planejamento">
-                <div class="md:col-span-2 space-y-2">
-                    <label for="content-title">Título</label>
-                    <InputText id="content-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
-                    <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="content-status">Status</label>
-                    <Select
-                        id="content-status"
-                        v-model="form.status"
-                        :options="[
-                            { label: 'Na fila', value: 'queued' },
-                            { label: 'Em produção', value: 'in_production' },
-                            { label: 'Finalizado', value: 'finalized' },
-                            { label: 'Cancelado', value: 'cancelled' },
-                            { label: 'Pausado', value: 'paused' },
-                            { label: 'Publicado', value: 'published' },
-                        ]"
-                        option-label="label"
-                        option-value="value"
-                        fluid
-                    />
-                    <Message v-if="form.errors.status" severity="error" size="small" variant="simple">{{ form.errors.status }}</Message>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="content-idea">Ideia de origem</label>
-                    <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="content-plan">Planejamento</label>
-                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
-                </div>
-
                 <div class="space-y-2">
                     <label for="content-type">Tipo</label>
                     <Select id="content-type" v-model="form.idea_type_id" :options="types" option-label="name" option-value="id" show-clear fluid />
@@ -149,6 +113,27 @@ const goBack = () => {
                 </div>
 
                 <div class="space-y-2">
+                    <label for="content-title">Título</label>
+                    <InputText id="content-title" v-model="form.title" fluid :invalid="!!form.errors.title" />
+                    <Message v-if="form.errors.title" severity="error" size="small" variant="simple">{{ form.errors.title }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-styles">Estilos</label>
+                    <MultiSelect id="content-styles" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-idea">Ideia de origem</label>
+                    <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-plan">Planejamento</label>
+                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
                     <label for="content-platforms">Plataformas</label>
                     <MultiSelect
                         id="content-platforms"
@@ -162,15 +147,30 @@ const goBack = () => {
                     />
                 </div>
 
-                <div class="md:col-span-2 space-y-2">
-                    <label for="content-styles">Estilos</label>
-                    <MultiSelect id="content-styles" v-model="form.venue_style_ids" :options="styles" option-label="name" option-value="id" display="chip" fluid />
-                </div>
-
                 <div class="space-y-2">
                     <label for="planned-publish">Publicação planejada</label>
                     <DatePicker id="planned-publish" v-model="form.planned_publish_at" date-format="dd/mm/yy" show-time hour-format="24" fluid />
                     <Message v-if="form.errors.planned_publish_at" severity="error" size="small" variant="simple">{{ form.errors.planned_publish_at }}</Message>
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-status">Status</label>
+                    <Select
+                        id="content-status"
+                        v-model="form.status"
+                        :options="[
+                            { label: 'Na fila', value: 'queued' },
+                            { label: 'Em produção', value: 'in_production' },
+                            { label: 'Finalizado', value: 'finalized' },
+                            { label: 'Cancelado', value: 'cancelled' },
+                            { label: 'Pausado', value: 'paused' },
+                            { label: 'Publicado', value: 'published' },
+                        ]"
+                        option-label="label"
+                        option-value="value"
+                        fluid
+                    />
+                    <Message v-if="form.errors.status" severity="error" size="small" variant="simple">{{ form.errors.status }}</Message>
                 </div>
 
                 <div class="space-y-2">

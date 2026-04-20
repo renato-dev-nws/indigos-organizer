@@ -138,7 +138,57 @@ const openEditModal = (task) => {
     showFormModal.value = true;
 };
 
-const openViewModal = (task) => {
+const hasRelationshipDetails = (task) => {
+    if (!task?.related_type || task.related_type === 'administrative') {
+        return true;
+    }
+
+    if (task.related_type === 'content') {
+        return !!task.content?.title;
+    }
+
+    if (task.related_type === 'plan') {
+        return !!task.plan?.title;
+    }
+
+    if (task.related_type === 'event') {
+        return !!task.event?.title;
+    }
+
+    return false;
+};
+
+const loadTaskDetails = async (taskId) => {
+    if (!taskId) {
+        return null;
+    }
+
+    const response = await fetch(route('tasks.show', taskId), {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+    const payload = await response.json();
+
+    return payload?.task || null;
+};
+
+const openViewModal = async (task) => {
+    if (!task?.id) {
+        selectedTask.value = task;
+        showViewModal.value = true;
+        return;
+    }
+
+    const needsFullTask = !hasRelationshipDetails(task) || task.subtasks === undefined;
+    if (needsFullTask) {
+        const fullTask = await loadTaskDetails(task.id);
+        if (fullTask) {
+            selectedTask.value = fullTask;
+            showViewModal.value = true;
+            return;
+        }
+    }
+
     selectedTask.value = task;
     showViewModal.value = true;
 };
@@ -154,14 +204,9 @@ const openViewModalByTaskId = async (taskId) => {
         return;
     }
 
-    const response = await fetch(route('tasks.show', taskId), {
-        headers: { Accept: 'application/json' },
-        credentials: 'same-origin',
-    });
-    const payload = await response.json();
-
-    if (payload?.task) {
-        openViewModal(payload.task);
+    const task = await loadTaskDetails(taskId);
+    if (task) {
+        openViewModal(task);
     }
 };
 
@@ -768,40 +813,62 @@ const taskByUserChartData = computed(() => {
                 </div>
 
                 <div class="block space-y-3 md:hidden">
-                    <div v-for="task in paginatedTasks" :key="task.id" class="flex min-h-[240px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="mb-2 flex items-start justify-between gap-2">
-                            <button type="button" class="flex items-center gap-1 font-semibold text-left hover:underline" @click="openViewModal(task)">
-                                <iconify-icon v-if="isTaskOverdue(task)" icon="mdi:clock-alert" class="text-red-500" width="14" height="14" />
-                                <span>{{ task.title }}</span>
-                            </button>
-                            <BoPriorityTag :value="task.priority" />
-                        </div>
-                        <p class="text-xs text-slate-500">{{ relatedTypeLabels[task.related_type] || task.related_type }}</p>
-                        <div class="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                            <span>Status:</span>
-                            <BoTaskStatusTag :status="task.status" />
-                        </div>
-                        <p class="text-xs text-slate-500">Responsáveis: {{ taskAssigneeLabel(task) }}</p>
-                        <p class="text-xs text-slate-500">Agendado: <BoDateText :value="task.scheduled_for" mode="datetime" /></p>
-                        <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
-                        <div class="mt-auto flex justify-end gap-1 pt-3">
-                            <Button
-                                v-if="canShowTaskQuickAction(task)"
-                                outlined
-                                rounded
-                                size="small"
-                                :severity="quickActionMeta(task).severity"
-                                :aria-label="quickActionMeta(task).tooltip"
-                                v-tooltip.top="quickActionMeta(task).tooltip"
-                                @click="runQuickAction(task)"
-                            >
-                                <template #icon>
-                                    <iconify-icon :icon="quickActionMeta(task).icon" width="14" height="14" />
-                                </template>
-                            </Button>
-                            <Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" @click="openViewModal(task)" />
-                            <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(task)" />
-                            <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(task.id)" />
+                    <div v-for="task in paginatedTasks" :key="task.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                        <div class="grid grid-cols-5 gap-3">
+                            <div class="col-span-3 space-y-2">
+                                <button type="button" class="flex items-center gap-1 text-base font-semibold leading-5 text-left hover:underline" @click="openViewModal(task)">
+                                    <iconify-icon v-if="isTaskOverdue(task)" icon="mdi:clock-alert" class="text-red-500" width="14" height="14" />
+                                    <span>{{ task.title }}</span>
+                                </button>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Tipo</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ relatedTypeLabels[task.related_type] || task.related_type }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Status</p>
+                                    <div class="mt-1"><BoTaskStatusTag :status="task.status" /></div>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Responsáveis</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ taskAssigneeLabel(task) }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Agendado</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="task.scheduled_for" mode="datetime" /></p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Prazo</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="task.due_date" mode="date" /></p>
+                                </div>
+                            </div>
+
+                            <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                                <BoPriorityTag :value="task.priority" />
+
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    <Button
+                                        v-if="canShowTaskQuickAction(task)"
+                                        outlined
+                                        rounded
+                                        size="small"
+                                        :severity="quickActionMeta(task).severity"
+                                        :aria-label="quickActionMeta(task).tooltip"
+                                        v-tooltip.top="quickActionMeta(task).tooltip"
+                                        @click="runQuickAction(task)"
+                                    >
+                                        <template #icon>
+                                            <iconify-icon :icon="quickActionMeta(task).icon" width="14" height="14" />
+                                        </template>
+                                    </Button>
+                                    <Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" @click="openEditModal(task)" />
+                                    <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta tarefa?" :rounded="true" @confirm="removeTask(task.id)" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -623,46 +623,61 @@ const applyContentChartPeriod = () => {
         </div>
 
         <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
-            <div v-for="content in contents.data" :key="content.id" class="flex min-h-[250px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div class="mb-2 flex items-start justify-between gap-2">
-                    <h3 class="font-semibold">{{ content.title }}</h3>
-                    <BoStatusTag :value="content.status" />
-                </div>
-                <div class="mb-2 flex flex-wrap gap-1">
-                    <Tag v-for="category in content.categories || []" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
-                        <template #default>
-                            <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" />
-                        </template>
-                    </Tag>
-                </div>
-                <p class="text-xs text-slate-500">{{ content.type?.name || '-' }}</p>
-                <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="style in content.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
-                        <template #default>
-                            <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
-                        </template>
-                    </Tag>
-                </div>
-                <div class="mt-2 flex flex-wrap gap-1">
-                    <Tag v-for="platform in content.platforms" :key="platform.id" severity="secondary" class="!px-1.5 !py-0.5">
-                        <template #default>
-                            <iconify-icon :icon="platform.icon || 'mdi:play-network-outline'" width="14" height="14" />
-                        </template>
-                    </Tag>
-                </div>
-                <p class="text-xs text-slate-500">
-                    Publicação:
-                    <Tag :severity="publishMeta(content).severity" class="mx-1 !px-1.5 !py-0.5 align-middle">
-                        <template #default>
-                            <iconify-icon :icon="publishMeta(content).icon" width="12" height="12" />
-                        </template>
-                    </Tag>
-                    <BoDateText :value="publishMeta(content).value" mode="datetime" />
-                </p>
-                <div class="mt-auto flex justify-end gap-1 pt-3">
-                    <Link :href="route('contents.show', content.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                    <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                    <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(content.id)" />
+            <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="grid grid-cols-5 gap-3">
+                    <div class="col-span-3 space-y-2">
+                        <Link :href="route('contents.show', content.id)" class="block text-base font-semibold leading-5 hover:underline">{{ content.title }}</Link>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Tipo</p>
+                            <p class="text-sm text-slate-700 dark:text-slate-200">{{ content.type?.name || '-' }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Categorias</p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Tag v-for="category in content.categories || []" :key="category.id" severity="secondary" class="!px-1.5 !py-0.5">
+                                    <template #default>
+                                        <iconify-icon :icon="category.icon || 'mdi:shape-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(content.categories || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Estilos</p>
+                            <div class="mt-1 flex flex-wrap gap-1">
+                                <Tag v-for="style in content.styles || []" :key="style.id" severity="secondary" class="!px-1.5 !py-0.5">
+                                    <template #default>
+                                        <iconify-icon :icon="style.icon || 'mdi:palette-outline'" width="14" height="14" />
+                                    </template>
+                                </Tag>
+                                <span v-if="!(content.styles || []).length" class="text-xs text-slate-400">-</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Publicação</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="publishMeta(content).value" mode="datetime" /></p>
+                        </div>
+                    </div>
+
+                    <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                        <div class="flex flex-col items-end gap-1">
+                            <BoStatusTag :value="content.status" />
+                            <Tag :severity="publishMeta(content).severity" class="!px-1.5 !py-0.5">
+                                <template #default>
+                                    <iconify-icon :icon="publishMeta(content).icon" width="12" height="12" />
+                                </template>
+                            </Tag>
+                        </div>
+
+                        <div class="flex flex-wrap justify-end gap-1">
+                            <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                            <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(content.id)" />
+                        </div>
+                    </div>
                 </div>
             </div>
 

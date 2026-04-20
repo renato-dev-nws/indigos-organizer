@@ -152,19 +152,37 @@ const removeInfo = (id) => router.delete(route('shared-infos.destroy', id), { pr
 
                 <div class="space-y-3 md:hidden">
                     <div v-for="item in sharedInfos.data" :key="item.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="flex items-start justify-between gap-2">
-                            <Link :href="route('shared-infos.show', item.id)" class="font-semibold hover:underline">{{ item.title }}</Link>
-                            <span class="text-xs text-slate-500">{{ item.user?.name || '-' }}</span>
-                        </div>
-                        <div class="mt-2 flex flex-wrap gap-1">
-                            <Tag v-for="category in item.categories || []" :key="category.id" :value="category.name" severity="secondary" />
-                            <span v-if="!(item.categories || []).length" class="text-xs text-slate-400">-</span>
-                        </div>
-                        <p class="mt-1 text-xs text-slate-500">Links: {{ item.links?.length || 0 }} · Documentos: {{ item.documents?.length || 0 }}</p>
-                        <div class="mt-3 flex justify-end gap-1">
-                            <Link :href="route('shared-infos.show', item.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
-                            <Link :href="route('shared-infos.edit', item.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
-                            <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta informação?" @confirm="removeInfo(item.id)" />
+                        <div class="grid grid-cols-5 gap-3">
+                            <div class="col-span-3 space-y-2">
+                                <Link :href="route('shared-infos.show', item.id)" class="block text-base font-semibold leading-5 hover:underline">{{ item.title }}</Link>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Categorias</p>
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        <Tag v-for="category in item.categories || []" :key="category.id" :value="category.name" severity="secondary" />
+                                        <span v-if="!(item.categories || []).length" class="text-xs text-slate-400">-</span>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Autor</p>
+                                    <p class="text-sm text-slate-700 dark:text-slate-200">{{ item.user?.name || '-' }}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-[11px] uppercase tracking-wide text-slate-500">Referências</p>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">Links: {{ item.links?.length || 0 }} · Documentos: {{ item.documents?.length || 0 }}</p>
+                                </div>
+                            </div>
+
+                            <div class="col-span-2 flex flex-col items-end justify-between gap-3">
+                                <Tag severity="secondary" class="!px-1.5 !py-0.5">{{ item.categories?.length || 0 }} cat.</Tag>
+
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    <Link :href="route('shared-infos.edit', item.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
+                                    <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover esta informação?" :rounded="true" @confirm="removeInfo(item.id)" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

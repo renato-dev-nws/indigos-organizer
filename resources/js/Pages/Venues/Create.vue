@@ -4,6 +4,11 @@ import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import {
+    composePhoneWithCountryCode,
+    formatBrazilPhoneInput,
+    normalizeCountryCodeInput,
+} from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 
@@ -61,6 +66,8 @@ const hasPlacesApi = ref(mapsApiKeyConfigured);
 const manualAddressMode = ref(!mapsApiKeyConfigured);
 const autocompleteInstance = ref(null);
 const autocompleteInputEl = ref(null);
+const phoneCountryCode = ref('55');
+const whatsappCountryCode = ref('55');
 let placesScriptPromise = null;
 
 const canUseAutocomplete = computed(() => hasPlacesApi.value && !manualAddressMode.value);
@@ -276,7 +283,29 @@ watch(canUseAutocomplete, (enabled) => {
     }
 });
 
-const submit = () => form.post(route('venues.store'));
+const updatePhone = (value) => {
+    form.phone = formatBrazilPhoneInput(value);
+};
+
+const updatePhoneCountryCode = (value) => {
+    phoneCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const updateWhatsapp = (value) => {
+    form.whatsapp = formatBrazilPhoneInput(value);
+};
+
+const updateWhatsappCountryCode = (value) => {
+    whatsappCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const submit = () => form
+    .transform((data) => ({
+        ...data,
+        phone: composePhoneWithCountryCode(phoneCountryCode.value, data.phone),
+        whatsapp: composePhoneWithCountryCode(whatsappCountryCode.value, data.whatsapp),
+    }))
+    .post(route('venues.store'));
 </script>
 
 <template>
@@ -320,7 +349,16 @@ const submit = () => form.post(route('venues.store'));
 
                 <div class="space-y-2">
                     <label for="venue-phone">Telefone</label>
-                    <InputText id="venue-phone" v-model="form.phone" fluid />
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="phoneCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updatePhoneCountryCode"
+                        />
+                        <InputText id="venue-phone" :model-value="form.phone" placeholder="(11) 3456-7890" fluid @update:model-value="updatePhone" />
+                    </InputGroup>
                 </div>
 
                 <div class="space-y-2">
@@ -330,7 +368,16 @@ const submit = () => form.post(route('venues.store'));
 
                 <div class="space-y-2">
                     <label for="venue-whatsapp">WhatsApp</label>
-                    <InputText id="venue-whatsapp" v-model="form.whatsapp" fluid />
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="whatsappCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updateWhatsappCountryCode"
+                        />
+                        <InputText id="venue-whatsapp" :model-value="form.whatsapp" placeholder="(11) 98765-4321" fluid @update:model-value="updateWhatsapp" />
+                    </InputGroup>
                 </div>
 
                 <div class="space-y-2">

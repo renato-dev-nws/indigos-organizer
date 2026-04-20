@@ -1,40 +1,95 @@
 const onlyDigits = (value) => String(value || '').replace(/\D/g, '');
 
-export const normalizeBrazilPhoneDigits = (value) => {
+export const normalizeCountryCodeInput = (value, fallback = '55') => {
+    const digits = onlyDigits(value).slice(0, 3);
+    return digits || fallback;
+};
+
+export const splitPhoneByCountryCode = (value, fallbackCountryCode = '55') => {
+    const fallback = normalizeCountryCodeInput(fallbackCountryCode, '55');
     const digits = onlyDigits(value);
 
     if (!digits) {
-        return '';
+        return { countryCode: fallback, localDigits: '' };
     }
 
-    if (digits.startsWith('55')) {
-        return digits;
+    if (digits.length > 11) {
+        return {
+            countryCode: digits.slice(0, digits.length - 11) || fallback,
+            localDigits: digits.slice(-11),
+        };
     }
 
-    if (digits.length === 10 || digits.length === 11) {
-        return `55${digits}`;
-    }
-
-    return digits;
+    return {
+        countryCode: fallback,
+        localDigits: digits.slice(0, 11),
+    };
 };
 
-export const formatBrazilPhone = (value) => {
-    const digits = normalizeBrazilPhoneDigits(value);
+const toBrazilLocalDigits = (value) => {
+    const { localDigits } = splitPhoneByCountryCode(value);
+    return localDigits;
+};
+
+export const formatBrazilPhoneInput = (value) => {
+    const digits = toBrazilLocalDigits(value);
     if (!digits) {
         return '';
     }
 
-    const local = digits.startsWith('55') ? digits.slice(2) : digits;
+    const ddd = digits.slice(0, 2);
+    const subscriber = digits.slice(2);
+    const isNineDigits = digits.length > 10;
+    const splitAt = isNineDigits ? 5 : 4;
+    const firstChunk = subscriber.slice(0, splitAt);
+    const secondChunk = subscriber.slice(splitAt);
 
-    if (local.length === 11) {
-        return `+55 (${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
+    let formatted = ddd ? `(${ddd}` : '';
+    if (ddd.length === 2) {
+        formatted += ')';
+    }
+    if (firstChunk) {
+        formatted += ` ${firstChunk}`;
+    }
+    if (secondChunk) {
+        formatted += `-${secondChunk}`;
     }
 
-    if (local.length === 10) {
-        return `+55 (${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
+    return formatted;
+};
+
+export const normalizeBrazilPhoneDigits = (value) => {
+    const { countryCode, localDigits } = splitPhoneByCountryCode(value);
+    if (localDigits.length < 10) {
+        return '';
     }
 
-    return `+${digits}`;
+    return `${countryCode}${localDigits.slice(0, 11)}`;
+};
+
+export const composePhoneWithCountryCode = (countryCode, localValue, fallbackCountryCode = '55') => {
+    const code = normalizeCountryCodeInput(countryCode, fallbackCountryCode);
+    const localDigits = toBrazilLocalDigits(localValue);
+
+    if (!localDigits) {
+        return '';
+    }
+
+    return `${code}${localDigits.slice(0, 11)}`;
+};
+
+export const formatBrazilPhone = (value, options = {}) => {
+    const { countryCode, localDigits } = splitPhoneByCountryCode(value);
+    const local = formatBrazilPhoneInput(localDigits);
+    if (!local) {
+        return '';
+    }
+
+    if (options.includeCountryCode) {
+        return `+${countryCode} ${local}`;
+    }
+
+    return local;
 };
 
 export const buildWhatsAppUrl = (value) => {
