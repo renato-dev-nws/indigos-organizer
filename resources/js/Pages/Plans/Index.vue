@@ -102,7 +102,7 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
         </div>
 
         <div class="block space-y-3 md:hidden">
-            <div v-for="plan in plans.data" :key="plan.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div v-for="plan in plans.data" :key="plan.id" class="flex min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ plan.title }}</h3>
                     <BoStatusTag :value="plan.status" />
@@ -113,12 +113,20 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
                 <p class="mt-2 text-xs text-slate-500">Fases: {{ plan.phases?.length || 0 }}</p>
                 <p class="text-xs text-slate-500">Tarefas relacionadas: {{ relatedTasksCount(plan) }}</p>
                 <p class="text-xs text-slate-500">Conteúdos relacionados: {{ relatedContentsCount(plan) }}</p>
-                <div class="mt-3 flex justify-end gap-1">
+                <div class="mt-auto flex justify-end gap-1 pt-3">
                     <Link :href="route('plans.show', plan.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('plans.edit', plan.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
                     <BoConfirmButton icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover este plano?" @confirm="removePlan(plan.id)" />
                 </div>
             </div>
+
+            <Paginator
+                class="mt-4"
+                :rows="plans.per_page"
+                :total-records="plans.total"
+                :first="(plans.current_page - 1) * plans.per_page"
+                @page="paginate"
+            />
         </div>
     </div>
 </template>

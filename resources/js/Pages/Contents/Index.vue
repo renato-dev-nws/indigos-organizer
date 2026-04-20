@@ -143,6 +143,18 @@ const publishMeta = (content) => {
     };
 };
 
+const contentCalendarDate = (content) => {
+    if (!content) {
+        return null;
+    }
+
+    if (content.status === 'published' && content.published_at) {
+        return content.published_at;
+    }
+
+    return content.planned_publish_at || null;
+};
+
 const calendarColumns = computed(() => {
     const labels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Próximo domingo'];
     const now = new Date();
@@ -163,11 +175,12 @@ const calendarColumns = computed(() => {
     });
 
     for (const item of props.contents.data || []) {
-        if (!item.planned_publish_at) {
+        const calendarDate = contentCalendarDate(item);
+        if (!calendarDate) {
             continue;
         }
 
-        const date = new Date(item.planned_publish_at);
+        const date = new Date(calendarDate);
         date.setHours(0, 0, 0, 0);
 
         const diffDays = Math.round((date.getTime() - weekStart.getTime()) / 86_400_000);
@@ -180,7 +193,7 @@ const calendarColumns = computed(() => {
 });
 
 const isWeeklyColumnOpenByDefault = (column) => column.date >= todayDate.value;
-const contentWeekDate = (content) => content.planned_publish_at;
+const contentWeekDate = (content) => contentCalendarDate(content);
 
 const formatWeekDate = (value) => {
     const date = value instanceof Date ? value : new Date(value);
@@ -217,11 +230,11 @@ const fullCalendarOptions = computed(() => ({
         week: 'Semana',
     },
     events: (props.contents.data || [])
-        .filter((item) => item.planned_publish_at)
+        .filter((item) => !!contentCalendarDate(item))
         .map((item) => ({
             id: item.id,
             title: item.title,
-            start: item.planned_publish_at,
+            start: contentCalendarDate(item),
             backgroundColor: statusColors[item.status] || '#64748b',
             borderColor: statusColors[item.status] || '#64748b',
         })),
@@ -610,7 +623,7 @@ const applyContentChartPeriod = () => {
         </div>
 
         <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
-            <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div v-for="content in contents.data" :key="content.id" class="flex min-h-[250px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ content.title }}</h3>
                     <BoStatusTag :value="content.status" />
@@ -646,12 +659,20 @@ const applyContentChartPeriod = () => {
                     </Tag>
                     <BoDateText :value="publishMeta(content).value" mode="datetime" />
                 </p>
-                <div class="mt-3 flex justify-end gap-1">
+                <div class="mt-auto flex justify-end gap-1 pt-3">
                     <Link :href="route('contents.show', content.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link :href="route('contents.edit', content.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
                     <BoConfirmButton icon="pi pi-trash" severity="danger" message="Deseja remover este conteúdo?" :rounded="true" @confirm="removeContent(content.id)" />
                 </div>
             </div>
+
+            <Paginator
+                class="mt-4"
+                :rows="contents.per_page"
+                :total-records="contents.total"
+                :first="(contents.current_page - 1) * contents.per_page"
+                @page="paginate"
+            />
         </div>
 
         <div v-else-if="viewMode === 'calendar'" class="md:hidden">

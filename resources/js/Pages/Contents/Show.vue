@@ -59,6 +59,10 @@ defineProps({ content: Object });
                         <p class="text-sm text-slate-500 dark:text-slate-400">Publicação planejada</p>
                         <p class="font-semibold"><BoDateText :value="content.planned_publish_at" mode="datetime" /></p>
                     </div>
+                    <div v-if="content.status === 'published'">
+                        <p class="text-sm text-slate-500 dark:text-slate-400">Publicado em</p>
+                        <p class="font-semibold"><BoDateText :value="content.published_at" mode="datetime" /></p>
+                    </div>
                 </div>
             </template>
         </Card>

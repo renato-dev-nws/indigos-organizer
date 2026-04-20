@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { useConfirm } from 'primevue/useconfirm';
 
 const props = defineProps({
@@ -106,7 +106,7 @@ const completeTask = () => {
         acceptClass: 'p-button-sm',
         rejectClass: 'p-button-text p-button-sm',
         accept: () => {
-            router.patch(route('tasks.quick-action', props.task.id), { action: 'complete' }, { preserveScroll: true });
+            router.patch(route('tasks.quick-action', props.task.id), { action: 'complete' }, { preserveScroll: true, replace: true });
             emit('update:visible', false);
         },
     });
@@ -166,14 +166,23 @@ const completeTask = () => {
         </div>
 
         <template #footer>
-            <Button
-                v-if="task && !isCompleted"
-                label="Marcar como concluída"
-                icon="pi pi-check"
-                severity="success"
-                @click="completeTask"
-            />
-            <Button label="Fechar" outlined severity="secondary" @click="emit('update:visible', false)" />
+            <div class="flex w-full items-center justify-between gap-2">
+                <div>
+                    <Link v-if="task?.id" :href="route('tasks.edit', task.id)">
+                        <Button label="EDITAR" icon="pi pi-pencil" outlined severity="secondary" />
+                    </Link>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Button
+                        v-if="task && !isCompleted"
+                        label="Marcar como concluída"
+                        icon="pi pi-check"
+                        severity="success"
+                        @click="completeTask"
+                    />
+                    <Button label="Fechar" outlined severity="secondary" @click="emit('update:visible', false)" />
+                </div>
+            </div>
         </template>
     </Dialog>
 </template>

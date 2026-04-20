@@ -4,6 +4,7 @@ import { Link } from '@inertiajs/vue3';
 import 'iconify-icon';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import { buildWhatsAppUrl, formatBrazilPhone } from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 
@@ -63,6 +64,9 @@ const mapEmbedUrl = computed(() => {
 
     return '';
 });
+
+const whatsappUrl = computed(() => buildWhatsAppUrl(props.venue?.whatsapp));
+const phoneLabel = (value) => formatBrazilPhone(value) || '-';
 </script>
 
 <template>
@@ -145,17 +149,17 @@ const mapEmbedUrl = computed(() => {
                     <div class="grid gap-2 text-sm md:grid-cols-2">
                         <p><strong>Responsável:</strong> {{ venue.contact_name || '-' }}</p>
                         <p><strong>E-mail:</strong> {{ venue.email || '-' }}</p>
-                        <p><strong>Telefone:</strong> {{ venue.phone || '-' }}</p>
+                        <p><strong>Telefone:</strong> {{ phoneLabel(venue.phone) }}</p>
                         <p>
                             <strong>WhatsApp:</strong>
                             <a
-                                v-if="venue.whatsapp"
-                                :href="`https://wa.me/${String(venue.whatsapp).replace(/\D/g, '')}`"
+                                v-if="whatsappUrl"
+                                :href="whatsappUrl"
                                 target="_blank"
                                 rel="noopener"
                                 class="text-emerald-600 underline dark:text-emerald-400"
                             >
-                                {{ venue.whatsapp }}
+                                {{ phoneLabel(venue.whatsapp) }}
                             </a>
                             <span v-else>-</span>
                         </p>

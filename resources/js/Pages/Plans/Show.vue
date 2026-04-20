@@ -90,7 +90,7 @@ const togglePhaseCompletion = (phase, completed) => {
         router.patch(
             route('plans.phases.completion', [props.plan.id, phase.id]),
             { completed: shouldComplete },
-            { preserveScroll: true },
+            { preserveScroll: true, replace: true },
         );
     };
 

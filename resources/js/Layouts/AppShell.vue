@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -11,6 +11,7 @@ import { usePushSubscription } from './composables/usePushSubscription';
 const page = usePage();
 const toast = useToast();
 useConfirm();
+const lastFlashSignature = ref('');
 
 const {
     layoutState,
@@ -52,12 +53,21 @@ const menuItems = computed(() => [
 watch(
     () => page.props.flash,
     (flash) => {
+        const signature = `${page.url || ''}|${flash?.success || ''}|${flash?.error || ''}`;
+        if ((flash?.success || flash?.error) && signature === lastFlashSignature.value) {
+            return;
+        }
+
         if (flash?.success) {
             toast.add({ severity: 'success', summary: 'Sucesso', detail: flash.success, life: 3500 });
         }
 
         if (flash?.error) {
             toast.add({ severity: 'error', summary: 'Erro', detail: flash.error, life: 4500 });
+        }
+
+        if (flash?.success || flash?.error) {
+            lastFlashSignature.value = signature;
         }
     },
     { immediate: true, deep: true },
@@ -92,6 +102,10 @@ watch(
                     <slot />
                 </div>
             </main>
+
+            <footer class="border-t border-slate-200/70 px-4 py-3 text-center text-xs text-slate-500 dark:border-slate-800/70 dark:text-slate-400 md:px-6">
+                <p>Indigos Organizer - For Creatives</p>
+            </footer>
         </div>
     </div>
 </template>

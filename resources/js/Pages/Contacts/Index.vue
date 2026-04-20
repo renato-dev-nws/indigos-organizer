@@ -7,6 +7,7 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 import ContactFormModal from '@/Components/contacts/ContactFormModal.vue';
+import { buildWhatsAppUrl, formatBrazilPhone } from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 
@@ -111,6 +112,9 @@ const removeContact = (contactId) => router.delete(route('contacts.destroy', con
 const refreshContacts = () => {
     router.reload({ only: ['contacts'], preserveScroll: true });
 };
+
+const whatsappUrl = (value) => buildWhatsAppUrl(value);
+const phoneLabel = (value) => formatBrazilPhone(value) || '-';
 </script>
 
 <template>
@@ -154,10 +158,12 @@ const refreshContacts = () => {
                 <div class="hidden md:block">
                     <DataTable :value="contacts.data" data-key="id" striped-rows>
                         <Column field="name" header="Nome" />
-                        <Column field="phone" header="Telefone" />
+                        <Column header="Telefone">
+                            <template #body="{ data }">{{ phoneLabel(data.phone) }}</template>
+                        </Column>
                         <Column field="whatsapp" header="WhatsApp">
                             <template #body="{ data }">
-                                <a v-if="data.whatsapp" :href="`https://wa.me/${String(data.whatsapp).replace(/\D/g, '')}`" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ data.whatsapp }}</a>
+                                <a v-if="whatsappUrl(data.whatsapp)" :href="whatsappUrl(data.whatsapp)" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ phoneLabel(data.whatsapp) }}</a>
                                 <span v-else>-</span>
                             </template>
                         </Column>
@@ -187,10 +193,10 @@ const refreshContacts = () => {
                 <div class="block space-y-3 md:hidden">
                     <div v-for="contact in contacts.data" :key="contact.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <h3 class="font-semibold">{{ contact.name }}</h3>
-                        <p class="mt-1 text-xs text-slate-500">Telefone: {{ contact.phone || '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Telefone: {{ phoneLabel(contact.phone) }}</p>
                         <p class="text-xs text-slate-500">
                             WhatsApp:
-                            <a v-if="contact.whatsapp" :href="`https://wa.me/${String(contact.whatsapp).replace(/\D/g, '')}`" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ contact.whatsapp }}</a>
+                            <a v-if="whatsappUrl(contact.whatsapp)" :href="whatsappUrl(contact.whatsapp)" target="_blank" rel="noopener" class="text-emerald-600 underline dark:text-emerald-400">{{ phoneLabel(contact.whatsapp) }}</a>
                             <span v-else>-</span>
                         </p>
                         <p class="text-xs text-slate-500">Email: {{ contact.email || '-' }}</p>

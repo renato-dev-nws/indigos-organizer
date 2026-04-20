@@ -1,4 +1,5 @@
 <script setup>
+import { computed, watch } from 'vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
@@ -38,6 +39,17 @@ const form = useForm({
     published_at: '',
 });
 
+const isPublishedStatus = computed(() => form.status === 'published');
+
+watch(
+    () => form.status,
+    (status) => {
+        if (status !== 'published') {
+            form.published_at = '';
+        }
+    },
+);
+
 const submit = () => form.post(route('contents.store'));
 
 const addLink = () => {
@@ -69,16 +81,6 @@ const removeLink = (index) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="content-idea">Ideia de origem</label>
-                    <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
-                </div>
-
-                <div class="space-y-2">
-                    <label for="content-plan">Planejamento</label>
-                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
-                </div>
-
-                <div class="space-y-2">
                     <label for="content-status">Status</label>
                     <Select
                         id="content-status"
@@ -99,16 +101,13 @@ const removeLink = (index) => {
                 </div>
 
                 <div class="space-y-2">
-                    <label for="content-platforms">Plataformas</label>
-                    <MultiSelect
-                        id="content-platforms"
-                        v-model="form.content_platform_ids"
-                        :options="platforms"
-                        option-label="name"
-                        option-value="id"
-                        placeholder="Selecionar plataformas"
-                        fluid
-                    />
+                    <label for="content-idea">Ideia de origem</label>
+                    <Select id="content-idea" v-model="form.idea_id" :options="ideas" option-label="title" option-value="id" show-clear fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-plan">Planejamento</label>
+                    <Select id="content-plan" v-model="form.plan_id" :options="plans" option-label="title" option-value="id" show-clear fluid />
                 </div>
 
                 <div class="space-y-2">
@@ -124,7 +123,22 @@ const removeLink = (index) => {
                         :options="categories"
                         option-label="name"
                         option-value="id"
+                        display="chip"
                         placeholder="Selecionar categorias"
+                        fluid
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="content-platforms">Plataformas</label>
+                    <MultiSelect
+                        id="content-platforms"
+                        v-model="form.content_platform_ids"
+                        :options="platforms"
+                        option-label="name"
+                        option-value="id"
+                        display="chip"
+                        placeholder="Selecionar plataformas"
                         fluid
                     />
                 </div>
@@ -136,13 +150,13 @@ const removeLink = (index) => {
 
                 <div class="space-y-2">
                     <label for="planned-publish">Publicação planejada</label>
-                    <DatePicker id="planned-publish" v-model="form.planned_publish_at" show-time hour-format="24" fluid />
+                    <DatePicker id="planned-publish" v-model="form.planned_publish_at" date-format="dd/mm/yy" show-time hour-format="24" fluid />
                     <Message v-if="form.errors.planned_publish_at" severity="error" size="small" variant="simple">{{ form.errors.planned_publish_at }}</Message>
                 </div>
 
                 <div class="space-y-2">
                     <label for="published-at">Publicado em</label>
-                    <DatePicker id="published-at" v-model="form.published_at" show-time hour-format="24" fluid />
+                    <DatePicker id="published-at" v-model="form.published_at" date-format="dd/mm/yy" show-time hour-format="24" :disabled="!isPublishedStatus" fluid />
                     <Message v-if="form.errors.published_at" severity="error" size="small" variant="simple">{{ form.errors.published_at }}</Message>
                 </div>
 

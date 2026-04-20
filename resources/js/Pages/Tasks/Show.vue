@@ -111,7 +111,7 @@ const completeTask = () => {
         acceptClass: 'p-button-sm',
         rejectClass: 'p-button-text p-button-sm',
         accept: () => {
-            router.patch(route('tasks.quick-action', props.task.id), { action: 'complete' }, { preserveScroll: true });
+            router.patch(route('tasks.quick-action', props.task.id), { action: 'complete' }, { preserveScroll: true, replace: true });
         },
     });
 };
@@ -187,17 +187,24 @@ const completeTask = () => {
                 </template>
             </Card>
 
-            <div class="flex justify-end gap-2">
-                <Button
-                    v-if="!isCompleted"
-                    label="Marcar como concluída"
-                    icon="pi pi-check"
-                    severity="success"
-                    @click="completeTask"
-                />
-                <Link :href="route('tasks.index')">
-                    <Button type="button" label="Fechar" outlined severity="secondary" />
-                </Link>
+            <div class="flex items-center justify-between gap-2">
+                <div>
+                    <Link :href="route('tasks.edit', task.id)">
+                        <Button type="button" label="EDITAR" icon="pi pi-pencil" outlined severity="secondary" />
+                    </Link>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Button
+                        v-if="!isCompleted"
+                        label="Marcar como concluída"
+                        icon="pi pi-check"
+                        severity="success"
+                        @click="completeTask"
+                    />
+                    <Link :href="route('tasks.index')">
+                        <Button type="button" label="Fechar" outlined severity="secondary" />
+                    </Link>
+                </div>
             </div>
         </div>
     </div>

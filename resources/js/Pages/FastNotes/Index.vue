@@ -380,10 +380,6 @@ const noteSummary = (note) => {
                 <Message v-if="form.hasErrors" severity="error" size="small" variant="simple">
                     {{ Object.values(form.errors)[0] }}
                 </Message>
-
-                <p v-if="editingNote" class="text-xs text-slate-500">
-                    Tipo: {{ relatedTypeLabel(form.related_type) }}
-                </p>
             </form>
         </Dialog>
     </div>

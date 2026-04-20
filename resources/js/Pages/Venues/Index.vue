@@ -8,6 +8,7 @@ import BoFilterBar from '@/Components/ui/BoFilterBar.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoDataTableEmpty from '@/Components/ui/BoDataTableEmpty.vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
+import { buildWhatsAppUrl, formatBrazilPhone } from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({ venues: Object, sizes: Array, types: Array, categories: Array, styles: Array, filters: Object, mapPoints: Array, venueCharts: Object });
@@ -169,6 +170,9 @@ const statusColors = {
     negotiating: '#f59e0b',
     open_doors: '#16a34a',
 };
+
+const whatsappUrl = (value) => buildWhatsAppUrl(value);
+const phoneLabel = (value) => formatBrazilPhone(value) || value || '-';
 
 const selectedVenueChart = ref('types');
 const chartOptions = {
@@ -416,19 +420,21 @@ const buildInfoWindowContent = (point) => {
     const icon = sanitizeIcon(point?.type?.icon);
     const color = sanitizeColor(point?.type?.color);
     const typeName = point?.type?.name || 'Tipo não informado';
+    const cityState = [point?.city, point?.state].filter(Boolean).join('/') || 'Cidade/UF não informado';
     const address = point?.address || 'Endereço não informado';
+    const compactAddress = address.length > 96 ? `${address.slice(0, 96)}...` : address;
 
     return `
-        <div style="min-width:260px;padding:4px 2px;font-family:inherit;">
-            <p style="margin:0 0 8px 0;font-size:14px;font-weight:700;color:#0f172a;">${escapeHtml(point?.name || '')}</p>
+        <div style="min-width:220px;max-width:260px;max-height:190px;overflow:auto;padding:4px 2px;font-family:inherit;">
+            <p style="margin:0 0 8px 0;font-size:13px;font-weight:700;color:#0f172a;line-height:1.25;">${escapeHtml(point?.name || '')}</p>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;color:#334155;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;background:${escapeHtml(color)};color:#fff;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:9999px;background:${escapeHtml(color)};color:#fff;flex-shrink:0;">
                     <img src="${toIconSvgUrl(icon)}" alt="ícone" width="18" height="18" style="display:block;" />
                 </span>
-                <span style="font-size:13px;">${escapeHtml(typeName)}</span>
+                <span style="font-size:12px;line-height:1.2;">${escapeHtml(typeName)}</span>
             </div>
-            <p style="margin:0 0 6px 0;font-size:12px;color:#475569;">Avaliação: ${escapeHtml(formatRating(point?.rating))}</p>
-            <p style="margin:0;font-size:12px;color:#64748b;line-height:1.4;">${escapeHtml(address)}</p>
+            <p style="margin:0 0 6px 0;font-size:11px;color:#475569;">${escapeHtml(cityState)}</p>
+            <p style="margin:0;font-size:11px;color:#64748b;line-height:1.35;">${escapeHtml(compactAddress)}</p>
         </div>
     `;
 };
@@ -983,13 +989,13 @@ onUnmounted(() => {
                     <Column header="WhatsApp">
                         <template #body="{ data }">
                             <a
-                                v-if="data.whatsapp"
-                                :href="`https://wa.me/${String(data.whatsapp).replace(/\D/g, '')}`"
+                                v-if="whatsappUrl(data.whatsapp)"
+                                :href="whatsappUrl(data.whatsapp)"
                                 target="_blank"
                                 rel="noopener"
                                 class="text-emerald-600 underline dark:text-emerald-400"
                             >
-                                {{ data.whatsapp }}
+                                {{ phoneLabel(data.whatsapp) }}
                             </a>
                             <span v-else>-</span>
                         </template>
@@ -1053,13 +1059,13 @@ onUnmounted(() => {
                             <p class="text-xs text-slate-500">
                                 WhatsApp:
                                 <a
-                                    v-if="venue.whatsapp"
-                                    :href="`https://wa.me/${String(venue.whatsapp).replace(/\D/g, '')}`"
+                                    v-if="whatsappUrl(venue.whatsapp)"
+                                    :href="whatsappUrl(venue.whatsapp)"
                                     target="_blank"
                                     rel="noopener"
                                     class="text-emerald-600 underline dark:text-emerald-400"
                                 >
-                                    {{ venue.whatsapp }}
+                                    {{ phoneLabel(venue.whatsapp) }}
                                 </a>
                                 <span v-else>-</span>
                             </p>

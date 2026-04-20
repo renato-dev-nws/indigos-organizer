@@ -33,12 +33,14 @@ const attendanceLabels = {
     audience: 'Público',
 };
 
+const toBoolean = (value) => value === true || value === 1 || value === '1' || value === 'true';
+
 const localFilters = reactive({
     event_type_id: props.filters?.event_type_id ?? null,
     attendance_mode: props.filters?.attendance_mode ?? 'all',
     event_mode: props.filters?.event_mode ?? null,
     search: props.filters?.search ?? '',
-    show_past: !!props.filters?.show_past,
+    show_past: toBoolean(props.filters?.show_past),
 });
 
 const syncLocalFiltersFromProps = () => {
@@ -46,7 +48,7 @@ const syncLocalFiltersFromProps = () => {
     localFilters.attendance_mode = props.filters?.attendance_mode ?? 'all';
     localFilters.event_mode = props.filters?.event_mode ?? null;
     localFilters.search = props.filters?.search ?? '';
-    localFilters.show_past = !!props.filters?.show_past;
+    localFilters.show_past = toBoolean(props.filters?.show_past);
 };
 
 watch(() => props.filters, syncLocalFiltersFromProps, { deep: true });
@@ -68,14 +70,19 @@ const filterChips = computed(() => {
     return chips;
 });
 
-const submitFilters = () => {
-    const payload = {
-        ...localFilters,
-        attendance_mode: localFilters.attendance_mode === 'all' ? null : localFilters.attendance_mode,
-    };
+const buildQueryPayload = (page = null) => ({
+    event_type_id: localFilters.event_type_id,
+    attendance_mode: localFilters.attendance_mode === 'all' ? null : localFilters.attendance_mode,
+    event_mode: localFilters.event_mode,
+    search: localFilters.search || null,
+    show_past: localFilters.show_past ? 1 : null,
+    page,
+});
 
-    router.get(route('events.index'), payload, { preserveState: true, preserveScroll: true, replace: true });
+const submitFilters = () => {
+    router.get(route('events.index'), buildQueryPayload(), { preserveState: true, preserveScroll: true, replace: true });
 };
+
 const resetFilters = () => {
     localFilters.event_type_id = null;
     localFilters.attendance_mode = 'all';
@@ -84,6 +91,7 @@ const resetFilters = () => {
     localFilters.show_past = false;
     submitFilters();
 };
+
 const removeChip = (key) => {
     if (key === 'search') {
         localFilters.search = '';
@@ -94,12 +102,11 @@ const removeChip = (key) => {
     }
     submitFilters();
 };
+
 const cancelFilters = () => syncLocalFiltersFromProps();
-const paginate = (event) => router.get(route('events.index'), {
-    ...localFilters,
-    attendance_mode: localFilters.attendance_mode === 'all' ? null : localFilters.attendance_mode,
-    page: event.page + 1,
-}, { preserveState: true, preserveScroll: true, replace: true });
+
+const paginate = (event) => router.get(route('events.index'), buildQueryPayload(event.page + 1), { preserveState: true, preserveScroll: true, replace: true });
+
 const removeEvent = (id) => router.delete(route('events.destroy', id), { preserveScroll: true });
 
 const setAttendanceFilter = (value) => {

@@ -223,7 +223,7 @@ const runQuickAction = (task) => {
         acceptClass: 'p-button-sm',
         rejectClass: 'p-button-text p-button-sm',
         accept: () => {
-            router.patch(route('tasks.quick-action', task.id), { action: meta.action }, { preserveScroll: true });
+            router.patch(route('tasks.quick-action', task.id), { action: meta.action }, { preserveScroll: true, replace: true });
         },
     });
 };
@@ -275,6 +275,7 @@ const onKanbanChange = (statusId, event) => {
         { task_status_id: statusId },
         {
             preserveScroll: true,
+            replace: true,
             onError: () => {
                 moved.task_status_id = previousStatusId;
             },
@@ -767,7 +768,7 @@ const taskByUserChartData = computed(() => {
                 </div>
 
                 <div class="block space-y-3 md:hidden">
-                    <div v-for="task in paginatedTasks" :key="task.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div v-for="task in paginatedTasks" :key="task.id" class="flex min-h-[240px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <div class="mb-2 flex items-start justify-between gap-2">
                             <button type="button" class="flex items-center gap-1 font-semibold text-left hover:underline" @click="openViewModal(task)">
                                 <iconify-icon v-if="isTaskOverdue(task)" icon="mdi:clock-alert" class="text-red-500" width="14" height="14" />
@@ -783,7 +784,7 @@ const taskByUserChartData = computed(() => {
                         <p class="text-xs text-slate-500">Responsáveis: {{ taskAssigneeLabel(task) }}</p>
                         <p class="text-xs text-slate-500">Agendado: <BoDateText :value="task.scheduled_for" mode="datetime" /></p>
                         <p class="text-xs text-slate-500">Prazo: <BoDateText :value="task.due_date" mode="date" /></p>
-                        <div class="mt-3 flex justify-end gap-1">
+                        <div class="mt-auto flex justify-end gap-1 pt-3">
                             <Button
                                 v-if="canShowTaskQuickAction(task)"
                                 outlined

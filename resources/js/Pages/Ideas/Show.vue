@@ -24,8 +24,16 @@ const canVote = computed(() => {
 
 const isCreator = computed(() => page.props.auth?.user?.id === props.idea.user_id);
 
+const voteLabels = {
+    on_table: 'Na mesa',
+    in_drawer: 'Na gaveta',
+    trash: 'No lixo',
+};
+
+const voteLabel = (value) => voteLabels[value] || value || '-';
+
 const vote = (value) => {
-    router.post(route('ideas.vote', props.idea.id), { vote: value }, { preserveScroll: true });
+    router.post(route('ideas.vote', props.idea.id), { vote: value }, { preserveScroll: true, replace: true });
 };
 </script>
 
@@ -82,7 +90,7 @@ const vote = (value) => {
                     <Button label="Na gaveta" severity="secondary" @click="vote('in_drawer')" />
                     <Button label="No lixo" severity="danger" @click="vote('trash')" />
                 </div>
-                <p v-if="userVote" class="mt-3 text-sm text-slate-500">Seu voto atual: {{ userVote.vote }}</p>
+                <p v-if="userVote" class="mt-3 text-sm text-slate-500">Seu voto atual: {{ voteLabel(userVote.vote) }}</p>
             </template>
         </Card>
 
@@ -108,7 +116,9 @@ const vote = (value) => {
                     <Column header="Usuário">
                         <template #body="{ data }">{{ data.user?.name || '-' }}</template>
                     </Column>
-                    <Column field="vote" header="Voto" />
+                    <Column header="Voto">
+                        <template #body="{ data }">{{ voteLabel(data.vote) }}</template>
+                    </Column>
                 </DataTable>
             </template>
         </Card>

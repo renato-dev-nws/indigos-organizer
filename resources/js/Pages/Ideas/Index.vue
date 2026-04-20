@@ -143,6 +143,7 @@ const onKanbanChange = (status, event) => {
         { status },
         {
             preserveScroll: true,
+            replace: true,
             onError: () => {
                 moved.status = previousStatus;
             },
@@ -290,7 +291,7 @@ const ideaCategoriesForDisplay = (idea) => {
         </div>
 
         <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
-            <div v-for="idea in ideas.data" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div v-for="idea in ideas.data" :key="idea.id" class="flex min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ idea.title }}</h3>
                     <BoStatusTag :value="idea.status" />
@@ -312,12 +313,20 @@ const ideaCategoriesForDisplay = (idea) => {
                 </div>
                 <p class="mt-1 text-xs text-slate-500">{{ statusLabels[idea.status] }}</p>
                 <p class="text-xs text-slate-500">Atualizado em: <BoDateText :value="idea.updated_at" mode="datetime" /></p>
-                <div class="mt-3 flex justify-end gap-1">
+                <div class="mt-auto flex justify-end gap-1 pt-3">
                     <Link :href="route('ideas.show', idea.id)"><Button icon="pi pi-eye" size="small" outlined rounded severity="secondary" /></Link>
                     <Link v-if="idea.can_edit" :href="route('ideas.edit', idea.id)"><Button icon="pi pi-pencil" size="small" outlined rounded severity="secondary" /></Link>
                     <BoConfirmButton v-if="idea.can_delete" icon="pi pi-trash" severity="danger" :rounded="true" message="Deseja remover esta ideia?" @confirm="removeIdea(idea.id)" />
                 </div>
             </div>
+
+            <Paginator
+                class="mt-4"
+                :rows="ideas.per_page"
+                :total-records="ideas.total"
+                :first="(ideas.current_page - 1) * ideas.per_page"
+                @page="paginate"
+            />
         </div>
 
         <div v-if="viewMode === 'kanban'" class="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-5">
