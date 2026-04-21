@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             'Database\\Seeders\\ContentPlatformSeeder',
             'Database\\Seeders\\VenueTaxonomySeeder',
             'Database\\Seeders\\TaskStatusSeeder',
+            'Database\\Seeders\\SystemModuleSettingsSeeder',
             'Database\\Seeders\\EventTypeSeeder',
             'Database\\Seeders\\SharedInfoCategorySeeder',
             'Database\\Seeders\\DemoDataSeeder',

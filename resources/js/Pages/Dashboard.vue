@@ -6,6 +6,7 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import BoStatusTag from '@/Components/ui/BoStatusTag.vue';
 import BoTaskStatusTag from '@/Components/ui/BoTaskStatusTag.vue';
 import BoDateText from '@/Components/ui/BoDateText.vue';
+import { useModuleTheme } from '@/Composables/useModuleTheme';
 
 defineOptions({ layout: AppLayout });
 const props = defineProps({
@@ -19,6 +20,7 @@ const props = defineProps({
     weeklyProgramItems: Array,
 });
 const page = usePage();
+const { getModuleColorHex } = useModuleTheme();
 const programFilter = ref('all');
 const weeklyProgramPage = ref(0);
 
@@ -29,9 +31,9 @@ const vote = (ideaId, voteValue) => {
 const dashboardCards = computed(() => [
     {
         key: 'tasks',
+        moduleKey: 'tasks',
         title: 'Tarefas',
         icon: 'mdi:checkbox-multiple-outline',
-        colors: 'bg-indigo-300 dark:bg-indigo-500',
         value: props.summary?.tasksTotal || 0,
         subItems: [
             { label: 'Agendadas', value: props.summary?.tasksScheduled || 0, href: route('tasks.index', { scheduled_only: 1 }) },
@@ -42,9 +44,9 @@ const dashboardCards = computed(() => [
     },
     {
         key: 'contents',
+        moduleKey: 'contents',
         title: 'Conteúdos',
         icon: 'mdi:film-reel',
-        colors: 'bg-purple-300 dark:bg-purple-600',
         value: props.summary?.contentsTotal || 0,
         subItems: [
             { label: 'Na fila', value: props.summary?.contentsQueued || 0, href: route('contents.index', { status: 'queued' }) },
@@ -55,9 +57,9 @@ const dashboardCards = computed(() => [
     },
     {
         key: 'ideas',
+        moduleKey: 'ideas',
         title: 'Ideias',
         icon: 'mdi:lightbulb-multiple-outline',
-        colors: 'bg-violet-300 dark:bg-violet-600',
         value: props.summary?.ideasTotal || 0,
         subItems: [
             { label: 'Suas ideias', value: props.summary?.ideasMine || 0, href: route('ideas.index', { mine: 1 }) },
@@ -242,14 +244,14 @@ const eventPresenceLabel = (mode) => mode === 'participant' ? 'Participante' : '
 
 const programItemAccentColor = (item) => {
     if (item.kind === 'task') {
-        return '#6366f1';
+        return getModuleColorHex('tasks', 'indigo-500');
     }
 
     if (item.kind === 'content') {
-        return '#a855f7';
+        return getModuleColorHex('contents', 'purple-500');
     }
 
-    return '#f97316';
+    return getModuleColorHex('events', 'orange-500');
 };
 
 const formatWeekDate = (value) => {
@@ -460,6 +462,15 @@ const visibleIndicators = computed(() =>
     }))
 );
 
+const dashboardSectionTitleColor = (moduleKey, fallback) => ({ color: getModuleColorHex(moduleKey, fallback) });
+
+const dashboardCardAccent = (moduleKey, fallback = 'slate-500') => ({ borderLeftColor: getModuleColorHex(moduleKey, fallback) });
+
+const dashboardCardBadgeStyle = (moduleKey, fallback = 'slate-500') => ({
+    backgroundColor: getModuleColorHex(moduleKey, fallback),
+    color: '#ffffff',
+});
+
 const goWeeklyProgramToIndicator = (index) => {
     weeklyProgramPage.value = Math.min(index, totalDays.value - 1);
 };
@@ -476,9 +487,9 @@ const goWeeklyProgramToIndicator = (index) => {
         </div>
 
         <div class="hidden gap-3 md:grid md:grid-cols-3">
-            <Card v-for="card in dashboardCards" :key="card.key" class="h-full">
+            <Card v-for="card in dashboardCards" :key="card.key" class="h-full border-l-4" :style="dashboardCardAccent(card.moduleKey)">
                 <template #content>
-                    <p class="text-xs font-bold uppercase tracking-wide rounded-full p-1" :class="card.colors">
+                    <p class="text-xs font-bold uppercase tracking-wide rounded-full p-1" :style="dashboardCardBadgeStyle(card.moduleKey)">
                         <iconify-icon :icon="card.icon" class="mx-2 -mb-[0.1rem]" />
                         {{ card.title }}
                     </p>
@@ -486,7 +497,13 @@ const goWeeklyProgramToIndicator = (index) => {
                         {{ card.value }}
                     </p>
                     <div class="mt-3 grid grid-cols-2 gap-2">
-                        <Link v-for="item in card.subItems" :key="item.label" :href="item.href" class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 border border-indigo-500 transition hover:bg-slate-200/80 dark:hover:bg-slate-700/70">
+                        <Link
+                            v-for="item in card.subItems"
+                            :key="item.label"
+                            :href="item.href"
+                            class="rounded-lg bg-slate-100/80 p-2 text-xs dark:bg-slate-800/70 border transition hover:bg-slate-200/80 dark:hover:bg-slate-700/70"
+                            :style="{ borderColor: getModuleColorHex(card.moduleKey, 'slate-500') }"
+                        >
                             <p class="text-slate-500 dark:text-slate-300">{{ item.label }}</p>
                             <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">{{ item.value }}</p>
                         </Link>
@@ -498,9 +515,9 @@ const goWeeklyProgramToIndicator = (index) => {
         <div class="md:hidden">
             <Carousel :value="dashboardCards" :num-visible="1" :num-scroll="1" :show-indicators="true" :show-navigators="false" circular>
                 <template #item="{ data }">
-                    <Card>
+                    <Card class="border-l-4" :style="dashboardCardAccent(data.moduleKey)">
                         <template #content>
-                            <p class="text-xs uppercase tracking-wide rounded-full p-1" :class="data.colors">
+                            <p class="text-xs uppercase tracking-wide rounded-full p-1" :style="dashboardCardBadgeStyle(data.moduleKey)">
                                 <iconify-icon :icon="data.icon" class="mx-2 -mb-[0.1rem]" />
                                 {{ data.title }}
                             </p>
@@ -795,7 +812,7 @@ const goWeeklyProgramToIndicator = (index) => {
         <div class="hidden gap-4 xl:grid xl:grid-cols-2">
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-lg text-orange-700 dark:text-orange-300 font-semibold">
+                    <h3 class="mb-3 text-lg font-semibold" :style="dashboardSectionTitleColor('tasks', 'indigo-500')">
                         <iconify-icon icon="mdi:format-list-checks" class="me-1 -mb-[0.2rem]" />
                         Próximas Tarefas
                     </h3>
@@ -832,7 +849,7 @@ const goWeeklyProgramToIndicator = (index) => {
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-lg text-blue-700 dark:text-blue-300 font-semibold">
+                    <h3 class="mb-3 text-lg font-semibold" :style="dashboardSectionTitleColor('contents', 'purple-500')">
                         <iconify-icon icon="mdi:movie-open-star" class="me-1 -mb-[0.2rem]" />
                         Próximos Conteúdos
                     </h3>
@@ -861,7 +878,7 @@ const goWeeklyProgramToIndicator = (index) => {
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-lg text-emerald-700 dark:text-emerald-300 font-semibold">
+                    <h3 class="mb-3 text-lg font-semibold" :style="dashboardSectionTitleColor('events', 'orange-500')">
                         <iconify-icon icon="mdi:event-clock" class="me-1 -mb-[0.2rem]" />
                         Próximos eventos
                     </h3>
@@ -900,7 +917,7 @@ const goWeeklyProgramToIndicator = (index) => {
 
             <Card>
                 <template #content>
-                    <h3 class="mb-3 text-lg text-blue-700 dark:text-blue-300 font-semibold">
+                    <h3 class="mb-3 text-lg font-semibold" :style="dashboardSectionTitleColor('ideas', 'violet-500')">
                         <iconify-icon icon="mdi:vote" class="me-1 -mb-[0.2rem]" />
                         Votação
                     </h3>

@@ -94,6 +94,7 @@ defineProps({ content: Object });
                 <template #content>
                     <DataTable :value="content.files" data-key="id" size="small">
                         <Column field="original_name" header="Arquivo" />
+                        <Column field="storage_label" header="Local" />
                         <Column field="mime_type" header="MIME" />
                         <Column field="size" header="Tamanho" />
                         <Column header="Ações" class="w-24">

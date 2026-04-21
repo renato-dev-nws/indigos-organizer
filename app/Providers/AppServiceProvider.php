@@ -10,8 +10,16 @@ use App\Observers\ContentObserver;
 use App\Observers\IdeaObserver;
 use App\Observers\PlanObserver;
 use App\Observers\TaskObserver;
+use Google\Client as GoogleClient;
+use Google\Service\Drive as GoogleDriveService;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use League\Flysystem\Filesystem;
+use Masbug\Flysystem\GoogleDriveAdapter;
+use Spatie\Dropbox\Client as DropboxClient;
+use Spatie\FlysystemDropbox\DropboxAdapter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +36,40 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Storage::extend('google', function ($app, $config) {
+            $client = new GoogleClient();
+            $client->setClientId($config['clientId'] ?? null);
+            $client->setClientSecret($config['clientSecret'] ?? null);
+
+            if (! empty($config['refreshToken'] ?? null)) {
+                $client->refreshToken($config['refreshToken']);
+            }
+
+            $service = new GoogleDriveService($client);
+
+            $options = [];
+            if (! empty($config['teamDriveId'] ?? null)) {
+                $options['teamDriveId'] = $config['teamDriveId'];
+            }
+            if (! empty($config['sharedFolderId'] ?? null)) {
+                $options['sharedFolderId'] = $config['sharedFolderId'];
+            }
+
+            $adapter = new GoogleDriveAdapter($service, $config['folder'] ?? '/', $options);
+            $driver = new Filesystem($adapter, $config);
+
+            return new FilesystemAdapter($driver, $adapter, $config);
+        });
+
+        Storage::extend('dropbox', function ($app, $config) {
+            $token = (string) ($config['authorizationToken'] ?? '');
+            $client = new DropboxClient($token);
+            $adapter = new DropboxAdapter($client);
+            $driver = new Filesystem($adapter, $config);
+
+            return new FilesystemAdapter($driver, $adapter, $config);
+        });
+
         Content::observe(ContentObserver::class);
         Plan::observe(PlanObserver::class);
         Task::observe(TaskObserver::class);

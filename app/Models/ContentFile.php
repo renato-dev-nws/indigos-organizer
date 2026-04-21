@@ -14,9 +14,9 @@ class ContentFile extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['content_id', 'original_name', 'path', 'mime_type', 'size'];
+    protected $fillable = ['content_id', 'storage_source', 'original_name', 'path', 'external_url', 'mime_type', 'size'];
 
-    protected $appends = ['url'];
+    protected $appends = ['url', 'storage_label'];
 
     public function content(): BelongsTo
     {
@@ -25,10 +25,27 @@ class ContentFile extends Model
 
     public function getUrlAttribute(): ?string
     {
+        if (filled($this->external_url)) {
+            return $this->external_url;
+        }
+
         if (blank($this->path)) {
             return null;
         }
 
+        if ($this->storage_source !== 'local') {
+            return route('contents.files.open', [$this->content_id, $this->id]);
+        }
+
         return asset('storage/'.$this->path);
+    }
+
+    public function getStorageLabelAttribute(): string
+    {
+        return match ($this->storage_source) {
+            'google' => 'Drive',
+            'dropbox' => 'Dropbox',
+            default => 'Local',
+        };
     }
 }

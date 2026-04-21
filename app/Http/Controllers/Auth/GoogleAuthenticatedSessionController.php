@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
@@ -15,6 +16,8 @@ class GoogleAuthenticatedSessionController extends Controller
 {
     public function redirect(): RedirectResponse
     {
+        Config::set('services.google.redirect', route('auth.google.callback'));
+
         /** @var RedirectResponse $response */
         $response = Socialite::driver('google')->redirect();
 
@@ -23,6 +26,8 @@ class GoogleAuthenticatedSessionController extends Controller
 
     public function callback(Request $request): RedirectResponse
     {
+        Config::set('services.google.redirect', route('auth.google.callback'));
+
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (Throwable) {

@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Models\UserCloudConnection;
+use App\Support\SystemSettingsRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\SystemSetting;
@@ -55,6 +57,15 @@ class HandleInertiaRequests extends Middleware
                 'icon_url' => ($iconPath = SystemSetting::get('icon_path'))
                     ? asset('storage/'.$iconPath)
                     : null,
+                'module_colors' => SystemSettingsRegistry::moduleColors(),
+                'cloud_integrations' => [
+                    'google' => [
+                        'configured' => $user?->cloudConnections()->where('provider', UserCloudConnection::PROVIDER_GOOGLE)->exists() ?? false,
+                    ],
+                    'dropbox' => [
+                        'configured' => $user?->cloudConnections()->where('provider', UserCloudConnection::PROVIDER_DROPBOX)->exists() ?? false,
+                    ],
+                ],
             ],
             'vapidPublicKey' => fn () => config('webpush.vapid.public_key'),
             'unreadNotificationsCount' => fn () => $user?->unreadNotifications()->count() ?? 0,

@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { useModuleTheme } from '@/Composables/useModuleTheme';
 
 const props = defineProps({
     title: {
@@ -19,14 +20,24 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    moduleKey: {
+        type: String,
+        default: null,
+    },
 });
 
 const page = usePage();
+const { getModuleKeyForPage, getModuleColorHex } = useModuleTheme();
 const shouldShowSubtitle = computed(() => page.component === 'Dashboard' && !!props.subtitle);
+const resolvedModuleKey = computed(() => props.moduleKey || getModuleKeyForPage(page.component || ''));
+const headerBorderColor = computed(() => getModuleColorHex(resolvedModuleKey.value, 'slate-500'));
 </script>
 
 <template>
-    <div class="flex items-start justify-between gap-3 rounded-2xl bg-white/80 p-4 shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-800">
+    <div
+        class="flex items-start justify-between gap-3 rounded-2xl border-l-4 bg-white/80 p-4 shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-900/70 dark:ring-slate-800"
+        :style="{ borderLeftColor: headerBorderColor }"
+    >
         <div class="min-w-0">
             <p v-if="supratitle" class="text-sm text-slate-500 dark:text-slate-400">{{ supratitle }}</p>
             <h1 class="flex items-center gap-2 text-2xl font-bold my-1 py-0">

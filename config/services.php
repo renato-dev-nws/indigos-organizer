@@ -38,7 +38,13 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/cloud/google/callback'),
+    ],
+
+    'dropbox' => [
+        'client_id' => env('DROPBOX_CLIENT_ID'),
+        'client_secret' => env('DROPBOX_CLIENT_SECRET'),
+        'redirect' => env('DROPBOX_REDIRECT_URI', env('APP_URL').'/cloud/dropbox/callback'),
     ],
 
 ];

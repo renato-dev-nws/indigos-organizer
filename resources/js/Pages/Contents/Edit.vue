@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
+import { Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
@@ -11,6 +11,7 @@ import AppSpeechTextareaAssist from '@/Components/AppSpeechTextareaAssist.vue';
 defineOptions({ layout: AppLayout });
 
 const props = defineProps({ content: Object, platforms: Array, types: Array, categories: Array, styles: Array, ideas: Array, plans: Array, ideaCategoryIds: Array, venueStyleIds: Array });
+const page = usePage();
 
 const form = useForm({
     idea_id: props.content.idea_id,
@@ -48,21 +49,8 @@ const removeLink = (index) => {
     form.links.splice(index, 1);
 };
 
-const uploadFile = async (files) => {
-    if (!files?.length) {
-        return;
-    }
-
-    for (const file of files) {
-        router.post(
-            route('contents.files.store', props.content.id),
-            { file },
-            {
-                forceFormData: true,
-                preserveScroll: true,
-            },
-        );
-    }
+const refreshFiles = () => {
+    router.reload({ only: ['content', 'flash'], preserveScroll: true });
 };
 
 const removeFile = (fileId) => {
@@ -207,7 +195,14 @@ const goBack = () => {
             <Card>
                 <template #title>Anexos</template>
                 <template #content>
-                    <AppFileUpload :files="content.files" @upload="uploadFile" @remove="removeFile" />
+                    <AppFileUpload
+                        :files="content.files"
+                        :content-id="content.id"
+                        :store-url="route('contents.files.store', content.id)"
+                        :integration-configured="page.props.systemSettings?.cloud_integrations"
+                        @upload="refreshFiles"
+                        @remove="removeFile"
+                    />
                 </template>
             </Card>
 

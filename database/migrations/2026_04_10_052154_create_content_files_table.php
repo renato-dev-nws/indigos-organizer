@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('content_files', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('content_id')->constrained('contents')->cascadeOnDelete();
+            $table->string('storage_source', 20)->default('local');
             $table->string('original_name');
-            $table->string('path');
-            $table->string('mime_type');
-            $table->bigInteger('size');
+            $table->string('path')->nullable();
+            $table->text('external_url')->nullable();
+            $table->string('mime_type')->nullable();
+            $table->bigInteger('size')->nullable();
             $table->timestamps();
         });
     }

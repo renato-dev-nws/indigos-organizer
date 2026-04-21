@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentFileController;
+use App\Http\Controllers\CloudConnectionController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -44,7 +45,16 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('contents', ContentController::class);
     Route::post('/contents/{content}/files', [ContentFileController::class, 'store'])->name('contents.files.store');
+    Route::post('/contents/{content}/files/attach', [ContentFileController::class, 'attach'])->name('contents.files.attach');
+    Route::get('/contents/{content}/files/{file}/open', [ContentFileController::class, 'open'])->name('contents.files.open');
     Route::delete('/contents/{content}/files/{file}', [ContentFileController::class, 'destroy'])->name('contents.files.destroy');
+
+    Route::get('/cloud/{provider}/redirect', [CloudConnectionController::class, 'redirect'])->name('cloud.redirect');
+    Route::get('/cloud/{provider}/callback', [CloudConnectionController::class, 'callback'])->name('cloud.callback');
+    Route::delete('/cloud/{provider}', [CloudConnectionController::class, 'disconnect'])->name('cloud.disconnect');
+    Route::patch('/cloud/{provider}/folder', [CloudConnectionController::class, 'updateFolder'])->name('cloud.folder');
+    Route::post('/cloud/{provider}/test', [CloudConnectionController::class, 'test'])->name('cloud.test');
+    Route::get('/cloud/{provider}/browser', [CloudConnectionController::class, 'browser'])->name('cloud.browser');
 
     Route::resource('tasks', TaskController::class);
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.status');
