@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserCloudConnection;
 use App\Models\SystemSetting;
+use App\Support\CloudStorageManager;
 use App\Support\SystemSettingsRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,19 +16,8 @@ class SystemSettingController extends Controller
 {
     public function index(): Response
     {
-        $user = request()->user();
         $logoPath = SystemSetting::get('logo_path');
         $iconPath = SystemSetting::get('icon_path');
-
-        $cloudConnections = $user?->cloudConnections
-            ?->keyBy('provider')
-            ->map(fn (UserCloudConnection $connection) => [
-                'configured' => $connection->isConnected(),
-                'account_name' => $connection->account_name,
-                'account_email' => $connection->account_email,
-                'base_folder' => $connection->base_folder,
-            ])
-            ->toArray() ?? [];
 
         return Inertia::render('Settings/System', [
             'logoUrl' => $logoPath ? Storage::url($logoPath) : null,
@@ -37,8 +26,8 @@ class SystemSettingController extends Controller
             'moduleColors' => SystemSettingsRegistry::moduleColors(),
             'colorPalette' => SystemSettingsRegistry::tailwindColorPalette(),
             'cloudIntegrations' => [
-                'google' => $cloudConnections['google'] ?? ['configured' => false, 'base_folder' => 'ERP_Arquivos'],
-                'dropbox' => $cloudConnections['dropbox'] ?? ['configured' => false, 'base_folder' => 'ERP_Arquivos'],
+                'google' => CloudStorageManager::integrationStatus('google'),
+                'dropbox' => CloudStorageManager::integrationStatus('dropbox'),
             ],
         ]);
     }

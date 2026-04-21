@@ -119,9 +119,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(FastNote::class);
     }
-
-    public function cloudConnections(): HasMany
-    {
-        return $this->hasMany(UserCloudConnection::class);
-    }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use App\Models\UserCloudConnection;
+use App\Support\CloudStorageManager;
 use App\Support\SystemSettingsRegistry;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -59,12 +59,8 @@ class HandleInertiaRequests extends Middleware
                     : null,
                 'module_colors' => SystemSettingsRegistry::moduleColors(),
                 'cloud_integrations' => [
-                    'google' => [
-                        'configured' => $user?->cloudConnections()->where('provider', UserCloudConnection::PROVIDER_GOOGLE)->exists() ?? false,
-                    ],
-                    'dropbox' => [
-                        'configured' => $user?->cloudConnections()->where('provider', UserCloudConnection::PROVIDER_DROPBOX)->exists() ?? false,
-                    ],
+                    'google' => CloudStorageManager::integrationStatus('google'),
+                    'dropbox' => CloudStorageManager::integrationStatus('dropbox'),
                 ],
             ],
             'vapidPublicKey' => fn () => config('webpush.vapid.public_key'),

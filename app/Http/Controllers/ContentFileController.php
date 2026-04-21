@@ -39,15 +39,14 @@ class ContentFileController extends Controller
             return back()->with('success', 'Arquivo enviado com sucesso.');
         }
 
-        $connection = $request->user()->cloudConnections()->where('provider', $source)->first();
-        if (! $connection || ! $connection->isConnected()) {
+        if (! CloudStorageManager::isConfigured($source)) {
             return back()->with('error', 'Integração não configurada. Complete as credenciais nas configurações do sistema.');
         }
 
-        CloudStorageManager::configureDisk($connection);
+        CloudStorageManager::configureDisk($source);
 
         if ($uploadedFile) {
-            $path = CloudStorageManager::buildContentUploadPath($connection, $content, $uploadedFile->getClientOriginalName());
+            $path = CloudStorageManager::buildContentUploadPath($content, $uploadedFile->getClientOriginalName());
 
             try {
                 Storage::disk($source)->put($path, file_get_contents($uploadedFile->getRealPath()));
@@ -80,9 +79,8 @@ class ContentFileController extends Controller
     public function attach(StoreContentFileRequest $request, Content $content): RedirectResponse
     {
         $source = (string) $request->input('storage_source');
-        $connection = $request->user()->cloudConnections()->where('provider', $source)->first();
 
-        if (! $connection || ! $connection->isConnected()) {
+        if (! CloudStorageManager::isConfigured($source)) {
             return back()->with('error', 'Integração não configurada.');
         }
 
@@ -105,12 +103,11 @@ class ContentFileController extends Controller
             return redirect($file->url);
         }
 
-        $connection = $request->user()->cloudConnections()->where('provider', $file->storage_source)->first();
-        if (! $connection || ! $connection->isConnected()) {
+        if (! CloudStorageManager::isConfigured($file->storage_source)) {
             return back()->with('error', 'Integração não configurada para abrir este arquivo.');
         }
 
-        CloudStorageManager::configureDisk($connection);
+        CloudStorageManager::configureDisk($file->storage_source);
 
         $stream = Storage::disk($file->storage_source)->readStream($file->path);
         abort_unless($stream !== false, 404);
@@ -134,9 +131,8 @@ class ContentFileController extends Controller
                 Storage::disk('local')->delete($file->path);
             } else {
                 try {
-                    $connection = request()->user()?->cloudConnections()?->where('provider', $file->storage_source)->first();
-                    if ($connection) {
-                        CloudStorageManager::configureDisk($connection);
+                    if (CloudStorageManager::isConfigured($file->storage_source)) {
+                        CloudStorageManager::configureDisk($file->storage_source);
                         Storage::disk($file->storage_source)->delete($file->path);
                     }
                 } catch (\Throwable) {

@@ -3,7 +3,8 @@
 namespace App\Support;
 
 use App\Models\Content;
-use App\Models\UserCloudConnection;
+use App\Models\SystemSetting;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -11,32 +12,91 @@ use Illuminate\Support\Str;
 
 class CloudStorageManager
 {
-    public static function configureDisk(UserCloudConnection $connection): void
-    {
-        $source = $connection->provider;
+    public const PROVIDER_GOOGLE = 'google';
 
-        if ($source === UserCloudConnection::PROVIDER_GOOGLE) {
+    public const PROVIDER_DROPBOX = 'dropbox';
+
+    public const PROVIDERS = [self::PROVIDER_GOOGLE, self::PROVIDER_DROPBOX];
+
+    public static function integrationStatus(string $provider): array
+    {
+        $provider = self::normalizeProvider($provider);
+
+        return [
+            'configured' => self::isConfigured($provider),
+            'account_name' => SystemSetting::get(self::key($provider, 'account_name')),
+            'account_email' => SystemSetting::get(self::key($provider, 'account_email')),
+            'base_folder' => SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'),
+        ];
+    }
+
+    public static function isConfigured(string $provider): bool
+    {
+        $provider = self::normalizeProvider($provider);
+
+        if ($provider === self::PROVIDER_GOOGLE) {
+            return filled(SystemSetting::get(self::key($provider, 'refresh_token')));
+        }
+
+        return filled(SystemSetting::get(self::key($provider, 'refresh_token'))) || filled(SystemSetting::get(self::key($provider, 'access_token')));
+    }
+
+    public static function saveConnection(string $provider, array $payload): void
+    {
+        $provider = self::normalizeProvider($provider);
+
+        foreach (['access_token', 'refresh_token', 'token_expires_at', 'account_name', 'account_email'] as $field) {
+            if (array_key_exists($field, $payload)) {
+                SystemSetting::set(self::key($provider, $field), $payload[$field]);
+            }
+        }
+
+        if (! filled(SystemSetting::get(self::key($provider, 'base_folder')))) {
+            SystemSetting::set(self::key($provider, 'base_folder'), 'ERP_Arquivos');
+        }
+    }
+
+    public static function disconnect(string $provider): void
+    {
+        $provider = self::normalizeProvider($provider);
+
+        foreach (['access_token', 'refresh_token', 'token_expires_at', 'account_name', 'account_email'] as $field) {
+            SystemSetting::set(self::key($provider, $field), null);
+        }
+    }
+
+    public static function updateBaseFolder(string $provider, string $folder): void
+    {
+        $provider = self::normalizeProvider($provider);
+        SystemSetting::set(self::key($provider, 'base_folder'), trim($folder));
+    }
+
+    public static function configureDisk(string $provider): void
+    {
+        $provider = self::normalizeProvider($provider);
+
+        if ($provider === self::PROVIDER_GOOGLE) {
             Config::set('filesystems.disks.google.clientId', (string) config('services.google.client_id'));
             Config::set('filesystems.disks.google.clientSecret', (string) config('services.google.client_secret'));
-            Config::set('filesystems.disks.google.refreshToken', $connection->refresh_token);
-            Config::set('filesystems.disks.google.folder', $connection->base_folder ?: 'ERP_Arquivos');
+            Config::set('filesystems.disks.google.refreshToken', (string) SystemSetting::get(self::key($provider, 'refresh_token')));
+            Config::set('filesystems.disks.google.folder', SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'));
             return;
         }
 
-        if ($source === UserCloudConnection::PROVIDER_DROPBOX) {
-            $accessToken = self::resolveDropboxAccessToken($connection);
+        if ($provider === self::PROVIDER_DROPBOX) {
+            $accessToken = self::resolveDropboxAccessToken();
             Config::set('filesystems.disks.dropbox.authorizationToken', $accessToken);
-            Config::set('filesystems.disks.dropbox.root', $connection->base_folder ?: 'ERP_Arquivos');
+            Config::set('filesystems.disks.dropbox.root', SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'));
         }
     }
 
-    public static function testConnection(UserCloudConnection $connection): void
+    public static function testConnection(string $provider): void
     {
-        self::configureDisk($connection);
-        Storage::disk($connection->provider)->files('');
+        self::configureDisk($provider);
+        Storage::disk($provider)->files('');
     }
 
-    public static function buildContentUploadPath(UserCloudConnection $connection, Content $content, string $originalName): string
+    public static function buildContentUploadPath(Content $content, string $originalName): string
     {
         $moduleFolder = 'Conteudos';
         $contentFolder = self::sanitizePathSegment($content->title ?: 'Sem titulo');
@@ -50,36 +110,43 @@ class CloudStorageManager
         ]), '/');
     }
 
-    public static function listTreeNodes(UserCloudConnection $connection, string $path = ''): array
+    public static function listTreeNodes(string $provider, string $path = ''): array
     {
-        self::configureDisk($connection);
+        self::configureDisk($provider);
 
         $normalizedPath = trim($path, '/');
-        $disk = Storage::disk($connection->provider);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk($provider);
 
         $directories = collect($disk->directories($normalizedPath))
             ->map(fn (string $directory) => [
                 'key' => $directory,
                 'label' => basename($directory),
-                'children' => [],
                 'leaf' => false,
                 'icon' => 'pi pi-folder',
                 'type' => 'folder',
                 'data' => [
                     'path' => $directory,
-                    'provider' => $connection->provider,
+                    'provider' => $provider,
                     'kind' => 'folder',
                 ],
             ]);
 
         $files = collect($disk->files($normalizedPath))
-            ->map(function (string $file) use ($disk, $connection) {
+            ->map(function (string $file) use ($disk, $provider) {
                 $size = null;
+                $mimeType = null;
 
                 try {
                     $size = $disk->size($file);
                 } catch (\Throwable) {
                     $size = null;
+                }
+
+                try {
+                    $mimeType = $disk->mimeType($file);
+                } catch (\Throwable) {
+                    $mimeType = null;
                 }
 
                 return [
@@ -90,10 +157,10 @@ class CloudStorageManager
                     'type' => 'file',
                     'data' => [
                         'path' => $file,
-                        'provider' => $connection->provider,
+                        'provider' => $provider,
                         'kind' => 'file',
                         'original_name' => basename($file),
-                        'mime_type' => null,
+                        'mime_type' => $mimeType,
                         'size' => $size,
                     ],
                 ];
@@ -104,6 +171,64 @@ class CloudStorageManager
             ->sortBy(fn (array $node) => sprintf('%s-%s', $node['type'] === 'folder' ? '0' : '1', Str::lower($node['label'])))
             ->values()
             ->all();
+    }
+
+    private static function resolveDropboxAccessToken(): ?string
+    {
+        $provider = self::PROVIDER_DROPBOX;
+        $accessToken = SystemSetting::get(self::key($provider, 'access_token'));
+        $expiresAt = SystemSetting::get(self::key($provider, 'token_expires_at'));
+        $isExpired = false;
+
+        if (filled($expiresAt)) {
+            try {
+                $isExpired = Carbon::parse($expiresAt)->isPast();
+            } catch (\Throwable) {
+                $isExpired = true;
+            }
+        }
+
+        if (filled($accessToken) && (! filled($expiresAt) || ! $isExpired)) {
+            return $accessToken;
+        }
+
+        $refreshToken = SystemSetting::get(self::key($provider, 'refresh_token'));
+        if (! filled($refreshToken)) {
+            return $accessToken;
+        }
+
+        $response = Http::asForm()->post('https://api.dropboxapi.com/oauth2/token', [
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $refreshToken,
+            'client_id' => config('services.dropbox.client_id'),
+            'client_secret' => config('services.dropbox.client_secret'),
+        ]);
+
+        if (! $response->successful()) {
+            return $accessToken;
+        }
+
+        $data = $response->json();
+        $newAccessToken = $data['access_token'] ?? $accessToken;
+        $newExpiresAt = isset($data['expires_in']) ? now()->addSeconds((int) $data['expires_in'])->toDateTimeString() : $expiresAt;
+
+        SystemSetting::set(self::key($provider, 'access_token'), $newAccessToken);
+        SystemSetting::set(self::key($provider, 'token_expires_at'), $newExpiresAt);
+
+        return $newAccessToken;
+    }
+
+    private static function key(string $provider, string $field): string
+    {
+        return "cloud_{$provider}_{$field}";
+    }
+
+    private static function normalizeProvider(string $provider): string
+    {
+        $provider = trim(Str::lower($provider));
+        abort_unless(in_array($provider, self::PROVIDERS, true), 404);
+
+        return $provider;
     }
 
     private static function sanitizePathSegment(string $value): string
@@ -125,35 +250,5 @@ class CloudStorageManager
         $sanitized = self::sanitizePathSegment($name);
 
         return $extension !== '' ? $sanitized.'.'.$extension : $sanitized;
-    }
-
-    private static function resolveDropboxAccessToken(UserCloudConnection $connection): ?string
-    {
-        if (filled($connection->access_token) && ($connection->token_expires_at?->isFuture() ?? true)) {
-            return $connection->access_token;
-        }
-
-        if (blank($connection->refresh_token)) {
-            return $connection->access_token;
-        }
-
-        $response = Http::asForm()->post('https://api.dropboxapi.com/oauth2/token', [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $connection->refresh_token,
-            'client_id' => config('services.dropbox.client_id'),
-            'client_secret' => config('services.dropbox.client_secret'),
-        ]);
-
-        if (! $response->successful()) {
-            return $connection->access_token;
-        }
-
-        $data = $response->json();
-        $connection->update([
-            'access_token' => $data['access_token'] ?? $connection->access_token,
-            'token_expires_at' => isset($data['expires_in']) ? now()->addSeconds((int) $data['expires_in']) : $connection->token_expires_at,
-        ]);
-
-        return $connection->fresh()->access_token;
     }
 }

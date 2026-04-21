@@ -282,8 +282,8 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                         <div class="mt-3 space-y-2">
                             <label>Pasta base</label>
                             <div class="flex gap-2">
-                                <InputText v-model="cloudIntegrationsLocal.google.base_folder" placeholder="ERP_Arquivos" />
-                                <Button type="button" icon="pi pi-save" outlined @click="saveProviderFolder('google')" />
+                                <InputText v-model="cloudIntegrationsLocal.google.base_folder" :disabled="readOnly" placeholder="ERP_Arquivos" />
+                                <Button type="button" icon="pi pi-save" outlined :disabled="readOnly" @click="saveProviderFolder('google')" />
                             </div>
                         </div>
                         <div class="mt-4 flex gap-2">
@@ -292,6 +292,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 type="button"
                                 icon="pi pi-link"
                                 label="Conectar Google Drive"
+                                :disabled="readOnly"
                                 @click="connectProvider('google')"
                             />
                             <Button
@@ -300,6 +301,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 icon="pi pi-check-circle"
                                 label="Testar conexão"
                                 outlined
+                                :disabled="readOnly"
                                 @click="testProvider('google')"
                             />
                             <Button
@@ -309,6 +311,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 label="Desconectar"
                                 severity="danger"
                                 outlined
+                                :disabled="readOnly"
                                 @click="disconnectProvider('google')"
                             />
                         </div>
@@ -328,8 +331,8 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                         <div class="mt-3 space-y-2">
                             <label>Pasta base</label>
                             <div class="flex gap-2">
-                                <InputText v-model="cloudIntegrationsLocal.dropbox.base_folder" placeholder="ERP_Arquivos" />
-                                <Button type="button" icon="pi pi-save" outlined @click="saveProviderFolder('dropbox')" />
+                                <InputText v-model="cloudIntegrationsLocal.dropbox.base_folder" :disabled="readOnly" placeholder="ERP_Arquivos" />
+                                <Button type="button" icon="pi pi-save" outlined :disabled="readOnly" @click="saveProviderFolder('dropbox')" />
                             </div>
                         </div>
                         <div class="mt-4 flex gap-2">
@@ -338,6 +341,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 type="button"
                                 icon="pi pi-link"
                                 label="Conectar Dropbox"
+                                :disabled="readOnly"
                                 @click="connectProvider('dropbox')"
                             />
                             <Button
@@ -346,6 +350,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 icon="pi pi-check-circle"
                                 label="Testar conexão"
                                 outlined
+                                :disabled="readOnly"
                                 @click="testProvider('dropbox')"
                             />
                             <Button
@@ -355,6 +360,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 label="Desconectar"
                                 severity="danger"
                                 outlined
+                                :disabled="readOnly"
                                 @click="disconnectProvider('dropbox')"
                             />
                         </div>
@@ -364,7 +370,7 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
         </Card>
 
         <Message v-if="readOnly" severity="info" size="small">
-            Apenas administradores podem alterar identidade visual e cores dos módulos.
+            Apenas administradores podem alterar identidade visual, cores dos módulos e integrações em nuvem.
         </Message>
 
         <Dialog

@@ -1,6 +1,7 @@
 <script setup>
 import axios from 'axios';
 import { computed, ref } from 'vue';
+import { Icon } from '@iconify/vue';
 import BoConfirmButton from '@/Components/ui/BoConfirmButton.vue';
 
 const props = defineProps({
@@ -28,14 +29,16 @@ const props = defineProps({
 
 const emit = defineEmits(['upload', 'remove']);
 const selectedUploadProvider = ref('local');
+const showUploader = ref(false);
 const showAttachModal = ref(false);
 const selectedAttachProvider = ref('google');
 const browserNodes = ref([]);
 const browserLoading = ref(false);
 const expandedKeys = ref({});
-const selectedTreeKey = ref(null);
+const selectedTreeKey = ref({});
 const selectedTreeNode = ref(null);
 const uploadProgress = ref({ active: false, provider: 'local', value: 0, label: '' });
+const browserError = ref('');
 
 const canUploadGoogle = computed(() => !!props.integrationConfigured?.google?.configured);
 const canUploadDropbox = computed(() => !!props.integrationConfigured?.dropbox?.configured);
@@ -45,8 +48,51 @@ const uploadHeader = computed(() => selectedUploadProvider.value === 'local'
         ? 'Upload para Google Drive'
         : 'Upload para Dropbox');
 
+const uploadHeaderIcon = computed(() => {
+    if (selectedUploadProvider.value === 'google') {
+        return 'mdi:google-drive';
+    }
+
+    if (selectedUploadProvider.value === 'dropbox') {
+        return 'mdi:dropbox';
+    }
+
+    return 'mdi:paperclip';
+});
+
+const googleActions = computed(() => ([
+    {
+        label: 'Upload para Google Drive',
+        iconifyIcon: 'mdi:upload',
+        command: () => openUploadPanel('google'),
+    },
+    {
+        label: 'Anexar do Google Drive',
+        iconifyIcon: 'mdi:link-variant',
+        command: () => openAttachModal('google'),
+    },
+]));
+
+const dropboxActions = computed(() => ([
+    {
+        label: 'Upload para Dropbox',
+        iconifyIcon: 'mdi:upload',
+        command: () => openUploadPanel('dropbox'),
+    },
+    {
+        label: 'Anexar do Dropbox',
+        iconifyIcon: 'mdi:link-variant',
+        command: () => openAttachModal('dropbox'),
+    },
+]));
+
 const setUploadProvider = (provider) => {
     selectedUploadProvider.value = provider;
+};
+
+const openUploadPanel = (provider) => {
+    setUploadProvider(provider);
+    showUploader.value = true;
 };
 
 const uploadFiles = async ({ files }) => {
@@ -90,8 +136,16 @@ const uploadFiles = async ({ files }) => {
     }
 };
 
-const loadBrowserNodes = async (provider, path = '') => {
-    browserLoading.value = true;
+const loadBrowserNodes = async (provider, path = '', options = {}) => {
+    const { showGlobalLoading = false, clearError = true } = options;
+
+    if (showGlobalLoading) {
+        browserLoading.value = true;
+    }
+
+    if (clearError) {
+        browserError.value = '';
+    }
 
     try {
         const { data } = await axios.get(route('cloud.browser', { provider }), {
@@ -102,28 +156,80 @@ const loadBrowserNodes = async (provider, path = '') => {
         });
 
         return data.nodes || [];
+    } catch (error) {
+        browserError.value = error?.response?.data?.message || 'Nao foi possivel carregar os itens desta pasta.';
+        throw error;
     } finally {
-        browserLoading.value = false;
+        if (showGlobalLoading) {
+            browserLoading.value = false;
+        }
     }
+};
+
+const patchNode = (nodes, key, transform) => nodes.map((node) => {
+    if (node.key === key) {
+        return transform(node);
+    }
+
+    if (Array.isArray(node.children) && node.children.length > 0) {
+        return {
+            ...node,
+            children: patchNode(node.children, key, transform),
+        };
+    }
+
+    return node;
+});
+
+const replaceNodeChildren = (nodes, key, children) => patchNode(nodes, key, (node) => ({
+    ...node,
+    children,
+    leaf: children.length === 0,
+    loading: false,
+}));
+
+const setNodeLoading = (key, loading) => {
+    browserNodes.value = patchNode(browserNodes.value, key, (node) => ({
+        ...node,
+        loading,
+    }));
 };
 
 const openAttachModal = async (provider) => {
     selectedAttachProvider.value = provider;
-    selectedTreeKey.value = null;
+    selectedTreeKey.value = {};
     selectedTreeNode.value = null;
     expandedKeys.value = {};
-    browserNodes.value = await loadBrowserNodes(provider);
+    try {
+        browserNodes.value = await loadBrowserNodes(provider, '', { showGlobalLoading: true });
+    } catch {
+        browserNodes.value = [];
+    }
+
     showAttachModal.value = true;
 };
 
-const onNodeExpand = async (event) => {
-    const children = await loadBrowserNodes(selectedAttachProvider.value, event.node.data?.path || '');
-    event.node.children = children;
-    browserNodes.value = [...browserNodes.value];
+const resolveTreeNodePayload = (payload) => payload?.node || payload;
+
+const onNodeExpand = async (payload) => {
+    const node = resolveTreeNodePayload(payload);
+    if (!node?.key) {
+        return;
+    }
+
+    setNodeLoading(node.key, true);
+
+    try {
+        const children = await loadBrowserNodes(selectedAttachProvider.value, node.data?.path || '', { showGlobalLoading: false });
+        browserNodes.value = replaceNodeChildren(browserNodes.value, node.key, children);
+    } catch {
+        setNodeLoading(node.key, false);
+    }
 };
 
-const onNodeSelect = (event) => {
-    selectedTreeNode.value = event.node?.type === 'file' ? event.node : null;
+const onNodeSelect = (payload) => {
+    const node = resolveTreeNodePayload(payload);
+    selectedTreeNode.value = node?.type === 'file' ? node : null;
 };
 
 const attachSelectedFile = async () => {
@@ -159,48 +265,48 @@ const formatSize = (size) => {
 <template>
     <div class="space-y-4">
         <div class="flex flex-wrap items-center gap-2">
-            <Button type="button" icon="pi pi-paperclip" label="Enviar local" :severity="selectedUploadProvider === 'local' ? null : 'secondary'" @click="setUploadProvider('local')" />
-            <Button
-                type="button"
-                icon="pi pi-cloud-upload"
-                label="Enviar Drive"
-                :disabled="!canUploadGoogle"
-                :severity="selectedUploadProvider === 'google' ? null : 'secondary'"
-                @click="setUploadProvider('google')"
-            />
-            <Button
-                type="button"
-                icon="pi pi-cloud-upload"
-                label="Enviar Dropbox"
-                :disabled="!canUploadDropbox"
-                :severity="selectedUploadProvider === 'dropbox' ? null : 'secondary'"
-                @click="setUploadProvider('dropbox')"
-            />
-            <Button
-                type="button"
-                icon="pi pi-folder-open"
-                label="Anexar do Drive"
-                :disabled="!canUploadGoogle"
-                outlined
-                @click="openAttachModal('google')"
-            />
-            <Button
-                type="button"
-                icon="pi pi-folder-open"
-                label="Anexar do Dropbox"
-                :disabled="!canUploadDropbox"
-                outlined
-                @click="openAttachModal('dropbox')"
-            />
+            <Button type="button" icon="pi pi-paperclip" label="Upload local" :severity="selectedUploadProvider === 'local' && showUploader ? null : 'secondary'" @click="openUploadPanel('local')" />
+
+            <SplitButton :model="googleActions" :disabled="!canUploadGoogle" severity="secondary" @click="openUploadPanel('google')">
+                <span class="flex items-center gap-2 font-semibold">
+                    <Icon icon="mdi:google-drive" class="h-4 w-4" />
+                    <span>Google Drive</span>
+                </span>
+                <template #item="{ item, props: itemProps }">
+                    <a v-ripple class="flex items-center gap-2" v-bind="itemProps.action">
+                        <Icon :icon="item.iconifyIcon" class="h-4 w-4" />
+                        <span>{{ item.label }}</span>
+                    </a>
+                </template>
+            </SplitButton>
+
+            <SplitButton :model="dropboxActions" :disabled="!canUploadDropbox" severity="secondary" @click="openUploadPanel('dropbox')">
+                <span class="flex items-center gap-2 font-semibold">
+                    <Icon icon="mdi:dropbox" class="h-4 w-4" />
+                    <span>Dropbox</span>
+                </span>
+                <template #item="{ item, props: itemProps }">
+                    <a v-ripple class="flex items-center gap-2" v-bind="itemProps.action">
+                        <Icon :icon="item.iconifyIcon" class="h-4 w-4" />
+                        <span>{{ item.label }}</span>
+                    </a>
+                </template>
+            </SplitButton>
         </div>
 
-        <div class="rounded-xl border border-slate-200/80 p-4 dark:border-slate-800">
+        <div v-if="showUploader" class="rounded-xl border border-slate-200/80 p-4 dark:border-slate-800">
             <div class="mb-3 flex items-center justify-between gap-3">
                 <div>
-                    <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ uploadHeader }}</h3>
+                    <h3 class="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
+                        <Icon :icon="uploadHeaderIcon" class="h-4 w-4" />
+                        <span>{{ uploadHeader }}</span>
+                    </h3>
                     <p class="text-sm text-slate-500 dark:text-slate-400">Selecione os arquivos e clique em enviar para iniciar o upload.</p>
                 </div>
-                <Tag :value="selectedUploadProvider === 'local' ? 'Local' : selectedUploadProvider === 'google' ? 'Drive' : 'Dropbox'" severity="secondary" />
+                <div class="flex items-center gap-2">
+                    <Tag :value="selectedUploadProvider === 'local' ? 'Local' : selectedUploadProvider === 'google' ? 'Drive' : 'Dropbox'" severity="secondary" />
+                    <Button type="button" icon="pi pi-times" text rounded severity="secondary" aria-label="Fechar uploader" @click="showUploader = false" />
+                </div>
             </div>
 
         <FileUpload
@@ -235,6 +341,9 @@ const formatSize = (size) => {
         >
             <div class="space-y-4">
                 <p class="text-sm text-slate-500 dark:text-slate-400">Selecione um arquivo dentro da pasta base configurada para anexar ao conteúdo.</p>
+                <Message v-if="browserError" severity="error" :closable="false" size="small">
+                    {{ browserError }}
+                </Message>
                 <Tree
                     v-model:expandedKeys="expandedKeys"
                     v-model:selectionKeys="selectedTreeKey"
@@ -244,17 +353,17 @@ const formatSize = (size) => {
                     filterMode="lenient"
                     :loading="browserLoading"
                     loadingMode="icon"
-                    class="w-full rounded-xl border border-slate-200/80 p-3 dark:border-slate-800"
-                    @nodeExpand="onNodeExpand"
-                    @nodeSelect="onNodeSelect"
+                    class="max-h-[60vh] w-full overflow-auto rounded-xl border border-slate-200/80 p-3 dark:border-slate-800"
+                    @node-expand="onNodeExpand"
+                    @node-select="onNodeSelect"
                 >
                     <template #default="slotProps">
-                        <div class="flex items-center gap-2">
-                            <i :class="slotProps.node.icon" class="text-slate-500" />
-                            <span>{{ slotProps.node.label }}</span>
-                        </div>
+                        <span>{{ slotProps.node.label }}</span>
                     </template>
                 </Tree>
+                <Message v-if="!browserLoading && !browserError && browserNodes.length === 0" severity="secondary" :closable="false" size="small">
+                    Pasta vazia ou sem itens visiveis para a integracao.
+                </Message>
 
                 <div class="flex items-center justify-end gap-2">
                     <Button type="button" label="Cancelar" outlined severity="secondary" @click="showAttachModal = false" />
@@ -264,7 +373,14 @@ const formatSize = (size) => {
         </Dialog>
 
         <DataTable :value="files" data-key="id" striped-rows size="small">
-            <Column field="original_name" header="Arquivo" />
+            <Column field="original_name" header="Arquivo">
+                <template #body="{ data }">
+                    <a v-if="data.url" :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">
+                        {{ data.original_name }}
+                    </a>
+                    <span v-else>{{ data.original_name }}</span>
+                </template>
+            </Column>
             <Column field="storage_label" header="Local" />
             <Column field="mime_type" header="MIME" />
             <Column header="Tamanho">
@@ -273,7 +389,6 @@ const formatSize = (size) => {
             <Column header="Ações" class="w-36">
                 <template #body="{ data }">
                     <div class="flex items-center gap-2">
-                        <a v-if="data.url" :href="data.url" target="_blank" rel="noopener" class="text-indigo-600 underline dark:text-indigo-400">Abrir</a>
                         <BoConfirmButton
                             label="Remover"
                             icon="pi pi-trash"
