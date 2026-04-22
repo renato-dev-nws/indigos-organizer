@@ -41,6 +41,34 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Mailpit (teste de e-mails local)
+
+O projeto esta configurado para usar Mailpit no ambiente local com Laravel Sail.
+
+1. Suba os containers:
+
+```bash
+./vendor/bin/sail up -d
+```
+
+2. Acesse a caixa de entrada do Mailpit:
+
+```text
+http://localhost:8025
+```
+
+3. Configuracao SMTP local (ja definida no `.env.example`):
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+```
+
+Se o seu `.env` ja existia antes dessa configuracao, atualize os campos `MAIL_*` e reinicie os containers com Sail.
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).

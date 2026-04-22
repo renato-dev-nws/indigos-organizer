@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/shared-infos/{sharedInfo}/documents/{document}', [SharedInfoDocumentController::class, 'destroy'])
         ->name('shared-infos.documents.destroy');
     Route::resource('users', UserController::class)->except(['show']);
+    Route::put('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password.update');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/types', [SettingsController::class, 'types'])->name('settings.pages.types');
@@ -109,6 +110,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Notifications

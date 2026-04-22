@@ -24,6 +24,9 @@ class User extends Authenticatable
         'is_admin',
         'avatar_url',
         'theme',
+        'push_enabled',
+        'email_enabled',
+        'whatsapp_enabled',
     ];
 
     protected $hidden = [
@@ -42,6 +45,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'push_enabled' => 'boolean',
+            'email_enabled' => 'boolean',
+            'whatsapp_enabled' => 'boolean',
         ];
     }
 

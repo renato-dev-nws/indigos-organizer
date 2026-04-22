@@ -18,6 +18,9 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false);
             $table->string('avatar_url')->nullable();
             $table->enum('theme', ['light', 'dark', 'system'])->default('system');
+            $table->boolean('push_enabled')->default(true);
+            $table->boolean('email_enabled')->default(true);
+            $table->boolean('whatsapp_enabled')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

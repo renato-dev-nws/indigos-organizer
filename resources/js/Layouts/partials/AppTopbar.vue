@@ -81,10 +81,15 @@ const pickTheme = (theme) => {
                     <Icon icon="mdi:notebook-plus" class="h-[17px] w-[17px]" />
                 </Link>
                 <AppNotificationBell />
-                <div class="hidden text-right sm:block">
+                <button
+                    type="button"
+                    class="hidden text-right sm:block"
+                    aria-label="Abrir menu do usuário"
+                    @click="toggleUserMenu"
+                >
                     <p class="text-sm font-semibold leading-tight text-slate-800 dark:text-slate-200">{{ page.props.auth?.user?.name }}</p>
                     <p class="text-[11px] text-slate-400 dark:text-slate-500">{{ page.props.auth?.user?.email }}</p>
-                </div>
+                </button>
                 <button
                     type="button"
                     class="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600"
@@ -98,7 +103,7 @@ const pickTheme = (theme) => {
 
                 <Popover ref="userMenu">
                     <div class="flex min-w-[260px] flex-col gap-3 p-2">
-                        <div class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
+                        <Link :href="route('profile.edit')" class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60">
                             <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                                 <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar do usuário" class="h-full w-full object-cover" />
                                 <Icon v-else icon="mdi:person" class="h-5 w-5" />
@@ -107,7 +112,7 @@ const pickTheme = (theme) => {
                                 <p class="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{{ page.props.auth?.user?.name }}</p>
                                 <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ page.props.auth?.user?.email }}</p>
                             </div>
-                        </div>
+                        </Link>
 
                         <div class="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 p-1 dark:border-slate-700">
                             <button

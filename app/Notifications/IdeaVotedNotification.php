@@ -19,7 +19,13 @@ class IdeaVotedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', WebPushChannel::class];
+        $channels = ['database'];
+
+        if ((bool) ($notifiable->push_enabled ?? true)) {
+            $channels[] = WebPushChannel::class;
+        }
+
+        return $channels;
     }
 
     public function toArray(object $notifiable): array
