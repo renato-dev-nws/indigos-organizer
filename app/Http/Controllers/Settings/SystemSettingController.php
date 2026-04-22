@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
+use App\Services\EvolutionApiService;
 use App\Support\CloudStorageManager;
 use App\Support\SystemSettingsRegistry;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,6 +31,11 @@ class SystemSettingController extends Controller
             'cloudIntegrations' => [
                 'google' => CloudStorageManager::integrationStatus('google'),
                 'dropbox' => CloudStorageManager::integrationStatus('dropbox'),
+            ],
+            'whatsAppSettings' => [
+                'instance' => (string) SystemSetting::get('evolution_instance', (string) config('services.evolution.instance', 'main')),
+                'user_routes' => (string) SystemSetting::get('evolution_whatsapp_user_routes', (string) config('services.evolution.user_routes', '')),
+                'group_routes' => (string) SystemSetting::get('evolution_whatsapp_group_routes', (string) config('services.evolution.group_routes', '')),
             ],
         ]);
     }
@@ -75,6 +83,144 @@ class SystemSettingController extends Controller
             SystemSetting::set('icon_path', null);
         }
 
+        if ($request->hasAny(['evolution_instance', 'evolution_whatsapp_user_routes', 'evolution_whatsapp_group_routes'])) {
+            $request->validate([
+                'evolution_instance' => ['nullable', 'string', 'max:120'],
+                'evolution_whatsapp_user_routes' => ['nullable', 'string', 'max:10000'],
+                'evolution_whatsapp_group_routes' => ['nullable', 'string', 'max:10000'],
+            ]);
+
+            SystemSetting::set('evolution_instance', (string) $request->input('evolution_instance', ''));
+            SystemSetting::set('evolution_whatsapp_user_routes', (string) $request->input('evolution_whatsapp_user_routes', ''));
+            SystemSetting::set('evolution_whatsapp_group_routes', (string) $request->input('evolution_whatsapp_group_routes', ''));
+        }
+
         return back()->with('success', 'Configurações do sistema salvas.');
+    }
+
+    public function whatsappQr(Request $request, EvolutionApiService $evolution): JsonResponse
+    {
+        $instance = $this->resolveRequestedInstance($request);
+        $result = $evolution->fetchQrCode($instance);
+
+        if (! $result['ok']) {
+            return $this->failedEvolutionResponse($result, 'Nao foi possivel gerar o QR Code.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'instance' => $evolution->resolveInstanceName($instance),
+            'data' => $this->normalizeQrPayload($result['data']),
+        ]);
+    }
+
+    public function whatsappStatus(Request $request, EvolutionApiService $evolution): JsonResponse
+    {
+        $instance = $this->resolveRequestedInstance($request);
+        $result = $evolution->fetchConnectionState($instance);
+
+        if (! $result['ok']) {
+            return $this->failedEvolutionResponse($result, 'Nao foi possivel consultar o status da instancia.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'instance' => $evolution->resolveInstanceName($instance),
+            'data' => [
+                'state' => $this->extractConnectionState($result['data']) ?? 'unknown',
+                'raw' => $result['data'],
+            ],
+        ]);
+    }
+
+    public function whatsappDisconnect(Request $request, EvolutionApiService $evolution): JsonResponse
+    {
+        $instance = $this->resolveRequestedInstance($request);
+        $result = $evolution->disconnectInstance($instance);
+
+        if (! $result['ok']) {
+            return $this->failedEvolutionResponse($result, 'Nao foi possivel desconectar a instancia.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'instance' => $evolution->resolveInstanceName($instance),
+            'message' => 'Instancia desconectada com sucesso.',
+            'data' => $result['data'],
+        ]);
+    }
+
+    private function resolveRequestedInstance(Request $request): ?string
+    {
+        $validated = $request->validate([
+            'instance' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $instance = trim((string) ($validated['instance'] ?? ''));
+
+        return $instance !== '' ? $instance : null;
+    }
+
+    private function failedEvolutionResponse(array $result, string $fallbackMessage): JsonResponse
+    {
+        $upstreamStatus = (int) ($result['status'] ?? 500);
+        $status = match (true) {
+            $upstreamStatus >= 500 => 502,
+            $upstreamStatus >= 400 => 422,
+            default => 500,
+        };
+
+        return response()->json([
+            'success' => false,
+            'message' => (string) (($result['message'] ?? '') !== '' ? $result['message'] : $fallbackMessage),
+            'upstream_status' => $upstreamStatus,
+            'data' => $result['data'] ?? [],
+        ], $status);
+    }
+
+    private function normalizeQrPayload(array $data): array
+    {
+        $base64 = Arr::get($data, 'base64');
+        if (! is_string($base64) || $base64 === '') {
+            $base64 = (string) Arr::get($data, 'qrcode.base64', '');
+        }
+
+        if ($base64 !== '' && ! str_starts_with($base64, 'data:image')) {
+            $base64 = 'data:image/png;base64,'.$base64;
+        }
+
+        $pairingCode = Arr::get($data, 'pairingCode') ?? Arr::get($data, 'pairing.code');
+
+        return [
+            'code' => Arr::get($data, 'code'),
+            'base64' => $base64 !== '' ? $base64 : null,
+            'pairingCode' => is_string($pairingCode) && $pairingCode !== '' ? $pairingCode : null,
+            'connectionState' => $this->extractConnectionState($data) ?? 'unknown',
+        ];
+    }
+
+    private function extractConnectionState(array $payload): ?string
+    {
+        $candidates = [
+            Arr::get($payload, 'state'),
+            Arr::get($payload, 'status'),
+            Arr::get($payload, 'connectionStatus'),
+            Arr::get($payload, 'instance.state'),
+            Arr::get($payload, 'instance.status'),
+            Arr::get($payload, 'instance.connectionStatus'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate)) {
+                continue;
+            }
+
+            $normalized = trim($candidate);
+            if ($normalized !== '') {
+                return strtolower($normalized);
+            }
+        }
+
+        return null;
     }
 }

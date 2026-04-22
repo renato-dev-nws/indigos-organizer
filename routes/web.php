@@ -107,6 +107,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/settings/task-statuses/reorder', [TaskStatusController::class, 'reorder'])->name('settings.task-statuses.reorder');
     Route::resource('/settings/task-statuses', TaskStatusController::class)->only(['store', 'update', 'destroy'])->names('settings.task-statuses');
     Route::post('/settings/system', [SystemSettingController::class, 'update'])->middleware('admin')->name('settings.system.update');
+    Route::get('/settings/system/whatsapp/status', [SystemSettingController::class, 'whatsappStatus'])->middleware('admin')->name('settings.system.whatsapp.status');
+    Route::get('/settings/system/whatsapp/qr', [SystemSettingController::class, 'whatsappQr'])->middleware('admin')->name('settings.system.whatsapp.qr');
+    Route::post('/settings/system/whatsapp/disconnect', [SystemSettingController::class, 'whatsappDisconnect'])->middleware('admin')->name('settings.system.whatsapp.disconnect');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

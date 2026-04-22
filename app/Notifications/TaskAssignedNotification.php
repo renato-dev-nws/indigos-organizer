@@ -3,12 +3,15 @@
 namespace App\Notifications;
 
 use App\Models\Task;
+use App\Notifications\Channels\WhatsAppChannel;
+use App\Notifications\Contracts\ShouldSendWhatsApp;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class TaskAssignedNotification extends Notification
+class TaskAssignedNotification extends Notification implements ShouldQueue, ShouldSendWhatsApp
 {
     use Queueable;
 
@@ -22,6 +25,10 @@ class TaskAssignedNotification extends Notification
 
         if ((bool) ($notifiable->push_enabled ?? true)) {
             $channels[] = WebPushChannel::class;
+        }
+
+        if ((bool) ($notifiable->whatsapp_enabled ?? false)) {
+            $channels[] = WhatsAppChannel::class;
         }
 
         return $channels;
@@ -44,5 +51,12 @@ class TaskAssignedNotification extends Notification
             ->body('"' . $this->task->title . '" foi atribuída para você.')
             ->icon('/icons/icon-192x192.png')
             ->data(['url' => '/tasks/' . $this->task->id]);
+    }
+
+    public function toWhatsApp(object $notifiable): array
+    {
+        return [
+            'content' => 'Nova tarefa atribuida: "'.$this->task->title.'". Acesse: '.url('/tasks/'.$this->task->id),
+        ];
     }
 }

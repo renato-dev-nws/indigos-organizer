@@ -1,9 +1,10 @@
 <script setup>
+import axios from 'axios';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import { Icon } from '@iconify/vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 defineOptions({ layout: AppLayout });
 
@@ -14,9 +15,11 @@ const props = defineProps({
     moduleColors: { type: Object, default: () => ({}) },
     colorPalette: { type: Array, default: () => [] },
     cloudIntegrations: { type: Object, default: () => ({}) },
+    whatsAppSettings: { type: Object, default: () => ({}) },
 });
 const page = usePage();
 const readOnly = !page.props.auth?.user?.is_admin;
+const WHATSAPP_STATUS_POLL_INTERVAL_MS = 30000;
 
 const editingModule = ref(null);
 const selectedColorToken = ref('slate-500');
@@ -29,6 +32,60 @@ const cloudIntegrationsLocal = ref(JSON.parse(JSON.stringify(props.cloudIntegrat
 })));
 
 const cloudFolderForm = useForm({ base_folder: '' });
+const whatsAppForm = useForm({
+    evolution_instance: props.whatsAppSettings?.instance || 'main',
+    evolution_whatsapp_user_routes: props.whatsAppSettings?.user_routes || '',
+    evolution_whatsapp_group_routes: props.whatsAppSettings?.group_routes || '',
+});
+const whatsAppConnection = ref({
+    status: 'unknown',
+    qrBase64: null,
+    pairingCode: null,
+    loadingStatus: false,
+    loadingQr: false,
+    loadingDisconnect: false,
+    error: '',
+    info: '',
+});
+const whatsAppStatusPollInterval = ref(null);
+const whatsAppQrAutoRefreshTimeout = ref(null);
+
+const resolvedWhatsAppInstance = computed(() => {
+    const instance = (whatsAppForm.evolution_instance || '').trim();
+
+    return instance !== '' ? instance : 'main';
+});
+const isWhatsAppConnected = computed(() => ['open', 'connected'].includes(String(whatsAppConnection.value.status || '').toLowerCase()));
+const whatsAppStatusLabel = computed(() => {
+    const status = String(whatsAppConnection.value.status || '').toLowerCase();
+
+    if (status === 'open' || status === 'connected') {
+        return 'Conectado';
+    }
+
+    if (status === 'connecting') {
+        return 'Conectando';
+    }
+
+    if (status === 'close' || status === 'closed' || status === 'disconnected') {
+        return 'Desconectado';
+    }
+
+    return 'Nao conectado';
+});
+const whatsAppStatusSeverity = computed(() => {
+    const status = String(whatsAppConnection.value.status || '').toLowerCase();
+
+    if (status === 'open' || status === 'connected') {
+        return 'success';
+    }
+
+    if (status === 'connecting') {
+        return 'warning';
+    }
+
+    return 'secondary';
+});
 
 // Logo
 const logoInput = ref(null);
@@ -125,6 +182,175 @@ const saveProviderFolder = (provider) => {
 };
 
 const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.configured ? 'Conectado' : 'Não conectado');
+
+const saveWhatsAppSettings = () => {
+    whatsAppForm.post(route('settings.system.update'), {
+        preserveScroll: true,
+    });
+};
+
+const clearWhatsAppQrAutoRefresh = () => {
+    if (whatsAppQrAutoRefreshTimeout.value) {
+        window.clearTimeout(whatsAppQrAutoRefreshTimeout.value);
+        whatsAppQrAutoRefreshTimeout.value = null;
+    }
+};
+
+const stopWhatsAppStatusPolling = () => {
+    if (whatsAppStatusPollInterval.value) {
+        window.clearInterval(whatsAppStatusPollInterval.value);
+        whatsAppStatusPollInterval.value = null;
+    }
+
+    clearWhatsAppQrAutoRefresh();
+};
+
+const startWhatsAppStatusPolling = () => {
+    if (whatsAppStatusPollInterval.value || readOnly) {
+        return;
+    }
+
+    whatsAppStatusPollInterval.value = window.setInterval(() => {
+        loadWhatsAppStatus({ silent: true });
+    }, WHATSAPP_STATUS_POLL_INTERVAL_MS);
+};
+
+const extractConnectionState = (payload) => {
+    const candidates = [
+        payload?.state,
+        payload?.status,
+        payload?.connectionStatus,
+        payload?.connectionState,
+        payload?.instance?.state,
+        payload?.instance?.status,
+        payload?.instance?.connectionStatus,
+    ];
+
+    const first = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim() !== '');
+
+    return first ? first.trim().toLowerCase() : 'unknown';
+};
+
+const scheduleWhatsAppQrAutoRefresh = () => {
+    clearWhatsAppQrAutoRefresh();
+
+    whatsAppQrAutoRefreshTimeout.value = window.setTimeout(() => {
+        if (!isWhatsAppConnected.value && !whatsAppConnection.value.loadingQr) {
+            generateWhatsAppQr({ autoRefresh: true });
+        }
+    }, 35000);
+};
+
+const loadWhatsAppStatus = async ({ silent = false } = {}) => {
+    if (readOnly || (!silent && whatsAppConnection.value.loadingStatus)) {
+        return;
+    }
+
+    if (!silent) {
+        whatsAppConnection.value.loadingStatus = true;
+    }
+
+    try {
+        const response = await axios.get(route('settings.system.whatsapp.status', {}, false), {
+            params: { instance: resolvedWhatsAppInstance.value },
+        });
+
+        const payload = response?.data?.data || {};
+        const nextStatus = extractConnectionState(payload);
+
+        whatsAppConnection.value.status = nextStatus;
+        if (isWhatsAppConnected.value) {
+            whatsAppConnection.value.qrBase64 = null;
+            whatsAppConnection.value.pairingCode = null;
+            stopWhatsAppStatusPolling();
+            clearWhatsAppQrAutoRefresh();
+        } else if (whatsAppConnection.value.qrBase64 || nextStatus === 'connecting') {
+            startWhatsAppStatusPolling();
+        }
+    } catch (error) {
+        if (!silent) {
+            whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel consultar o status da instancia.';
+        }
+    } finally {
+        if (!silent) {
+            whatsAppConnection.value.loadingStatus = false;
+        }
+    }
+};
+
+const generateWhatsAppQr = async ({ autoRefresh = false } = {}) => {
+    if (readOnly || whatsAppConnection.value.loadingQr) {
+        return;
+    }
+
+    whatsAppConnection.value.loadingQr = true;
+    if (!autoRefresh) {
+        whatsAppConnection.value.error = '';
+        whatsAppConnection.value.info = 'Gerando QR Code...';
+    }
+
+    try {
+        const response = await axios.get(route('settings.system.whatsapp.qr', {}, false), {
+            params: { instance: resolvedWhatsAppInstance.value },
+        });
+
+        const payload = response?.data?.data || {};
+        whatsAppConnection.value.qrBase64 = payload.base64 || null;
+        whatsAppConnection.value.pairingCode = payload.pairingCode || null;
+        whatsAppConnection.value.status = extractConnectionState(payload);
+        whatsAppConnection.value.error = '';
+        whatsAppConnection.value.info = 'QR Code atualizado. Ele sera renovado automaticamente em cerca de 35 segundos.';
+
+        if (!whatsAppConnection.value.qrBase64) {
+            whatsAppConnection.value.info = 'A instancia ainda esta conectando e o QR pode demorar alguns segundos para aparecer. Tentaremos novamente automaticamente.';
+        }
+
+        scheduleWhatsAppQrAutoRefresh();
+        startWhatsAppStatusPolling();
+    } catch (error) {
+        whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel gerar o QR Code.';
+    } finally {
+        whatsAppConnection.value.loadingQr = false;
+    }
+};
+
+const disconnectWhatsAppInstance = async () => {
+    if (readOnly || whatsAppConnection.value.loadingDisconnect) {
+        return;
+    }
+
+    whatsAppConnection.value.loadingDisconnect = true;
+    whatsAppConnection.value.error = '';
+
+    try {
+        await axios.post(route('settings.system.whatsapp.disconnect', {}, false), {
+            instance: resolvedWhatsAppInstance.value,
+        });
+
+        whatsAppConnection.value.qrBase64 = null;
+        whatsAppConnection.value.pairingCode = null;
+        whatsAppConnection.value.info = 'Instancia desconectada. Gere um novo QR Code para reconectar.';
+        clearWhatsAppQrAutoRefresh();
+
+        await loadWhatsAppStatus({ silent: true });
+    } catch (error) {
+        whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel desconectar a instancia.';
+    } finally {
+        whatsAppConnection.value.loadingDisconnect = false;
+    }
+};
+
+onMounted(() => {
+    if (readOnly) {
+        return;
+    }
+
+    loadWhatsAppStatus();
+});
+
+onBeforeUnmount(() => {
+    stopWhatsAppStatusPolling();
+});
 </script>
 
 <template>
@@ -363,6 +589,125 @@ const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.conf
                                 :disabled="readOnly"
                                 @click="disconnectProvider('dropbox')"
                             />
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </Card>
+
+        <Card>
+            <template #title>WhatsApp (Evolution API)</template>
+            <template #content>
+                <div class="space-y-4">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">
+                        Configure os destinos de WhatsApp no nivel do sistema. O envio so acontece para usuarios com notificacoes de WhatsApp habilitadas.
+                    </p>
+
+                    <div class="space-y-2">
+                        <label>Nome da instância</label>
+                        <InputText v-model="whatsAppForm.evolution_instance" :disabled="readOnly" placeholder="main" />
+                        <small class="text-slate-500 dark:text-slate-400">Usado no endpoint da Evolution API (sendText/[instancia]).</small>
+                        <Message v-if="whatsAppForm.errors.evolution_instance" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_instance }}</Message>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label>Rotas de usuários (1 por linha)</label>
+                        <Textarea
+                            v-model="whatsAppForm.evolution_whatsapp_user_routes"
+                            :disabled="readOnly"
+                            rows="6"
+                            autoResize
+                            placeholder="user-uuid-1=5511999999999@s.whatsapp.net"
+                            class="w-full"
+                        />
+                        <small class="text-slate-500 dark:text-slate-400">Formato: user_id=jid. Ex.: 8f1...=5511999999999@s.whatsapp.net</small>
+                        <Message v-if="whatsAppForm.errors.evolution_whatsapp_user_routes" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_whatsapp_user_routes }}</Message>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label>Rotas de grupos (1 por linha)</label>
+                        <Textarea
+                            v-model="whatsAppForm.evolution_whatsapp_group_routes"
+                            :disabled="readOnly"
+                            rows="5"
+                            autoResize
+                            placeholder="operacoes=1203630XXXXXX@g.us"
+                            class="w-full"
+                        />
+                        <small class="text-slate-500 dark:text-slate-400">Formato: chave=jid_grupo. Ex.: operacoes=1203...@g.us</small>
+                        <Message v-if="whatsAppForm.errors.evolution_whatsapp_group_routes" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_whatsapp_group_routes }}</Message>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <Button
+                            type="button"
+                            icon="pi pi-save"
+                            label="Salvar configuracao WhatsApp"
+                            :loading="whatsAppForm.processing"
+                            :disabled="readOnly"
+                            @click="saveWhatsAppSettings"
+                        />
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200/80 p-4 dark:border-slate-800">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-semibold text-slate-800 dark:text-slate-100">Conexao da instancia</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
+                                    Instancia ativa: <span class="font-semibold">{{ resolvedWhatsAppInstance }}</span>
+                                </p>
+                            </div>
+                            <Tag :severity="whatsAppStatusSeverity" :value="whatsAppStatusLabel" />
+                        </div>
+
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                icon="pi pi-refresh"
+                                label="Atualizar status"
+                                outlined
+                                :loading="whatsAppConnection.loadingStatus"
+                                :disabled="readOnly"
+                                @click="loadWhatsAppStatus()"
+                            />
+                            <Button
+                                type="button"
+                                icon="pi pi-qrcode"
+                                label="Gerar QR Code"
+                                :loading="whatsAppConnection.loadingQr"
+                                :disabled="readOnly"
+                                @click="generateWhatsAppQr()"
+                            />
+                            <Button
+                                v-if="isWhatsAppConnected"
+                                type="button"
+                                icon="pi pi-power-off"
+                                label="Desconectar"
+                                severity="danger"
+                                outlined
+                                :loading="whatsAppConnection.loadingDisconnect"
+                                :disabled="readOnly"
+                                @click="disconnectWhatsAppInstance"
+                            />
+                        </div>
+
+                        <Message v-if="whatsAppConnection.error" class="mt-3" severity="error" size="small" variant="simple">
+                            {{ whatsAppConnection.error }}
+                        </Message>
+                        <Message v-else-if="whatsAppConnection.info" class="mt-3" severity="info" size="small" variant="simple">
+                            {{ whatsAppConnection.info }}
+                        </Message>
+
+                        <div v-if="whatsAppConnection.qrBase64 && !isWhatsAppConnected" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                            <div class="flex flex-col items-center gap-3">
+                                <img :src="whatsAppConnection.qrBase64" alt="QR Code da instancia WhatsApp" class="h-56 w-56 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700" />
+                                <p v-if="whatsAppConnection.pairingCode" class="text-sm text-slate-500 dark:text-slate-400">
+                                    Codigo de pareamento: <span class="font-semibold">{{ whatsAppConnection.pairingCode }}</span>
+                                </p>
+                                <p class="text-xs text-slate-400 dark:text-slate-500">
+                                    O QR Code expira rapidamente. Esta tela renova automaticamente o codigo a cada ~35 segundos.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>

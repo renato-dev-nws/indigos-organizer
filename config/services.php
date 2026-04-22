@@ -47,4 +47,13 @@ return [
         'redirect' => env('DROPBOX_REDIRECT_URI', env('APP_URL').'/cloud/dropbox/callback'),
     ],
 
+    'evolution' => [
+        'base_url' => env('EVOLUTION_API_URL', 'http://evolution-api:8080'),
+        'api_key' => env('EVOLUTION_API_MASTER_KEY'),
+        'instance' => env('EVOLUTION_INSTANCE', 'main'),
+        'timeout' => env('EVOLUTION_API_TIMEOUT', 10),
+        'user_routes' => env('EVOLUTION_WHATSAPP_USER_ROUTES', ''),
+        'group_routes' => env('EVOLUTION_WHATSAPP_GROUP_ROUTES', ''),
+    ],
+
 ];

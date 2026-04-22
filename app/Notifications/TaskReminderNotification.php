@@ -3,12 +3,15 @@
 namespace App\Notifications;
 
 use App\Models\Task;
+use App\Notifications\Channels\WhatsAppChannel;
+use App\Notifications\Contracts\ShouldSendWhatsApp;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
-class TaskReminderNotification extends Notification
+class TaskReminderNotification extends Notification implements ShouldQueue, ShouldSendWhatsApp
 {
     use Queueable;
 
@@ -22,6 +25,10 @@ class TaskReminderNotification extends Notification
 
         if ((bool) ($notifiable->push_enabled ?? true)) {
             $channels[] = WebPushChannel::class;
+        }
+
+        if ((bool) ($notifiable->whatsapp_enabled ?? false)) {
+            $channels[] = WhatsAppChannel::class;
         }
 
         return $channels;
@@ -45,5 +52,12 @@ class TaskReminderNotification extends Notification
             ->body('Lembrete: "' . $this->task->title . '"')
             ->icon('/icons/icon-192x192.png')
             ->data(['url' => '/tasks/' . $this->task->id]);
+    }
+
+    public function toWhatsApp(object $notifiable): array
+    {
+        return [
+            'content' => 'Lembrete de tarefa: "'.$this->task->title.'". Confira: '.url('/tasks/'.$this->task->id),
+        ];
     }
 }

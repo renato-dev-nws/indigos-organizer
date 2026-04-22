@@ -1,0 +1,49 @@
+evolution-api-1  | Deploying migrations for postgresql
+evolution-api-1  | Database URL: 
+evolution-api-1  | 
+evolution-api-1  | > evolution-api@2.2.3 db:deploy
+evolution-api-1  | > node runWithProvider.js "rm -rf ./prisma/migrations && cp -r ./prisma/DATABASE_PROVIDER-migrations ./prisma/migrations && npx prisma migrate deploy --schema ./prisma/DATABASE_PROVIDER-schema.prisma"
+evolution-api-1  | 
+evolution-api-1  | Environment variables loaded from .env
+evolution-api-1  | Prisma schema loaded from prisma/postgresql-schema.prisma
+evolution-api-1  | Datasource "db": PostgreSQL database "band_organizer", schema "evolution_api" at "pgsql:5432"
+evolution-api-1  | 
+evolution-api-1  | 49 migrations found in prisma/migrations
+evolution-api-1  | 
+evolution-api-1  | 
+evolution-api-1  | No pending migrations to apply.
+evolution-api-1  | npm notice
+evolution-api-1  | npm notice New major version of npm available! 10.8.2 -> 11.13.0
+evolution-api-1  | npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.13.0
+evolution-api-1  | npm notice To update run: npm install -g npm@11.13.0
+evolution-api-1  | npm notice
+evolution-api-1  | Migration succeeded
+evolution-api-1  | 
+evolution-api-1  | > evolution-api@2.2.3 db:generate
+evolution-api-1  | > node runWithProvider.js "npx prisma generate --schema ./prisma/DATABASE_PROVIDER-schema.prisma"
+evolution-api-1  | 
+evolution-api-1  | Environment variables loaded from .env
+evolution-api-1  | Prisma schema loaded from prisma/postgresql-schema.prisma
+evolution-api-1  | 
+evolution-api-1  | ✔ Generated Prisma Client (v6.3.0) to ./node_modules/@prisma/client in 1.07s
+evolution-api-1  | 
+evolution-api-1  | Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+evolution-api-1  | 
+evolution-api-1  | Tip: Want real-time updates to your database without manual polling? Discover how with Pulse: https://pris.ly/tip-0-pulse
+evolution-api-1  | 
+evolution-api-1  | Prisma generate succeeded
+evolution-api-1  | 
+evolution-api-1  | > evolution-api@2.2.3 start:prod
+evolution-api-1  | > node dist/main
+evolution-api-1  | 
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheEngine][0m [37m[1m [string][0m [37m RedisCache initialized for groups [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheService][0m [37m[1m [string][0m [37m cacheservice created using cache engine: Gt [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheEngine][0m [37m[1m [string][0m [37m RedisCache initialized for instance [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheService][0m [37m[1m [string][0m [37m cacheservice created using cache engine: Gt [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheEngine][0m [37m[1m [string][0m [37m RedisCache initialized for baileys [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [37m[47m[1m VERBOSE [0m [33m[1m [CacheService][0m [37m[1m [string][0m [37m cacheservice created using cache engine: Gt [0m
+evolution-api-1  | [1m[34m[Evolution API][0m [1m[34m  [1m[34m v2.2.3 [1m[34m 213 [0m [1m[34m - [1m[37m Wed Apr 22 2026 20:16:20   [0m [34m[44m[1m INFO [0m [33m[1m [WA MODULE][0m [34m[1m [string][0m [34m Module - ON [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:21   [0m [37m[47m[1m VERBOSE [0m [33m[1m [Redis][0m [37m[1m [string][0m [37m redis connecting [0m
+evolution-api-1  | [1m[37m[Evolution API][0m [1m[37m  [1m[37m v2.2.3 [1m[37m 213 [0m [1m[37m - [1m[37m Wed Apr 22 2026 20:16:21   [0m [37m[47m[1m VERBOSE [0m [33m[1m [Redis][0m [37m[1m [string][0m [37m redis ready [0m
+evolution-api-1  | [1m[34m[Evolution API][0m [1m[34m  [1m[34m v2.2.3 [1m[34m 213 [0m [1m[34m - [1m[37m Wed Apr 22 2026 20:16:21   [0m [34m[44m[1m INFO [0m [33m[1m [PrismaRepository][0m [34m[1m [string][0m [34m Repository:Prisma - ON [0m
+evolution-api-1  | [1m[32m[Evolution API][0m [1m[32m  [1m[32m v2.2.3 [1m[32m 213 [0m [1m[32m - [1m[37m Wed Apr 22 2026 20:16:21   [0m [32m[42m[1m LOG [0m [33m[1m [SERVER][0m [32m[1m [string][0m [32m HTTP - ON: 8080 [0m
