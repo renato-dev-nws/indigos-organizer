@@ -16,11 +16,13 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->boolean('is_admin')->default(false);
+            $table->boolean('is_super_admin')->default(false);
             $table->string('avatar_url')->nullable();
             $table->enum('theme', ['light', 'dark', 'system'])->default('system');
             $table->boolean('push_enabled')->default(true);
             $table->boolean('email_enabled')->default(true);
             $table->boolean('whatsapp_enabled')->default(false);
+            $table->string('whatsapp_phone', 30)->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

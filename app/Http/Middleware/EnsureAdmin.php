@@ -12,7 +12,7 @@ class EnsureAdmin
     {
         $user = $request->user();
 
-        abort_unless($user?->is_admin, 403, 'Apenas administradores podem executar esta ação.');
+        abort_unless($user?->is_admin || $user?->is_super_admin, 403, 'Apenas administradores podem executar esta ação.');
 
         return $next($request);
     }

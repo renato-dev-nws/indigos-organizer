@@ -58,8 +58,32 @@ const removeUser = (id) => {
     router.delete(route('users.destroy', id), { preserveScroll: true });
 };
 
-const isAdmin = computed(() => !!page.props.auth?.user?.is_admin);
-const canEditUser = (user) => isAdmin.value || page.props.auth?.user?.id === user.id;
+const isAdmin = computed(() => !!page.props.auth?.user?.is_admin || !!page.props.auth?.user?.is_super_admin);
+const isSuperAdmin = computed(() => !!page.props.auth?.user?.is_super_admin);
+
+const canEditUser = (user) => {
+    if (user.is_super_admin && !isSuperAdmin.value) {
+        return false;
+    }
+
+    return isAdmin.value || page.props.auth?.user?.id === user.id;
+};
+
+const canDeleteUser = (user) => {
+    if (!isAdmin.value) {
+        return false;
+    }
+
+    if (page.props.auth?.user?.id === user.id) {
+        return false;
+    }
+
+    if (user.is_super_admin) {
+        return false;
+    }
+
+    return true;
+};
 </script>
 
 <template>
@@ -88,9 +112,12 @@ const canEditUser = (user) => isAdmin.value || page.props.auth?.user?.id === use
                 <DataTable :value="users.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
                     <Column field="name" header="Nome" sortable />
                     <Column field="email" header="E-mail" sortable />
-                    <Column header="Perfil" class="w-24">
+                    <Column header="Perfil" class="w-40">
                         <template #body="{ data }">
-                            <Tag :value="data.is_admin ? 'Admin' : 'Usuário'" :severity="data.is_admin ? 'danger' : 'secondary'" />
+                            <Tag
+                                :value="data.is_super_admin ? 'Super Admin' : (data.is_admin ? 'Admin' : 'Usuário')"
+                                :severity="data.is_super_admin ? 'success' : (data.is_admin ? 'danger' : 'secondary')"
+                            />
                         </template>
                     </Column>
                     <Column field="theme" header="Tema" />
@@ -111,15 +138,15 @@ const canEditUser = (user) => isAdmin.value || page.props.auth?.user?.id === use
                     <Column header="Ações" class="bo-action-col w-20">
                         <template #body="{ data }">
                             <div class="flex gap-1">
-                                <Link :href="route('users.edit', data.id)">
-                                    <Button icon="pi pi-pencil" outlined rounded severity="secondary" size="small" v-tooltip.top="'Editar'" :disabled="!canEditUser(data)" />
+                                <Link v-if="canEditUser(data)" :href="route('users.edit', data.id)">
+                                    <Button icon="pi pi-pencil" outlined rounded severity="secondary" size="small" v-tooltip.top="'Editar'" />
                                 </Link>
                                 <BoConfirmButton
+                                    v-if="canDeleteUser(data)"
                                     icon="pi pi-trash"
                                     severity="danger"
                                     message="Deseja remover este usuário?"
                                     :rounded="true"
-                                    :disabled="!isAdmin || page.props.auth.user?.id === data.id"
                                     @confirm="removeUser(data.id)"
                                 />
                             </div>

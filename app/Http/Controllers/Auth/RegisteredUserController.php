@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -21,6 +22,8 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
+        $this->ensureRegistrationIsAvailable();
+
         return Inertia::render('Auth/Register');
     }
 
@@ -31,6 +34,8 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $this->ensureRegistrationIsAvailable();
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
@@ -41,6 +46,8 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_admin' => true,
+            'is_super_admin' => true,
         ]);
 
         event(new Registered($user));
@@ -48,5 +55,10 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return redirect(route('dashboard', absolute: false));
+    }
+
+    private function ensureRegistrationIsAvailable(): void
+    {
+        abort_if(User::query()->exists(), HttpResponse::HTTP_NOT_FOUND);
     }
 }

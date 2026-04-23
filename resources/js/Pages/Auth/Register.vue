@@ -8,7 +8,11 @@ const submit = () => form.post(route('register'), { onFinish: () => form.reset('
 
 <template>
     <GuestLayout>
-        <Head title="Register" />
+        <Head title="Configuração inicial" />
+
+        <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+            Este cadastro cria o primeiro usuário do sistema como super administrador.
+        </div>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2"><label class="text-sm font-medium">Nome</label><InputText v-model="form.name" class="w-full" /><Message v-if="form.errors.name" severity="error" size="small" variant="simple">{{ form.errors.name }}</Message></div>

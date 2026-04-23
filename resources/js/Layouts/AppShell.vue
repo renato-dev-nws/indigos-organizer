@@ -20,6 +20,8 @@ const {
     closeMobileSidebar,
 } = useLayoutState();
 
+const currentYear = new Date().getFullYear();
+
 const { subscribe } = usePushSubscription();
 onMounted(() => subscribe());
 
@@ -76,7 +78,7 @@ watch(
 </script>
 
 <template>
-    <div class="min-h-screen text-slate-900 transition-colors dark:text-slate-100">
+    <div class="min-h-screen overflow-x-hidden text-slate-900 transition-colors dark:text-slate-100">
         <Toast />
         <ConfirmDialog />
 
@@ -88,7 +90,7 @@ watch(
         />
 
         <div
-            class="min-h-screen transition-all duration-300"
+            class="flex min-h-screen flex-col transition-all duration-300"
             :class="layoutState.desktopCollapsed ? 'md:pl-[72px]' : 'md:pl-64'"
         >
             <AppTopbar
@@ -97,14 +99,18 @@ watch(
                 @open-mobile-sidebar="openMobileSidebar"
             />
 
-            <main class="bo-shell-content p-4 md:p-6">
+            <main class="bo-shell-content flex-1 p-4 md:p-6">
                 <div class="mx-auto max-w-[95%]">
                     <slot />
                 </div>
             </main>
 
             <footer class="border-t border-slate-200/70 px-4 py-3 text-center text-xs text-slate-500 dark:border-slate-800/70 dark:text-slate-400 md:px-6">
-                <p>Indigos Organizer - For Creatives</p>
+                <div class="flex items-center justify-center gap-2">
+                    <img src="/icons/io-icon-32x32.png" alt="Ícone Índigos Organizer" class="h-5 w-5 object-contain" />
+                    <p>Indigos Organizer - For Creatives</p>
+                </div>
+                <p class="mt-1">Copyright {{ currentYear }}. Todos os direitos reservados.</p>
             </footer>
         </div>
     </div>

@@ -12,6 +12,20 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
+    private function canManageUsers(?User $user): bool
+    {
+        return (bool) ($user?->is_admin || $user?->is_super_admin);
+    }
+
+    private function canManageTargetUser(User $authUser, User $targetUser): bool
+    {
+        if ($targetUser->is_super_admin && ! $authUser->is_super_admin) {
+            return false;
+        }
+
+        return $this->canManageUsers($authUser) || (string) $authUser->id === (string) $targetUser->id;
+    }
+
     public function index(): Response
     {
         $users = User::query()
@@ -32,14 +46,15 @@ class UserController extends Controller
 
     public function create(): Response
     {
-        abort_unless(Auth::user()?->is_admin, 403);
+        abort_unless($this->canManageUsers(Auth::user()), 403);
 
         return Inertia::render('Users/Create');
     }
 
     public function store(Request $request): RedirectResponse
     {
-        abort_unless(Auth::user()?->is_admin, 403);
+        $authUser = Auth::user();
+        abort_unless($this->canManageUsers($authUser), 403);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -51,6 +66,12 @@ class UserController extends Controller
             'whatsapp_phone' => ['nullable', 'string', 'max:30'],
         ]);
 
+        if (! $authUser?->is_super_admin) {
+            unset($validated['is_admin']);
+        }
+
+        $validated['is_super_admin'] = false;
+
         User::create($validated);
 
         return redirect()->route('users.index')->with('success', 'Usuário cadastrado com sucesso.');
@@ -59,7 +80,7 @@ class UserController extends Controller
     public function edit(User $user): Response
     {
         $authUser = Auth::user();
-        abort_unless($authUser && ($authUser->is_admin || (string) $authUser->id === (string) $user->id), 403);
+        abort_unless($authUser && $this->canManageTargetUser($authUser, $user), 403);
 
         return Inertia::render('Users/Edit', [
             'user' => $user,
@@ -69,7 +90,7 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $authUser = Auth::user();
-        abort_unless($authUser && ($authUser->is_admin || (string) $authUser->id === (string) $user->id), 403);
+        abort_unless($authUser && $this->canManageTargetUser($authUser, $user), 403);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -110,9 +131,15 @@ class UserController extends Controller
 
         unset($validated['avatar']);
 
-        if (! $authUser->is_admin) {
+        if (! $authUser->is_super_admin) {
             unset($validated['is_admin']);
         }
+
+        if ($user->is_super_admin) {
+            $validated['is_admin'] = true;
+        }
+
+        unset($validated['is_super_admin']);
 
         $user->fill($validated);
 
@@ -128,7 +155,7 @@ class UserController extends Controller
     public function updatePassword(Request $request, User $user): RedirectResponse
     {
         $authUser = Auth::user();
-        abort_unless($authUser && ($authUser->is_admin || (string) $authUser->id === (string) $user->id), 403);
+        abort_unless($authUser && $this->canManageTargetUser($authUser, $user), 403);
 
         $validated = $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
@@ -143,7 +170,10 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
-        abort_unless(Auth::user()?->is_admin, 403);
+        $authUser = Auth::user();
+        abort_unless($authUser && $this->canManageUsers($authUser), 403);
+        abort_unless($this->canManageTargetUser($authUser, $user), 403);
+        abort_if($user->is_super_admin, 422, 'Usuários super-admin não podem ser removidos.');
         abort_if((string) $user->getKey() === (string) Auth::id(), 422, 'Você não pode remover seu próprio usuário.');
 
         $user->delete();

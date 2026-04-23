@@ -46,13 +46,13 @@ const BoPreset = definePreset(Aura, {
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Índigos Organizer';
 
 createServer((page) =>
     createInertiaApp({
         page,
         render: renderToString,
-        title: (title) => `${title} - ${appName}`,
+        title: (title) => (title ? `${appName} - ${title}` : appName),
         resolve: (name) =>
             resolvePageComponent(
                 `./Pages/${name}.vue`,

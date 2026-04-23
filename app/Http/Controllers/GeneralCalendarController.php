@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\Event;
 use App\Models\Task;
+use App\Support\SystemSettingsRegistry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,12 @@ class GeneralCalendarController extends Controller
 {
     public function __invoke(): Response
     {
+        $moduleColors = SystemSettingsRegistry::moduleColors();
+        $contentColor = SystemSettingsRegistry::tokenToHex($moduleColors['contents'] ?? 'purple-500');
+        $eventColor = SystemSettingsRegistry::tokenToHex($moduleColors['events'] ?? 'orange-500');
+        $scheduledTaskColor = SystemSettingsRegistry::tokenToHex($moduleColors['tasks'] ?? 'indigo-500');
+        $deadlineColor = '#ef4444';
+
         $contentItems = Content::query()
             ->whereNotNull('planned_publish_at')
             ->get(['id', 'title', 'planned_publish_at'])
@@ -24,7 +31,7 @@ class GeneralCalendarController extends Controller
                 'start' => optional($content->planned_publish_at)->toDateString(),
                 'allDay' => true,
                 'type' => 'content',
-                'color' => '#4f46e5',
+                'color' => $contentColor,
                 'display' => 'block',
                 'url' => route('contents.show', $content),
             ]);
@@ -37,7 +44,7 @@ class GeneralCalendarController extends Controller
                 'title' => $event->title,
                 'start' => $event->starts_at,
                 'type' => 'event',
-                'color' => $event->type?->color ?: '#059669',
+                'color' => $eventColor,
                 'display' => 'block',
                 'url' => route('events.show', $event),
             ]);
@@ -60,7 +67,7 @@ class GeneralCalendarController extends Controller
                 'start' => optional($task->scheduled_for)->toIso8601String(),
                 'type' => 'task_scheduled',
                 'task_id' => $task->id,
-                'color' => '#0ea5e9',
+                'color' => $scheduledTaskColor,
                 'display' => 'block',
             ]);
 
@@ -84,7 +91,7 @@ class GeneralCalendarController extends Controller
                 'display' => 'block',
                 'type' => 'task_deadline',
                 'task_id' => $task->id,
-                'color' => '#ef4444',
+                'color' => $deadlineColor,
             ]);
 
         return Inertia::render('Calendar/Index', [
@@ -94,10 +101,10 @@ class GeneralCalendarController extends Controller
                 ->concat($deadlineTaskItems)
                 ->values(),
             'legend' => [
-                ['label' => 'Conteúdos', 'color' => '#4f46e5'],
-                ['label' => 'Eventos', 'color' => '#059669'],
-                ['label' => 'Tarefas agendadas', 'color' => '#0ea5e9'],
-                ['label' => 'Deadlines de tarefas', 'color' => '#ef4444'],
+                ['label' => 'Conteúdos', 'color' => $contentColor],
+                ['label' => 'Eventos', 'color' => $eventColor],
+                ['label' => 'Tarefas agendadas', 'color' => $scheduledTaskColor],
+                ['label' => 'Deadlines de tarefas', 'color' => $deadlineColor],
             ],
         ]);
     }

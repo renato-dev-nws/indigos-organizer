@@ -631,8 +631,8 @@ const taskByUserChartData = computed(() => {
                         :options="[
                             { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
                             { label: 'Kanban', value: 'kanban', icon: 'mdi:view-column' },
-                            { label: 'Programação da semana', value: 'weekly', icon: 'mdi:calendar-week' },
-                            { label: 'Calendário completo', value: 'full_calendar', icon: 'mdi:calendar-month' },
+                            { label: 'Semana', value: 'weekly', icon: 'mdi:calendar-week' },
+                            { label: 'Calendário', value: 'full_calendar', icon: 'mdi:calendar-month' },
                             { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
                         ]"
                         option-label="label"

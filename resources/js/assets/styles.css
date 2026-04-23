@@ -44,13 +44,13 @@ html:not(.app-dark) body:not(.app-dark) .bo-topbar,
 html:not(.app-dark) body:not(.app-dark) .bo-topbar p,
 html:not(.app-dark) body:not(.app-dark) .bo-topbar span,
 html:not(.app-dark) body:not(.app-dark) .bo-topbar button {
-    color: #f8fafc;
+    color: #0f172a;
 }
 
 html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-800,
 html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-500,
 html:not(.app-dark) body:not(.app-dark) .bo-topbar .text-slate-400 {
-    color: #f8fafc !important;
+    color: #334155 !important;
 }
 
 html:not(.app-dark) body:not(.app-dark) .p-card {
@@ -146,6 +146,21 @@ html:not(.app-dark) body:not(.app-dark) .p-paginator {
 
 .app-dark .fc .fc-col-header-cell-cushion {
     color: #e2e8f0;
+}
+
+html:not(.app-dark) body:not(.app-dark) .fc-theme-standard td,
+html:not(.app-dark) body:not(.app-dark) .fc-theme-standard th {
+    border-color: #cbd5e1;
+}
+
+html:not(.app-dark) body:not(.app-dark) .fc .fc-col-header-cell {
+    background: #f8fafc;
+}
+
+html:not(.app-dark) body:not(.app-dark) .fc .fc-col-header-cell-cushion,
+html:not(.app-dark) body:not(.app-dark) .fc .fc-daygrid-day-number,
+html:not(.app-dark) body:not(.app-dark) .fc .fc-toolbar-title {
+    color: #334155;
 }
 
 .fc .fc-event {

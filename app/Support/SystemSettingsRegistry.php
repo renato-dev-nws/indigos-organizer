@@ -11,7 +11,6 @@ class SystemSettingsRegistry
     public static function moduleDefinitions(): array
     {
         return [
-            ['key' => 'dashboard', 'title' => 'Dashboard', 'icon' => 'ph:squares-four-bold', 'default_color' => 'sky-500'],
             ['key' => 'tasks', 'title' => 'Tarefas', 'icon' => 'mdi:checkbox-multiple-outline', 'default_color' => 'indigo-500'],
             ['key' => 'calendar', 'title' => 'Calendario', 'icon' => 'mdi:calendar-month-outline', 'default_color' => 'cyan-500'],
             ['key' => 'ideas', 'title' => 'Ideias', 'icon' => 'mdi:lightbulb-multiple-outline', 'default_color' => 'violet-500'],

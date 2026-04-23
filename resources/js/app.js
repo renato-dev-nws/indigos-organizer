@@ -51,10 +51,10 @@ const BoPreset = definePreset(Aura, {
     },
 });
 
-const appName = import.meta.env.VITE_APP_NAME || 'Índigos - Artist Organizer';
+const appName = import.meta.env.VITE_APP_NAME || 'Índigos Organizer';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} — ${appName}` : appName),
+    title: (title) => (title ? `${appName} - ${title}` : appName),
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,

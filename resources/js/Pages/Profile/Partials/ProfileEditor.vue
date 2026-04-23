@@ -84,6 +84,8 @@ const requiresEmailVerification = computed(() => {
     return props.showEmailVerification && props.mustVerifyEmail && props.user.email_verified_at === null;
 });
 
+const canToggleAdminRole = computed(() => props.canEditAdmin && !props.user.is_super_admin);
+
 const resolveRoute = (name, params) => {
     if (params === null || typeof params === 'undefined') {
         return route(name);
@@ -159,7 +161,7 @@ const submitProfile = () => {
                 whatsapp_phone: composePhoneWithCountryCode(whatsappPhoneCountryCode.value, data.whatsapp_phone) || null,
             };
 
-            if (props.canEditAdmin) {
+            if (canToggleAdminRole.value) {
                 payload.is_admin = data.is_admin ? 1 : 0;
             } else {
                 delete payload.is_admin;
@@ -367,7 +369,7 @@ const updatePassword = () => {
                             <InputError :message="form.errors.whatsapp_phone" />
                         </div>
 
-                        <div v-if="canEditAdmin" class="rounded-lg border border-slate-200 px-3 py-3 dark:border-slate-700">
+                        <div v-if="canToggleAdminRole" class="rounded-lg border border-slate-200 px-3 py-3 dark:border-slate-700">
                             <label class="flex items-center justify-between">
                                 <span class="text-sm text-slate-700 dark:text-slate-200">Usuario administrador</span>
                                 <Checkbox v-model="form.is_admin" input-id="is_admin" binary />

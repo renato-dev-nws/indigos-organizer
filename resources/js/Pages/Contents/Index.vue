@@ -24,8 +24,8 @@ const todayDate = ref(weeklyBaseDate);
 
 const viewModeOptions = [
     { label: 'Lista', value: 'list', icon: 'mdi:list-box' },
-    { label: 'Programação da semana', value: 'calendar', icon: 'mdi:calendar-week' },
-    { label: 'Calendário completo', value: 'full_calendar', icon: 'mdi:calendar-month' },
+    { label: 'Semana', value: 'calendar', icon: 'mdi:calendar-week' },
+    { label: 'Calendário', value: 'full_calendar', icon: 'mdi:calendar-month' },
     { label: 'Gráficos', value: 'charts', icon: 'mdi:chart-box' },
 ];
 

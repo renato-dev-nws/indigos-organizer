@@ -32,7 +32,7 @@ const form = useForm({
 const whatsappCountryCode = ref('55');
 
 const page = usePage();
-const isAdmin = !!page.props.auth?.user?.is_admin;
+const isSuperAdmin = !!page.props.auth?.user?.is_super_admin;
 
 const updateWhatsappPhone = (value) => {
     form.whatsapp_phone = formatBrazilPhoneInput(value);
@@ -84,7 +84,7 @@ const submit = () => form
                     <Message v-if="form.errors.avatar_url" severity="error" size="small" variant="simple">{{ form.errors.avatar_url }}</Message>
                 </div>
 
-                <div v-if="isAdmin" class="space-y-2 md:col-span-2">
+                <div v-if="isSuperAdmin" class="space-y-2 md:col-span-2">
                     <label for="user-admin">Permissão</label>
                     <div class="flex items-center gap-2">
                         <Checkbox id="user-admin" v-model="form.is_admin" binary />

@@ -2,7 +2,6 @@ import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 
 const MODULE_COMPONENT_MAP = [
-    { key: 'dashboard', match: (component) => component === 'Dashboard' || component.startsWith('Dashboard/') },
     { key: 'tasks', match: (component) => component.startsWith('Tasks/') },
     { key: 'calendar', match: (component) => component.startsWith('Calendar/') },
     { key: 'ideas', match: (component) => component.startsWith('Ideas/') },

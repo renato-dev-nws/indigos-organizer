@@ -14,7 +14,7 @@ const props = defineProps({
 });
 
 const page = usePage();
-const canEditAdmin = computed(() => !!page.props.auth?.user?.is_admin);
+const canEditAdmin = computed(() => !!page.props.auth?.user?.is_super_admin);
 </script>
 
 <template>
