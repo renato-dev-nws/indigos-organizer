@@ -290,7 +290,7 @@ const ideaCategoriesForDisplay = (idea) => {
             </Card>
         </div>
 
-        <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
+        <div v-if="viewMode === 'list' && ideas.data.length" class="block space-y-3 md:hidden">
             <div v-for="idea in ideas.data" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="grid grid-cols-5 gap-3">
                     <div class="col-span-3 space-y-2">
@@ -349,6 +349,15 @@ const ideaCategoriesForDisplay = (idea) => {
                 :first="(ideas.current_page - 1) * ideas.per_page"
                 @page="paginate"
             />
+        </div>
+
+        <div v-else-if="viewMode === 'list'" class="md:hidden">
+            <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Nenhuma ideia ainda.</p>
+                <Link :href="route('ideas.create')" class="mt-3 inline-flex">
+                    <Button label="Crie sua primeira ideia" icon="pi pi-plus" size="small" />
+                </Link>
+            </div>
         </div>
 
         <div v-if="viewMode === 'kanban'" class="hidden gap-4 md:grid md:grid-cols-2 xl:grid-cols-5">

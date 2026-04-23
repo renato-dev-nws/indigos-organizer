@@ -16,14 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             'Database\\Seeders\\UserSeeder',
-            'Database\\Seeders\\IdeaTypeSeeder',
-            'Database\\Seeders\\IdeaCategorySeeder',
-            'Database\\Seeders\\ContentPlatformSeeder',
-            'Database\\Seeders\\VenueTaxonomySeeder',
-            'Database\\Seeders\\TaskStatusSeeder',
-            'Database\\Seeders\\SystemModuleSettingsSeeder',
-            'Database\\Seeders\\EventTypeSeeder',
-            'Database\\Seeders\\SharedInfoCategorySeeder',
+            'Database\\Seeders\\InitialSettingsSeeder',
             'Database\\Seeders\\DemoDataSeeder',
             'Database\\Seeders\\PlanSeeder',
             'Database\\Seeders\\EventSeeder',

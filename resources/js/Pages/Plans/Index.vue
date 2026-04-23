@@ -101,7 +101,7 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
             </Card>
         </div>
 
-        <div class="block space-y-3 md:hidden">
+        <div v-if="plans.data.length" class="block space-y-3 md:hidden">
             <div v-for="plan in plans.data" :key="plan.id" class="flex min-h-[220px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="mb-2 flex items-start justify-between gap-2">
                     <h3 class="font-semibold">{{ plan.title }}</h3>
@@ -127,6 +127,15 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
                 :first="(plans.current_page - 1) * plans.per_page"
                 @page="paginate"
             />
+        </div>
+
+        <div v-else class="md:hidden">
+            <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Nenhum planejamento ainda.</p>
+                <Link :href="route('plans.create')" class="mt-3 inline-flex">
+                    <Button label="Crie seu primeiro planejamento" icon="pi pi-plus" size="small" />
+                </Link>
+            </div>
         </div>
     </div>
 </template>

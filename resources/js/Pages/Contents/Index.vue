@@ -622,7 +622,7 @@ const applyContentChartPeriod = () => {
 
         </div>
 
-        <div v-if="viewMode === 'list'" class="block space-y-3 md:hidden">
+        <div v-if="viewMode === 'list' && contents.data.length" class="block space-y-3 md:hidden">
             <div v-for="content in contents.data" :key="content.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <div class="grid grid-cols-5 gap-3">
                     <div class="col-span-3 space-y-2">
@@ -688,6 +688,15 @@ const applyContentChartPeriod = () => {
                 :first="(contents.current_page - 1) * contents.per_page"
                 @page="paginate"
             />
+        </div>
+
+        <div v-else-if="viewMode === 'list'" class="md:hidden">
+            <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Nenhum conteúdo ainda.</p>
+                <Link :href="route('contents.create')" class="mt-3 inline-flex">
+                    <Button label="Crie seu primeiro conteúdo" icon="pi pi-plus" size="small" />
+                </Link>
+            </div>
         </div>
 
         <div v-else-if="viewMode === 'calendar'" class="md:hidden">

@@ -190,7 +190,7 @@ const phoneLabel = (value) => formatBrazilPhone(value) || '-';
                     </DataTable>
                 </div>
 
-                <div class="block space-y-3 md:hidden">
+                <div v-if="contacts.data.length" class="block space-y-3 md:hidden">
                     <div v-for="contact in contacts.data" :key="contact.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                         <div class="grid grid-cols-5 gap-3">
                             <div class="col-span-3 space-y-2">
@@ -234,6 +234,13 @@ const phoneLabel = (value) => formatBrazilPhone(value) || '-';
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div v-else class="md:hidden">
+                    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-900">
+                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Nenhum contato ainda.</p>
+                        <Button class="mt-3" label="Crie seu primeiro contato" icon="pi pi-plus" size="small" @click="openCreateModal" />
                     </div>
                 </div>
 
