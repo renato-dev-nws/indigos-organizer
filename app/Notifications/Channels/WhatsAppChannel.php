@@ -46,9 +46,16 @@ class WhatsAppChannel
 
         $userId = (string) ($notifiable->id ?? '');
         if ($userId !== '') {
-            $userRouteMap = $this->parseRoutes((string) SystemSetting::get('evolution_whatsapp_user_routes', (string) config('services.evolution.user_routes', '')));
-            if (isset($userRouteMap[$userId])) {
-                $resolved[] = $userRouteMap[$userId];
+            // Prefer per-user whatsapp_phone field.
+            $userPhone = trim((string) ($notifiable->whatsapp_phone ?? ''));
+            if ($userPhone !== '') {
+                $resolved[] = $userPhone;
+            } else {
+                // Backward compat: fall back to system-level route map.
+                $userRouteMap = $this->parseRoutes((string) SystemSetting::get('evolution_whatsapp_user_routes', (string) config('services.evolution.user_routes', '')));
+                if (isset($userRouteMap[$userId])) {
+                    $resolved[] = $userRouteMap[$userId];
+                }
             }
         }
 

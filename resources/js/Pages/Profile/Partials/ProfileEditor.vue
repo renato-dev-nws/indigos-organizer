@@ -6,6 +6,12 @@ import TextInput from '@/Components/TextInput.vue';
 import { Link, useForm } from '@inertiajs/vue3';
 import { Icon } from '@iconify/vue';
 import { computed, ref } from 'vue';
+import {
+    composePhoneWithCountryCode,
+    formatBrazilPhoneInput,
+    normalizeCountryCodeInput,
+    splitPhoneByCountryCode,
+} from '@/Utils/phone';
 
 const props = defineProps({
     user: {
@@ -54,6 +60,9 @@ const avatarInput = ref(null);
 const avatarPreview = ref(props.user.avatar_url || '');
 const showPasswordModal = ref(false);
 
+const { countryCode: initialWaCountryCode, localDigits: initialWaLocalDigits } = splitPhoneByCountryCode(props.user.whatsapp_phone || '');
+const whatsappPhoneCountryCode = ref(initialWaCountryCode || '55');
+
 const form = useForm({
     name: props.user.name,
     email: props.user.email,
@@ -62,6 +71,7 @@ const form = useForm({
     push_enabled: props.user.push_enabled ?? true,
     email_enabled: props.user.email_enabled ?? true,
     whatsapp_enabled: props.user.whatsapp_enabled ?? false,
+    whatsapp_phone: formatBrazilPhoneInput(initialWaLocalDigits) || '',
     is_admin: !!props.user.is_admin,
 });
 
@@ -107,6 +117,14 @@ const onAvatarUrlPaste = () => {
     requestAnimationFrame(updateAvatarPreviewFromUrl);
 };
 
+const updateWhatsappPhone = (value) => {
+    form.whatsapp_phone = formatBrazilPhoneInput(value);
+};
+
+const updateWhatsappPhoneCountryCode = (value) => {
+    whatsappPhoneCountryCode.value = normalizeCountryCodeInput(value);
+};
+
 const onAvatarSelected = (event) => {
     const file = event.target?.files?.[0];
     if (!file) {
@@ -138,6 +156,7 @@ const submitProfile = () => {
                 push_enabled: data.push_enabled ? 1 : 0,
                 email_enabled: data.email_enabled ? 1 : 0,
                 whatsapp_enabled: data.whatsapp_enabled ? 1 : 0,
+                whatsapp_phone: composePhoneWithCountryCode(whatsappPhoneCountryCode.value, data.whatsapp_phone) || null,
             };
 
             if (props.canEditAdmin) {
@@ -162,6 +181,10 @@ const submitProfile = () => {
                     form.email_enabled = updatedUser.email_enabled ?? form.email_enabled;
                     form.whatsapp_enabled = updatedUser.whatsapp_enabled ?? form.whatsapp_enabled;
                     form.is_admin = !!updatedUser.is_admin;
+
+                    const { countryCode: newWaCountryCode, localDigits: newWaLocalDigits } = splitPhoneByCountryCode(updatedUser.whatsapp_phone || '');
+                    whatsappPhoneCountryCode.value = newWaCountryCode || '55';
+                    form.whatsapp_phone = formatBrazilPhoneInput(newWaLocalDigits) || '';
                 }
 
                 form.avatar = null;
@@ -322,6 +345,27 @@ const updatePassword = () => {
                             <span class="text-sm text-slate-700 dark:text-slate-200">Notificacoes por WhatsApp</span>
                             <Checkbox v-model="form.whatsapp_enabled" input-id="whatsapp_enabled" binary />
                         </label>
+
+                        <div class="space-y-2">
+                            <InputLabel value="Número WhatsApp" class="text-slate-700 dark:text-slate-200" />
+                            <InputGroup>
+                                <InputGroupAddon>+</InputGroupAddon>
+                                <InputText
+                                    :model-value="whatsappPhoneCountryCode"
+                                    style="width: 54px; min-width: 54px; max-width: 54px"
+                                    inputmode="numeric"
+                                    @update:model-value="updateWhatsappPhoneCountryCode"
+                                />
+                                <InputText
+                                    :model-value="form.whatsapp_phone"
+                                    placeholder="(11) 98765-4321"
+                                    fluid
+                                    @update:model-value="updateWhatsappPhone"
+                                />
+                            </InputGroup>
+                            <small class="text-slate-500 dark:text-slate-400">Número utilizado para envio de notificações via WhatsApp.</small>
+                            <InputError :message="form.errors.whatsapp_phone" />
+                        </div>
 
                         <div v-if="canEditAdmin" class="rounded-lg border border-slate-200 px-3 py-3 dark:border-slate-700">
                             <label class="flex items-center justify-between">

@@ -67,7 +67,7 @@ services:
         networks:
             - sail
     evolution-api:
-        image: 'atendai/evolution-api:latest'
+        image: 'evoapicloud/evolution-api:latest'
         restart: always
         ports:
             - '${FORWARD_EVOLUTION_API_PORT:-8080}:8080'

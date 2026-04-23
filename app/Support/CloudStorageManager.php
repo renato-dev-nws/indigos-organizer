@@ -26,7 +26,7 @@ class CloudStorageManager
             'configured' => self::isConfigured($provider),
             'account_name' => SystemSetting::get(self::key($provider, 'account_name')),
             'account_email' => SystemSetting::get(self::key($provider, 'account_email')),
-            'base_folder' => SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'),
+            'base_folder' => SystemSetting::get(self::key($provider, 'base_folder'), 'indigos-organizer'),
         ];
     }
 
@@ -52,7 +52,7 @@ class CloudStorageManager
         }
 
         if (! filled(SystemSetting::get(self::key($provider, 'base_folder')))) {
-            SystemSetting::set(self::key($provider, 'base_folder'), 'ERP_Arquivos');
+            SystemSetting::set(self::key($provider, 'base_folder'), 'indigos-organizer');
         }
     }
 
@@ -79,14 +79,14 @@ class CloudStorageManager
             Config::set('filesystems.disks.google.clientId', (string) config('services.google.client_id'));
             Config::set('filesystems.disks.google.clientSecret', (string) config('services.google.client_secret'));
             Config::set('filesystems.disks.google.refreshToken', (string) SystemSetting::get(self::key($provider, 'refresh_token')));
-            Config::set('filesystems.disks.google.folder', SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'));
+            Config::set('filesystems.disks.google.folder', SystemSetting::get(self::key($provider, 'base_folder'), 'indigos-organizer'));
             return;
         }
 
         if ($provider === self::PROVIDER_DROPBOX) {
             $accessToken = self::resolveDropboxAccessToken();
             Config::set('filesystems.disks.dropbox.authorizationToken', $accessToken);
-            Config::set('filesystems.disks.dropbox.root', SystemSetting::get(self::key($provider, 'base_folder'), 'ERP_Arquivos'));
+            Config::set('filesystems.disks.dropbox.root', SystemSetting::get(self::key($provider, 'base_folder'), 'indigos-organizer'));
         }
     }
 

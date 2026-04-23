@@ -20,7 +20,7 @@ class SystemWhatsAppConnectionTest extends TestCase
         $service = Mockery::mock(EvolutionApiService::class);
         $service->shouldReceive('fetchQrCode')
             ->once()
-            ->with('main')
+            ->with('main', null)
             ->andReturn([
                 'ok' => true,
                 'status' => 200,
@@ -69,6 +69,18 @@ class SystemWhatsAppConnectionTest extends TestCase
                     ],
                 ],
             ]);
+        $service->shouldReceive('fetchInstanceInfo')
+            ->once()
+            ->with('main')
+            ->andReturn([
+                'ok' => true,
+                'status' => 200,
+                'message' => '',
+                'data' => [
+                    'ownerJid' => '5511999999999@s.whatsapp.net',
+                    'profileName' => 'Test User',
+                ],
+            ]);
         $service->shouldReceive('resolveInstanceName')
             ->once()
             ->with('main')
@@ -81,7 +93,71 @@ class SystemWhatsAppConnectionTest extends TestCase
             ->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('instance', 'main')
-            ->assertJsonPath('data.state', 'open');
+            ->assertJsonPath('data.state', 'open')
+            ->assertJsonPath('data.ownerJid', '5511999999999@s.whatsapp.net')
+            ->assertJsonPath('data.profileName', 'Test User');
+    }
+
+    public function test_admin_can_send_whatsapp_test_message(): void
+    {
+        /** @var User $admin */
+        $admin = User::factory()->createOne(['is_admin' => true]);
+
+        $service = Mockery::mock(EvolutionApiService::class);
+        $service->shouldReceive('sendTextMessage')
+            ->once()
+            ->with('5511999999999', Mockery::type('string'), 'main')
+            ->andReturn(true);
+
+        $this->app->instance(EvolutionApiService::class, $service);
+
+        $this->actingAs($admin)
+            ->postJson(route('settings.system.whatsapp.send-test'), [
+                'number' => '5511999999999',
+                'message' => 'Teste',
+                'instance' => 'main',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_admin_can_reconnect_whatsapp_instance_from_settings_endpoint(): void
+    {
+        /** @var User $admin */
+        $admin = User::factory()->createOne(['is_admin' => true]);
+
+        $service = Mockery::mock(EvolutionApiService::class);
+        $service->shouldReceive('reconnectInstance')
+            ->once()
+            ->with('main', null)
+            ->andReturn([
+                'ok' => true,
+                'status' => 200,
+                'message' => 'Instancia reiniciada.',
+                'data' => [
+                    'code' => 'ABCD-EFGH',
+                    'pairingCode' => '11223344',
+                    'instance' => [
+                        'state' => 'connecting',
+                    ],
+                ],
+            ]);
+        $service->shouldReceive('resolveInstanceName')
+            ->once()
+            ->with('main')
+            ->andReturn('main');
+
+        $this->app->instance(EvolutionApiService::class, $service);
+
+        $this->actingAs($admin)
+            ->postJson(route('settings.system.whatsapp.reconnect'), ['instance' => 'main'])
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('instance', 'main')
+            ->assertJsonPath('message', 'Instancia reiniciada.')
+            ->assertJsonPath('data.code', 'ABCD-EFGH')
+            ->assertJsonPath('data.pairingCode', '11223344')
+            ->assertJsonPath('data.connectionState', 'connecting');
     }
 
     public function test_non_admin_cannot_access_whatsapp_connection_endpoints(): void
@@ -91,6 +167,14 @@ class SystemWhatsAppConnectionTest extends TestCase
 
         $this->actingAs($user)
             ->getJson(route('settings.system.whatsapp.status', ['instance' => 'main']))
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->postJson(route('settings.system.whatsapp.reconnect'), ['instance' => 'main'])
+            ->assertForbidden();
+
+        $this->actingAs($user)
+            ->postJson(route('settings.system.whatsapp.send-test'), ['number' => '5511999999999', 'message' => 'test'])
             ->assertForbidden();
     }
 }

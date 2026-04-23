@@ -110,6 +110,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/system/whatsapp/status', [SystemSettingController::class, 'whatsappStatus'])->middleware('admin')->name('settings.system.whatsapp.status');
     Route::get('/settings/system/whatsapp/qr', [SystemSettingController::class, 'whatsappQr'])->middleware('admin')->name('settings.system.whatsapp.qr');
     Route::post('/settings/system/whatsapp/disconnect', [SystemSettingController::class, 'whatsappDisconnect'])->middleware('admin')->name('settings.system.whatsapp.disconnect');
+    Route::post('/settings/system/whatsapp/reconnect', [SystemSettingController::class, 'whatsappReconnect'])->middleware('admin')->name('settings.system.whatsapp.reconnect');
+    Route::post('/settings/system/whatsapp/send-test', [SystemSettingController::class, 'whatsappSendTest'])->middleware('admin')->name('settings.system.whatsapp.send-test');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

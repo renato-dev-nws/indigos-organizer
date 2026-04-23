@@ -5,6 +5,11 @@ import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import { Icon } from '@iconify/vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    composePhoneWithCountryCode,
+    formatBrazilPhoneInput,
+    normalizeCountryCodeInput,
+} from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 
@@ -27,23 +32,27 @@ const localModuleColors = ref({ ...(props.moduleColors || {}) });
 const showColorModal = computed(() => editingModule.value !== null);
 const moduleColorForm = useForm({ module_colors: {} });
 const cloudIntegrationsLocal = ref(JSON.parse(JSON.stringify(props.cloudIntegrations || {
-    google: { configured: false, base_folder: 'ERP_Arquivos' },
-    dropbox: { configured: false, base_folder: 'ERP_Arquivos' },
+    google: { configured: false, base_folder: 'indigos-organizer' },
+    dropbox: { configured: false, base_folder: 'indigos-organizer' },
 })));
 
 const cloudFolderForm = useForm({ base_folder: '' });
 const whatsAppForm = useForm({
     evolution_instance: props.whatsAppSettings?.instance || 'main',
-    evolution_whatsapp_user_routes: props.whatsAppSettings?.user_routes || '',
+    evolution_pairing_number: props.whatsAppSettings?.pair_number || '',
     evolution_whatsapp_group_routes: props.whatsAppSettings?.group_routes || '',
 });
 const whatsAppConnection = ref({
     status: 'unknown',
     qrBase64: null,
     pairingCode: null,
+    code: null,
+    ownerJid: null,
+    profileName: null,
     loadingStatus: false,
     loadingQr: false,
     loadingDisconnect: false,
+    loadingReconnect: false,
     error: '',
     info: '',
 });
@@ -54,6 +63,11 @@ const resolvedWhatsAppInstance = computed(() => {
     const instance = (whatsAppForm.evolution_instance || '').trim();
 
     return instance !== '' ? instance : 'main';
+});
+const resolvedPairingNumber = computed(() => {
+    const number = String(whatsAppForm.evolution_pairing_number || '').replace(/\D+/g, '');
+
+    return number !== '' ? number : null;
 });
 const isWhatsAppConnected = computed(() => ['open', 'connected'].includes(String(whatsAppConnection.value.status || '').toLowerCase()));
 const whatsAppStatusLabel = computed(() => {
@@ -177,7 +191,7 @@ const testProvider = (provider) => {
 };
 
 const saveProviderFolder = (provider) => {
-    cloudFolderForm.base_folder = cloudIntegrationsLocal.value?.[provider]?.base_folder || 'ERP_Arquivos';
+    cloudFolderForm.base_folder = cloudIntegrationsLocal.value?.[provider]?.base_folder || 'indigos-organizer';
     cloudFolderForm.patch(route('cloud.folder', { provider }), { preserveScroll: true });
 };
 
@@ -259,9 +273,13 @@ const loadWhatsAppStatus = async ({ silent = false } = {}) => {
         const nextStatus = extractConnectionState(payload);
 
         whatsAppConnection.value.status = nextStatus;
+        whatsAppConnection.value.ownerJid = payload.ownerJid || null;
+        whatsAppConnection.value.profileName = payload.profileName || null;
         if (isWhatsAppConnected.value) {
             whatsAppConnection.value.qrBase64 = null;
             whatsAppConnection.value.pairingCode = null;
+            whatsAppConnection.value.code = null;
+            whatsAppConnection.value.info = '';
             stopWhatsAppStatusPolling();
             clearWhatsAppQrAutoRefresh();
         } else if (whatsAppConnection.value.qrBase64 || nextStatus === 'connecting') {
@@ -291,18 +309,25 @@ const generateWhatsAppQr = async ({ autoRefresh = false } = {}) => {
 
     try {
         const response = await axios.get(route('settings.system.whatsapp.qr', {}, false), {
-            params: { instance: resolvedWhatsAppInstance.value },
+            params: {
+                instance: resolvedWhatsAppInstance.value,
+            },
         });
 
         const payload = response?.data?.data || {};
         whatsAppConnection.value.qrBase64 = payload.base64 || null;
         whatsAppConnection.value.pairingCode = payload.pairingCode || null;
+        whatsAppConnection.value.code = payload.code || null;
         whatsAppConnection.value.status = extractConnectionState(payload);
         whatsAppConnection.value.error = '';
         whatsAppConnection.value.info = 'QR Code atualizado. Ele sera renovado automaticamente em cerca de 35 segundos.';
 
         if (!whatsAppConnection.value.qrBase64) {
-            whatsAppConnection.value.info = 'A instancia ainda esta conectando e o QR pode demorar alguns segundos para aparecer. Tentaremos novamente automaticamente.';
+            if (whatsAppConnection.value.pairingCode || whatsAppConnection.value.code) {
+                whatsAppConnection.value.info = 'Recebemos um codigo de pareamento. Use o codigo abaixo no WhatsApp se o QR visual nao aparecer.';
+            } else {
+                whatsAppConnection.value.info = 'A instancia ainda esta conectando e o QR pode demorar alguns segundos para aparecer. Tentaremos novamente automaticamente.';
+            }
         }
 
         scheduleWhatsAppQrAutoRefresh();
@@ -329,14 +354,101 @@ const disconnectWhatsAppInstance = async () => {
 
         whatsAppConnection.value.qrBase64 = null;
         whatsAppConnection.value.pairingCode = null;
+        whatsAppConnection.value.code = null;
         whatsAppConnection.value.info = 'Instancia desconectada. Gere um novo QR Code para reconectar.';
         clearWhatsAppQrAutoRefresh();
 
-        await loadWhatsAppStatus({ silent: true });
-    } catch (error) {
+        await loadWhatsAppStatus({ silent: true });    } catch (error) {
         whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel desconectar a instancia.';
     } finally {
         whatsAppConnection.value.loadingDisconnect = false;
+    }
+};
+
+const reconnectWhatsAppInstance = async () => {
+    if (readOnly || whatsAppConnection.value.loadingReconnect) {
+        return;
+    }
+
+    whatsAppConnection.value.loadingReconnect = true;
+    whatsAppConnection.value.error = '';
+    whatsAppConnection.value.info = 'Reiniciando conexao da instancia...';
+
+    try {
+        const response = await axios.post(route('settings.system.whatsapp.reconnect', {}, false), {
+            instance: resolvedWhatsAppInstance.value,
+        });
+
+        const payload = response?.data?.data || {};
+        whatsAppConnection.value.qrBase64 = payload.base64 || null;
+        whatsAppConnection.value.pairingCode = payload.pairingCode || null;
+        whatsAppConnection.value.code = payload.code || null;
+        whatsAppConnection.value.status = extractConnectionState(payload);
+
+        const hasQrData = !!(whatsAppConnection.value.qrBase64 || whatsAppConnection.value.pairingCode || whatsAppConnection.value.code);
+        if (hasQrData) {
+            whatsAppConnection.value.info = response?.data?.message || 'Instancia reiniciada.';
+            scheduleWhatsAppQrAutoRefresh();
+        } else {
+            whatsAppConnection.value.info = 'Instancia reiniciada. Aguardando inicializacao para gerar o QR Code...';
+            // Give Baileys a few seconds to initialize, then auto-request the QR.
+            setTimeout(() => {
+                if (!isWhatsAppConnected.value && !whatsAppConnection.value.loadingQr) {
+                    generateWhatsAppQr({ autoRefresh: true });
+                }
+            }, 3000);
+        }
+
+        startWhatsAppStatusPolling();
+    } catch (error) {
+        whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel reiniciar a conexao da instancia.';
+    } finally {
+        whatsAppConnection.value.loadingReconnect = false;
+    }
+};
+
+// Send test message modal
+const showSendTestModal = ref(false);
+const sendTestCountryCode = ref('55');
+const sendTestPhone = ref('');
+const sendTestMessage = ref('Mensagem de teste do Band Organizer.');
+const sendTestLoading = ref(false);
+const sendTestError = ref('');
+const sendTestSuccess = ref('');
+
+const updateSendTestPhone = (value) => {
+    sendTestPhone.value = formatBrazilPhoneInput(value);
+};
+const updateSendTestCountryCode = (value) => {
+    sendTestCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const openSendTestModal = () => {
+    sendTestError.value = '';
+    sendTestSuccess.value = '';
+    showSendTestModal.value = true;
+};
+
+const sendTestWhatsApp = async () => {
+    sendTestError.value = '';
+    sendTestSuccess.value = '';
+    const fullNumber = composePhoneWithCountryCode(sendTestCountryCode.value, sendTestPhone.value);
+    if (!fullNumber) {
+        sendTestError.value = 'Informe um número válido.';
+        return;
+    }
+    sendTestLoading.value = true;
+    try {
+        const response = await axios.post(route('settings.system.whatsapp.send-test', {}, false), {
+            number: fullNumber,
+            message: sendTestMessage.value,
+            instance: resolvedWhatsAppInstance.value,
+        });
+        sendTestSuccess.value = response?.data?.message || 'Mensagem enviada com sucesso.';
+    } catch (error) {
+        sendTestError.value = error?.response?.data?.message || 'Falha ao enviar mensagem.';
+    } finally {
+        sendTestLoading.value = false;
     }
 };
 
@@ -347,7 +459,6 @@ onMounted(() => {
 
     loadWhatsAppStatus();
 });
-
 onBeforeUnmount(() => {
     stopWhatsAppStatusPolling();
 });
@@ -508,7 +619,7 @@ onBeforeUnmount(() => {
                         <div class="mt-3 space-y-2">
                             <label>Pasta base</label>
                             <div class="flex gap-2">
-                                <InputText v-model="cloudIntegrationsLocal.google.base_folder" :disabled="readOnly" placeholder="ERP_Arquivos" />
+                                <InputText v-model="cloudIntegrationsLocal.google.base_folder" :disabled="readOnly" placeholder="indigos-organizer" />
                                 <Button type="button" icon="pi pi-save" outlined :disabled="readOnly" @click="saveProviderFolder('google')" />
                             </div>
                         </div>
@@ -557,7 +668,7 @@ onBeforeUnmount(() => {
                         <div class="mt-3 space-y-2">
                             <label>Pasta base</label>
                             <div class="flex gap-2">
-                                <InputText v-model="cloudIntegrationsLocal.dropbox.base_folder" :disabled="readOnly" placeholder="ERP_Arquivos" />
+                                <InputText v-model="cloudIntegrationsLocal.dropbox.base_folder" :disabled="readOnly" placeholder="indigos-organizer" />
                                 <Button type="button" icon="pi pi-save" outlined :disabled="readOnly" @click="saveProviderFolder('dropbox')" />
                             </div>
                         </div>
@@ -611,17 +722,10 @@ onBeforeUnmount(() => {
                     </div>
 
                     <div class="space-y-2">
-                        <label>Rotas de usuários (1 por linha)</label>
-                        <Textarea
-                            v-model="whatsAppForm.evolution_whatsapp_user_routes"
-                            :disabled="readOnly"
-                            rows="6"
-                            autoResize
-                            placeholder="user-uuid-1=5511999999999@s.whatsapp.net"
-                            class="w-full"
-                        />
-                        <small class="text-slate-500 dark:text-slate-400">Formato: user_id=jid. Ex.: 8f1...=5511999999999@s.whatsapp.net</small>
-                        <Message v-if="whatsAppForm.errors.evolution_whatsapp_user_routes" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_whatsapp_user_routes }}</Message>
+                        <label>Número para pareamento (opcional)</label>
+                        <InputText v-model="whatsAppForm.evolution_pairing_number" :disabled="readOnly" placeholder="5511999999999" />
+                        <small class="text-slate-500 dark:text-slate-400">Quando o QR nao aparecer, a Evolution pode emitir codigo de pareamento para este numero (somente digitos com DDI).</small>
+                        <Message v-if="whatsAppForm.errors.evolution_pairing_number" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_pairing_number }}</Message>
                     </div>
 
                     <div class="space-y-2">
@@ -679,6 +783,26 @@ onBeforeUnmount(() => {
                                 @click="generateWhatsAppQr()"
                             />
                             <Button
+                                type="button"
+                                icon="pi pi-replay"
+                                label="Reiniciar conexao"
+                                severity="warning"
+                                outlined
+                                :loading="whatsAppConnection.loadingReconnect"
+                                :disabled="readOnly"
+                                @click="reconnectWhatsAppInstance"
+                            />
+                            <Button
+                                v-if="isWhatsAppConnected"
+                                type="button"
+                                icon="pi pi-send"
+                                label="Testar envio"
+                                severity="info"
+                                outlined
+                                :disabled="readOnly"
+                                @click="openSendTestModal"
+                            />
+                            <Button
                                 v-if="isWhatsAppConnected"
                                 type="button"
                                 icon="pi pi-power-off"
@@ -698,9 +822,27 @@ onBeforeUnmount(() => {
                             {{ whatsAppConnection.info }}
                         </Message>
 
-                        <div v-if="whatsAppConnection.qrBase64 && !isWhatsAppConnected" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                        <!-- Connected: show paired phone info -->
+                        <div v-if="isWhatsAppConnected && (whatsAppConnection.ownerJid || whatsAppConnection.profileName)" class="mt-3 flex items-center gap-2 rounded-xl bg-green-50 px-4 py-3 dark:bg-green-900/20">
+                            <Icon icon="ph:whatsapp-logo-fill" class="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+                            <div class="text-sm text-green-800 dark:text-green-300">
+                                <span v-if="whatsAppConnection.profileName" class="font-semibold">{{ whatsAppConnection.profileName }}</span>
+                                <span v-if="whatsAppConnection.profileName && whatsAppConnection.ownerJid"> · </span>
+                                <span v-if="whatsAppConnection.ownerJid">{{ whatsAppConnection.ownerJid.replace('@s.whatsapp.net', '') }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="(whatsAppConnection.qrBase64 || whatsAppConnection.pairingCode) && !isWhatsAppConnected" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                             <div class="flex flex-col items-center gap-3">
-                                <img :src="whatsAppConnection.qrBase64" alt="QR Code da instancia WhatsApp" class="h-56 w-56 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700" />
+                                <img
+                                    v-if="whatsAppConnection.qrBase64"
+                                    :src="whatsAppConnection.qrBase64"
+                                    alt="QR Code da instancia WhatsApp"
+                                    class="h-56 w-56 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700"
+                                />
+                                <div v-else class="flex h-56 w-56 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+                                    QR visual indisponivel no momento.
+                                </div>
                                 <p v-if="whatsAppConnection.pairingCode" class="text-sm text-slate-500 dark:text-slate-400">
                                     Codigo de pareamento: <span class="font-semibold">{{ whatsAppConnection.pairingCode }}</span>
                                 </p>
@@ -717,6 +859,51 @@ onBeforeUnmount(() => {
         <Message v-if="readOnly" severity="info" size="small">
             Apenas administradores podem alterar identidade visual, cores dos módulos e integrações em nuvem.
         </Message>
+
+        <!-- Send test message modal -->
+        <Dialog
+            :visible="showSendTestModal"
+            modal
+            :closable="true"
+            :style="{ width: '480px', maxWidth: '95vw' }"
+            header="Testar envio de mensagem"
+            @update:visible="(v) => { if (!v) { showSendTestModal = false; sendTestError = ''; sendTestSuccess = ''; } }"
+        >
+            <div class="space-y-4">
+                <div class="space-y-2">
+                    <label>Destinatário</label>
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="sendTestCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updateSendTestCountryCode"
+                        />
+                        <InputText
+                            :model-value="sendTestPhone"
+                            placeholder="(11) 98765-4321"
+                            fluid
+                            inputmode="numeric"
+                            @update:model-value="updateSendTestPhone"
+                        />
+                    </InputGroup>
+                </div>
+
+                <div class="space-y-2">
+                    <label>Mensagem</label>
+                    <Textarea v-model="sendTestMessage" rows="3" autoResize class="w-full" />
+                </div>
+
+                <Message v-if="sendTestError" severity="error" size="small" variant="simple">{{ sendTestError }}</Message>
+                <Message v-if="sendTestSuccess" severity="success" size="small" variant="simple">{{ sendTestSuccess }}</Message>
+
+                <div class="flex justify-end gap-2">
+                    <Button type="button" label="Fechar" outlined severity="secondary" @click="showSendTestModal = false; sendTestError = ''; sendTestSuccess = '';" />
+                    <Button type="button" icon="pi pi-send" label="Enviar" :loading="sendTestLoading" @click="sendTestWhatsApp" />
+                </div>
+            </div>
+        </Dialog>
 
         <Dialog
             :visible="showColorModal"

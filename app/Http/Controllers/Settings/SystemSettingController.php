@@ -34,7 +34,7 @@ class SystemSettingController extends Controller
             ],
             'whatsAppSettings' => [
                 'instance' => (string) SystemSetting::get('evolution_instance', (string) config('services.evolution.instance', 'main')),
-                'user_routes' => (string) SystemSetting::get('evolution_whatsapp_user_routes', (string) config('services.evolution.user_routes', '')),
+                'pair_number' => (string) SystemSetting::get('evolution_pairing_number', (string) config('services.evolution.pairing_number', '')),
                 'group_routes' => (string) SystemSetting::get('evolution_whatsapp_group_routes', (string) config('services.evolution.group_routes', '')),
             ],
         ]);
@@ -83,15 +83,15 @@ class SystemSettingController extends Controller
             SystemSetting::set('icon_path', null);
         }
 
-        if ($request->hasAny(['evolution_instance', 'evolution_whatsapp_user_routes', 'evolution_whatsapp_group_routes'])) {
+        if ($request->hasAny(['evolution_instance', 'evolution_pairing_number', 'evolution_whatsapp_group_routes'])) {
             $request->validate([
                 'evolution_instance' => ['nullable', 'string', 'max:120'],
-                'evolution_whatsapp_user_routes' => ['nullable', 'string', 'max:10000'],
+                'evolution_pairing_number' => ['nullable', 'string', 'max:30'],
                 'evolution_whatsapp_group_routes' => ['nullable', 'string', 'max:10000'],
             ]);
 
             SystemSetting::set('evolution_instance', (string) $request->input('evolution_instance', ''));
-            SystemSetting::set('evolution_whatsapp_user_routes', (string) $request->input('evolution_whatsapp_user_routes', ''));
+            SystemSetting::set('evolution_pairing_number', (string) $request->input('evolution_pairing_number', ''));
             SystemSetting::set('evolution_whatsapp_group_routes', (string) $request->input('evolution_whatsapp_group_routes', ''));
         }
 
@@ -101,7 +101,8 @@ class SystemSettingController extends Controller
     public function whatsappQr(Request $request, EvolutionApiService $evolution): JsonResponse
     {
         $instance = $this->resolveRequestedInstance($request);
-        $result = $evolution->fetchQrCode($instance);
+        // QR code generation does not use pairing number — pass null to ensure QR mode.
+        $result = $evolution->fetchQrCode($instance, null);
 
         if (! $result['ok']) {
             return $this->failedEvolutionResponse($result, 'Nao foi possivel gerar o QR Code.');
@@ -123,14 +124,52 @@ class SystemSettingController extends Controller
             return $this->failedEvolutionResponse($result, 'Nao foi possivel consultar o status da instancia.');
         }
 
+        $state = $this->extractConnectionState($result['data']) ?? 'unknown';
+
+        // When connected, also fetch owner info (ownerJid, profileName) from fetchInstances.
+        $ownerJid = null;
+        $profileName = null;
+        if (in_array($state, ['open', 'connected'], true)) {
+            $info = $evolution->fetchInstanceInfo($instance);
+            if ($info['ok'] && ! empty($info['data'])) {
+                $ownerJid = $info['data']['ownerJid'] ?? null;
+                $profileName = $info['data']['profileName'] ?? null;
+            }
+        }
+
         return response()->json([
             'success' => true,
             'instance' => $evolution->resolveInstanceName($instance),
             'data' => [
-                'state' => $this->extractConnectionState($result['data']) ?? 'unknown',
+                'state' => $state,
+                'ownerJid' => $ownerJid,
+                'profileName' => $profileName,
                 'raw' => $result['data'],
             ],
         ]);
+    }
+
+    public function whatsappSendTest(Request $request, EvolutionApiService $evolution): JsonResponse
+    {
+        $validated = $request->validate([
+            'number' => ['required', 'string', 'max:30'],
+            'message' => ['required', 'string', 'max:4096'],
+            'instance' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $number = preg_replace('/\D+/', '', $validated['number']);
+        if (! $number) {
+            return response()->json(['success' => false, 'message' => 'Numero invalido.'], 422);
+        }
+
+        $instance = trim((string) ($validated['instance'] ?? ''));
+        $sent = $evolution->sendTextMessage($number, $validated['message'], $instance !== '' ? $instance : null);
+
+        if (! $sent) {
+            return response()->json(['success' => false, 'message' => 'Falha ao enviar mensagem de teste. Verifique se a instancia esta conectada.'], 502);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Mensagem enviada com sucesso.']);
     }
 
     public function whatsappDisconnect(Request $request, EvolutionApiService $evolution): JsonResponse
@@ -150,6 +189,24 @@ class SystemSettingController extends Controller
         ]);
     }
 
+    public function whatsappReconnect(Request $request, EvolutionApiService $evolution): JsonResponse
+    {
+        $instance = $this->resolveRequestedInstance($request);
+        // Reconnect always recreates in QR mode; pairing number is only used during QR fetch.
+        $result = $evolution->reconnectInstance($instance, null);
+
+        if (! $result['ok']) {
+            return $this->failedEvolutionResponse($result, 'Nao foi possivel reiniciar a conexao da instancia.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'instance' => $evolution->resolveInstanceName($instance),
+            'message' => (string) (($result['message'] ?? '') !== '' ? $result['message'] : 'Instancia reiniciada com sucesso.'),
+            'data' => $this->normalizeQrPayload($result['data']),
+        ]);
+    }
+
     private function resolveRequestedInstance(Request $request): ?string
     {
         $validated = $request->validate([
@@ -159,6 +216,19 @@ class SystemSettingController extends Controller
         $instance = trim((string) ($validated['instance'] ?? ''));
 
         return $instance !== '' ? $instance : null;
+    }
+
+    private function resolveRequestedPairingNumber(Request $request): ?string
+    {
+        $validated = $request->validate([
+            'number' => ['nullable', 'string', 'max:30'],
+        ]);
+
+        $raw = trim((string) ($validated['number'] ?? ''));
+
+        $normalized = preg_replace('/\D+/', '', $raw);
+
+        return is_string($normalized) && $normalized !== '' ? $normalized : null;
     }
 
     private function failedEvolutionResponse(array $result, string $fallbackMessage): JsonResponse

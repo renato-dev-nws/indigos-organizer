@@ -27,6 +27,7 @@ class User extends Authenticatable
         'push_enabled',
         'email_enabled',
         'whatsapp_enabled',
+        'whatsapp_phone',
     ];
 
     protected $hidden = [

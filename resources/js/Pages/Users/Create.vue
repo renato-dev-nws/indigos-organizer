@@ -1,8 +1,14 @@
 <script setup>
 import { Link, useForm, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import BoFormSection from '@/Components/ui/BoFormSection.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
+import {
+    composePhoneWithCountryCode,
+    formatBrazilPhoneInput,
+    normalizeCountryCodeInput,
+} from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
 
@@ -20,12 +26,28 @@ const form = useForm({
     avatar_url: '',
     is_admin: false,
     theme: 'system',
+    whatsapp_phone: '',
 });
+
+const whatsappCountryCode = ref('55');
 
 const page = usePage();
 const isAdmin = !!page.props.auth?.user?.is_admin;
 
-const submit = () => form.post(route('users.store'));
+const updateWhatsappPhone = (value) => {
+    form.whatsapp_phone = formatBrazilPhoneInput(value);
+};
+
+const updateWhatsappCountryCode = (value) => {
+    whatsappCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const submit = () => form
+    .transform((data) => ({
+        ...data,
+        whatsapp_phone: composePhoneWithCountryCode(whatsappCountryCode.value, data.whatsapp_phone) || null,
+    }))
+    .post(route('users.store'));
 </script>
 
 <template>
@@ -79,6 +101,22 @@ const submit = () => form.post(route('users.store'));
                 <div class="space-y-2">
                     <label for="user-password-confirmation">Confirmar senha</label>
                     <Password id="user-password-confirmation" v-model="form.password_confirmation" :feedback="false" toggle-mask fluid />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="user-whatsapp">WhatsApp</label>
+                    <InputGroup>
+                        <InputGroupAddon>+</InputGroupAddon>
+                        <InputText
+                            :model-value="whatsappCountryCode"
+                            style="width: 54px; min-width: 54px; max-width: 54px"
+                            inputmode="numeric"
+                            @update:model-value="updateWhatsappCountryCode"
+                        />
+                        <InputText id="user-whatsapp" :model-value="form.whatsapp_phone" placeholder="(11) 98765-4321" fluid @update:model-value="updateWhatsappPhone" />
+                    </InputGroup>
+                    <small class="text-slate-500 dark:text-slate-400">Número utilizado para envio de notificações via WhatsApp.</small>
+                    <Message v-if="form.errors.whatsapp_phone" severity="error" size="small" variant="simple">{{ form.errors.whatsapp_phone }}</Message>
                 </div>
             </BoFormSection>
 

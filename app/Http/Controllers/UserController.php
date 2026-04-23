@@ -48,6 +48,7 @@ class UserController extends Controller
             'is_admin' => ['sometimes', 'boolean'],
             'avatar_url' => ['nullable', 'url', 'max:2048'],
             'theme' => ['required', 'in:light,dark,system'],
+            'whatsapp_phone' => ['nullable', 'string', 'max:30'],
         ]);
 
         User::create($validated);
@@ -98,6 +99,7 @@ class UserController extends Controller
             'push_enabled' => ['nullable', 'boolean'],
             'email_enabled' => ['nullable', 'boolean'],
             'whatsapp_enabled' => ['nullable', 'boolean'],
+            'whatsapp_phone' => ['nullable', 'string', 'max:30'],
             'theme' => ['sometimes', 'in:light,dark,system'],
         ]);
 
