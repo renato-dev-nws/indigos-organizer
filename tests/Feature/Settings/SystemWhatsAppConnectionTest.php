@@ -46,7 +46,7 @@ class SystemWhatsAppConnectionTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('instance', 'main')
             ->assertJsonPath('data.base64', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA')
-            ->assertJsonPath('data.pairingCode', 'ABCDEFGH')
+            ->assertJsonPath('data.pairingCode', 'ABCD-EFGH')
             ->assertJsonPath('data.connectionState', 'connecting');
     }
 
@@ -156,7 +156,7 @@ class SystemWhatsAppConnectionTest extends TestCase
             ->assertJsonPath('instance', 'main')
             ->assertJsonPath('message', 'Instancia reiniciada.')
             ->assertJsonPath('data.code', 'ABCD-EFGH')
-            ->assertJsonPath('data.pairingCode', '11223344')
+            ->assertJsonPath('data.pairingCode', '1122-3344')
             ->assertJsonPath('data.connectionState', 'connecting');
     }
 

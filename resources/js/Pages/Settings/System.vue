@@ -4,11 +4,13 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import BoPageHeader from '@/Components/ui/BoPageHeader.vue';
 import { Icon } from '@iconify/vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
+import { useConfirm } from 'primevue/useconfirm';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import {
     composePhoneWithCountryCode,
     formatBrazilPhoneInput,
     normalizeCountryCodeInput,
+    splitPhoneByCountryCode,
 } from '@/Utils/phone';
 
 defineOptions({ layout: AppLayout });
@@ -23,6 +25,7 @@ const props = defineProps({
     whatsAppSettings: { type: Object, default: () => ({}) },
 });
 const page = usePage();
+const confirm = useConfirm();
 const readOnly = !page.props.auth?.user?.is_admin;
 const WHATSAPP_STATUS_POLL_INTERVAL_MS = 30000;
 
@@ -39,9 +42,14 @@ const cloudIntegrationsLocal = ref(JSON.parse(JSON.stringify(props.cloudIntegrat
 const cloudFolderForm = useForm({ base_folder: '' });
 const whatsAppForm = useForm({
     evolution_instance: props.whatsAppSettings?.instance || 'main',
-    evolution_pairing_number: props.whatsAppSettings?.pair_number || '',
-    evolution_whatsapp_group_routes: props.whatsAppSettings?.group_routes || '',
+    evolution_pairing_number: '',
 });
+const pairingPhoneCountryCode = ref('55');
+const pairingPhoneLocal = ref('');
+
+const initialPairingParts = splitPhoneByCountryCode(props.whatsAppSettings?.pair_number || '');
+pairingPhoneCountryCode.value = initialPairingParts.countryCode;
+pairingPhoneLocal.value = formatBrazilPhoneInput(initialPairingParts.localDigits);
 const whatsAppConnection = ref({
     status: 'unknown',
     qrBase64: null,
@@ -65,7 +73,7 @@ const resolvedWhatsAppInstance = computed(() => {
     return instance !== '' ? instance : 'main';
 });
 const resolvedPairingNumber = computed(() => {
-    const number = String(whatsAppForm.evolution_pairing_number || '').replace(/\D+/g, '');
+    const number = composePhoneWithCountryCode(pairingPhoneCountryCode.value, pairingPhoneLocal.value);
 
     return number !== '' ? number : null;
 });
@@ -198,9 +206,20 @@ const saveProviderFolder = (provider) => {
 const cloudStatusText = (provider) => (props.cloudIntegrations?.[provider]?.configured ? 'Conectado' : 'Não conectado');
 
 const saveWhatsAppSettings = () => {
-    whatsAppForm.post(route('settings.system.update'), {
+    whatsAppForm.transform((data) => ({
+        ...data,
+        evolution_pairing_number: resolvedPairingNumber.value || '',
+    })).post(route('settings.system.update'), {
         preserveScroll: true,
     });
+};
+
+const updatePairingPhoneCountryCode = (value) => {
+    pairingPhoneCountryCode.value = normalizeCountryCodeInput(value);
+};
+
+const updatePairingPhoneLocal = (value) => {
+    pairingPhoneLocal.value = formatBrazilPhoneInput(value);
 };
 
 const clearWhatsAppQrAutoRefresh = () => {
@@ -358,11 +377,32 @@ const disconnectWhatsAppInstance = async () => {
         whatsAppConnection.value.info = 'Instancia desconectada. Gere um novo QR Code para reconectar.';
         clearWhatsAppQrAutoRefresh();
 
-        await loadWhatsAppStatus({ silent: true });    } catch (error) {
+        await loadWhatsAppStatus({ silent: true });
+    } catch (error) {
         whatsAppConnection.value.error = error?.response?.data?.message || 'Nao foi possivel desconectar a instancia.';
     } finally {
         whatsAppConnection.value.loadingDisconnect = false;
     }
+};
+
+const requestDisconnectConfirmation = () => {
+    confirm.require({
+        header: 'Confirmar desconexao',
+        message: 'O sistema desconectara o numero atual e ele precisara ser configurado novamente no aparelho pareado. Deseja continuar?',
+        icon: 'pi pi-exclamation-triangle',
+        rejectProps: {
+            label: 'Cancelar',
+            severity: 'secondary',
+            outlined: true,
+        },
+        acceptProps: {
+            label: 'Desconectar',
+            severity: 'danger',
+        },
+        accept: () => {
+            disconnectWhatsAppInstance();
+        },
+    });
 };
 
 const reconnectWhatsAppInstance = async () => {
@@ -405,6 +445,26 @@ const reconnectWhatsAppInstance = async () => {
     } finally {
         whatsAppConnection.value.loadingReconnect = false;
     }
+};
+
+const requestReconnectConfirmation = () => {
+    confirm.require({
+        header: 'Confirmar reinicio da conexao',
+        message: 'O sistema desconectara o numero atual e ele precisara ser configurado novamente no aparelho pareado. Deseja continuar?',
+        icon: 'pi pi-exclamation-triangle',
+        rejectProps: {
+            label: 'Cancelar',
+            severity: 'secondary',
+            outlined: true,
+        },
+        acceptProps: {
+            label: 'Reiniciar conexao',
+            severity: 'warning',
+        },
+        accept: () => {
+            reconnectWhatsAppInstance();
+        },
+    });
 };
 
 // Send test message modal
@@ -714,32 +774,36 @@ onBeforeUnmount(() => {
                         Configure os destinos de WhatsApp no nivel do sistema. O envio so acontece para usuarios com notificacoes de WhatsApp habilitadas.
                     </p>
 
-                    <div class="space-y-2">
-                        <label>Nome da instância</label>
-                        <InputText v-model="whatsAppForm.evolution_instance" :disabled="readOnly" placeholder="main" />
-                        <small class="text-slate-500 dark:text-slate-400">Usado no endpoint da Evolution API (sendText/[instancia]).</small>
-                        <Message v-if="whatsAppForm.errors.evolution_instance" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_instance }}</Message>
-                    </div>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <label>Nome da instância</label>
+                            <InputText v-model="whatsAppForm.evolution_instance" :disabled="readOnly" placeholder="main" />
+                            <small class="text-slate-500 dark:text-slate-400">Usado no endpoint da Evolution API (sendText/[instancia]).</small>
+                            <Message v-if="whatsAppForm.errors.evolution_instance" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_instance }}</Message>
+                        </div>
 
-                    <div class="space-y-2">
-                        <label>Número para pareamento (opcional)</label>
-                        <InputText v-model="whatsAppForm.evolution_pairing_number" :disabled="readOnly" placeholder="5511999999999" />
-                        <small class="text-slate-500 dark:text-slate-400">Quando o QR nao aparecer, a Evolution pode emitir codigo de pareamento para este numero (somente digitos com DDI).</small>
-                        <Message v-if="whatsAppForm.errors.evolution_pairing_number" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_pairing_number }}</Message>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label>Rotas de grupos (1 por linha)</label>
-                        <Textarea
-                            v-model="whatsAppForm.evolution_whatsapp_group_routes"
-                            :disabled="readOnly"
-                            rows="5"
-                            autoResize
-                            placeholder="operacoes=1203630XXXXXX@g.us"
-                            class="w-full"
-                        />
-                        <small class="text-slate-500 dark:text-slate-400">Formato: chave=jid_grupo. Ex.: operacoes=1203...@g.us</small>
-                        <Message v-if="whatsAppForm.errors.evolution_whatsapp_group_routes" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_whatsapp_group_routes }}</Message>
+                        <div class="space-y-2">
+                            <label>Número para pareamento</label>
+                            <InputGroup>
+                                <InputGroupAddon>+</InputGroupAddon>
+                                <InputText
+                                    :model-value="pairingPhoneCountryCode"
+                                    style="width: 54px; min-width: 54px; max-width: 54px"
+                                    inputmode="numeric"
+                                    @update:model-value="updatePairingPhoneCountryCode"
+                                />
+                                <InputText
+                                    id="system-whatsapp-pairing-number"
+                                    :model-value="pairingPhoneLocal"
+                                    placeholder="(11) 98765-4321"
+                                    fluid
+                                    inputmode="numeric"
+                                    @update:model-value="updatePairingPhoneLocal"
+                                />
+                            </InputGroup>
+                            <small class="text-slate-500 dark:text-slate-400">Número do aparelho que será pareado.</small>
+                            <Message v-if="whatsAppForm.errors.evolution_pairing_number" severity="error" size="small" variant="simple">{{ whatsAppForm.errors.evolution_pairing_number }}</Message>
+                        </div>
                     </div>
 
                     <div class="flex justify-end">
@@ -768,15 +832,6 @@ onBeforeUnmount(() => {
                             <Button
                                 type="button"
                                 icon="pi pi-refresh"
-                                label="Atualizar status"
-                                outlined
-                                :loading="whatsAppConnection.loadingStatus"
-                                :disabled="readOnly"
-                                @click="loadWhatsAppStatus()"
-                            />
-                            <Button
-                                type="button"
-                                icon="pi pi-qrcode"
                                 label="Gerar QR Code"
                                 :loading="whatsAppConnection.loadingQr"
                                 :disabled="readOnly"
@@ -784,13 +839,12 @@ onBeforeUnmount(() => {
                             />
                             <Button
                                 type="button"
-                                icon="pi pi-replay"
-                                label="Reiniciar conexao"
-                                severity="warning"
+                                icon="pi pi-refresh"
+                                label="Atualizar status"
                                 outlined
-                                :loading="whatsAppConnection.loadingReconnect"
+                                :loading="whatsAppConnection.loadingStatus"
                                 :disabled="readOnly"
-                                @click="reconnectWhatsAppInstance"
+                                @click="loadWhatsAppStatus()"
                             />
                             <Button
                                 v-if="isWhatsAppConnected"
@@ -811,7 +865,17 @@ onBeforeUnmount(() => {
                                 outlined
                                 :loading="whatsAppConnection.loadingDisconnect"
                                 :disabled="readOnly"
-                                @click="disconnectWhatsAppInstance"
+                                @click="requestDisconnectConfirmation"
+                            />
+                            <Button
+                                type="button"
+                                icon="pi pi-replay"
+                                label="Reiniciar conexao"
+                                severity="warning"
+                                outlined
+                                :loading="whatsAppConnection.loadingReconnect"
+                                :disabled="readOnly"
+                                @click="requestReconnectConfirmation"
                             />
                         </div>
 
@@ -832,7 +896,7 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
-                        <div v-if="(whatsAppConnection.qrBase64 || whatsAppConnection.pairingCode) && !isWhatsAppConnected" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                        <div v-if="whatsAppConnection.qrBase64 && !isWhatsAppConnected" class="mt-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                             <div class="flex flex-col items-center gap-3">
                                 <img
                                     v-if="whatsAppConnection.qrBase64"
@@ -840,12 +904,6 @@ onBeforeUnmount(() => {
                                     alt="QR Code da instancia WhatsApp"
                                     class="h-56 w-56 rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-700"
                                 />
-                                <div v-else class="flex h-56 w-56 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
-                                    QR visual indisponivel no momento.
-                                </div>
-                                <p v-if="whatsAppConnection.pairingCode" class="text-sm text-slate-500 dark:text-slate-400">
-                                    Codigo de pareamento: <span class="font-semibold">{{ whatsAppConnection.pairingCode }}</span>
-                                </p>
                                 <p class="text-xs text-slate-400 dark:text-slate-500">
                                     O QR Code expira rapidamente. Esta tela renova automaticamente o codigo a cada ~35 segundos.
                                 </p>

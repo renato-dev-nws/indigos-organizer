@@ -55,24 +55,70 @@ class EvolutionApiService
             'data' => [],
         ];
 
-        for ($attempt = 0; $attempt < 4; $attempt++) {
-            $connect = $this->performJsonRequest('get', '/instance/connect/'.rawurlencode($instanceName), $pairingNumber !== null ? [
-                'number' => $pairingNumber,
-            ] : []);
-            if (! $connect['ok']) {
-                return $connect;
-            }
+        if ($pairingNumber !== null) {
+            $candidates = $this->pairingNumberCandidates($pairingNumber);
 
-            $lastConnect = $connect;
-            if ($this->hasQrCodeData($connect['data'])) {
-                return [
-                    ...$connect,
-                    'data' => $this->attachStateToPayload($connect['data'], $state['data']),
-                ];
-            }
+            foreach ($candidates as $candidate) {
+                // Pairing-code flow for Evolution API: POST /instance/connect/{instance}
+                // with number + options.pairingCode=true.
+                for ($attempt = 0; $attempt < 3; $attempt++) {
+                    $connect = $this->performJsonRequest('post', '/instance/connect/'.rawurlencode($instanceName), [
+                        'number' => $candidate,
+                        'options' => [
+                            'pairingCode' => true,
+                        ],
+                    ]);
+                    if (! $connect['ok']) {
+                        return $connect;
+                    }
 
-            if ($attempt < 3) {
-                usleep(750000);
+                    $lastConnect = $connect;
+                    if ($this->hasPairingCodeData($connect['data'])) {
+                        return [
+                            ...$connect,
+                            'data' => $this->attachStateToPayload($connect['data'], $state['data']),
+                        ];
+                    }
+
+                    if ($attempt < 2) {
+                        usleep(700000);
+                    }
+                }
+
+                // Backward-compatible fallback for builds that still expect GET with query number.
+                $connectFallback = $this->performJsonRequest('get', '/instance/connect/'.rawurlencode($instanceName), [
+                    'number' => $candidate,
+                ]);
+                if (! $connectFallback['ok']) {
+                    return $connectFallback;
+                }
+
+                $lastConnect = $connectFallback;
+                if ($this->hasPairingCodeData($connectFallback['data'])) {
+                    return [
+                        ...$connectFallback,
+                        'data' => $this->attachStateToPayload($connectFallback['data'], $state['data']),
+                    ];
+                }
+            }
+        } else {
+            for ($attempt = 0; $attempt < 4; $attempt++) {
+                $connect = $this->performJsonRequest('get', '/instance/connect/'.rawurlencode($instanceName));
+                if (! $connect['ok']) {
+                    return $connect;
+                }
+
+                $lastConnect = $connect;
+                if ($this->hasQrCodeData($connect['data'])) {
+                    return [
+                        ...$connect,
+                        'data' => $this->attachStateToPayload($connect['data'], $state['data']),
+                    ];
+                }
+
+                if ($attempt < 3) {
+                    usleep(750000);
+                }
             }
         }
 
@@ -306,6 +352,17 @@ class EvolutionApiService
         return is_string($pairingCode) && trim($pairingCode) !== '';
     }
 
+    private function hasPairingCodeData(array $payload): bool
+    {
+        $pairingCode = $payload['pairingCode']
+            ?? ($payload['pairing']['code'] ?? null)
+            ?? ($payload['response']['pairingCode'] ?? null)
+            ?? ($payload['response']['pairing']['code'] ?? null)
+            ?? null;
+
+        return is_string($pairingCode) && trim($pairingCode) !== '';
+    }
+
     private function attachStateToPayload(array $payload, array $statePayload): array
     {
         $state = $statePayload['instance']['state'] ?? null;
@@ -394,5 +451,17 @@ class EvolutionApiService
         }
 
         return $normalized;
+    }
+
+    private function pairingNumberCandidates(string $number): array
+    {
+        $candidates = [$number];
+
+        // Some Evolution API builds expect local number (without DDI), others expect full E.164 digits.
+        if (str_starts_with($number, '55') && strlen($number) > 11) {
+            $candidates[] = substr($number, 2);
+        }
+
+        return array_values(array_unique(array_filter($candidates, fn ($item) => is_string($item) && $item !== '')));
     }
 }

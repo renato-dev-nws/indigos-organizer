@@ -101,8 +101,8 @@ class SystemSettingController extends Controller
     public function whatsappQr(Request $request, EvolutionApiService $evolution): JsonResponse
     {
         $instance = $this->resolveRequestedInstance($request);
-        // QR code generation does not use pairing number — pass null to ensure QR mode.
-        $result = $evolution->fetchQrCode($instance, null);
+        $pairingNumber = $this->resolveRequestedPairingNumber($request);
+        $result = $evolution->fetchQrCode($instance, $pairingNumber);
 
         if (! $result['ok']) {
             return $this->failedEvolutionResponse($result, 'Nao foi possivel gerar o QR Code.');
@@ -259,14 +259,42 @@ class SystemSettingController extends Controller
             $base64 = 'data:image/png;base64,'.$base64;
         }
 
-        $pairingCode = Arr::get($data, 'pairingCode') ?? Arr::get($data, 'pairing.code');
+        $pairingCode = $this->normalizePairingCodeCandidate(
+            Arr::get($data, 'pairingCode')
+            ?? Arr::get($data, 'pairing.code')
+            ?? Arr::get($data, 'response.pairingCode')
+            ?? Arr::get($data, 'response.pairing.code')
+            ?? Arr::get($data, 'code')
+        );
 
         return [
             'code' => Arr::get($data, 'code'),
             'base64' => $base64 !== '' ? $base64 : null,
-            'pairingCode' => is_string($pairingCode) && $pairingCode !== '' ? $pairingCode : null,
+            'pairingCode' => $pairingCode,
             'connectionState' => $this->extractConnectionState($data) ?? 'unknown',
         ];
+    }
+
+    private function normalizePairingCodeCandidate(mixed $candidate): ?string
+    {
+        if (! is_string($candidate)) {
+            return null;
+        }
+
+        $clean = strtoupper(trim($candidate));
+        if ($clean === '') {
+            return null;
+        }
+
+        if (preg_match('/^[A-Z0-9]{4}-[A-Z0-9]{4}$/', $clean) === 1) {
+            return $clean;
+        }
+
+        if (preg_match('/^[A-Z0-9]{8}$/', $clean) === 1) {
+            return substr($clean, 0, 4).'-'.substr($clean, 4, 4);
+        }
+
+        return null;
     }
 
     private function extractConnectionState(array $payload): ?string
