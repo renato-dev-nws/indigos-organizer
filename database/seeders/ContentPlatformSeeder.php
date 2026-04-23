@@ -3,15 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\ContentPlatform;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ContentPlatformSeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
-
         $data = [
             ['name' => 'TikTok', 'icon' => 'mdi:music-note-eighth'],
             ['name' => 'Instagram', 'icon' => 'mdi:instagram'],
@@ -20,7 +17,7 @@ class ContentPlatformSeeder extends Seeder
 
         foreach ($data as $item) {
             ContentPlatform::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => null, 'name' => $item['name']],
                 ['icon' => $item['icon']],
             );
         }

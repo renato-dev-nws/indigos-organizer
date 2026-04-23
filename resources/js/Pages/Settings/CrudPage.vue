@@ -54,7 +54,7 @@ const switchTab = (tabValue) => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader :title="pageTitle" subtitle="" />
+        <BoPageHeader :title="pageTitle" subtitle="" icon="mdi:settings-outline" />
 
         <div v-if="tabs?.length" class="max-w-md">
             <SelectButton

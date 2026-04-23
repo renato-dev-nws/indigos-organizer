@@ -7,6 +7,7 @@ use App\Models\IdeaCategory;
 use App\Models\IdeaType;
 use App\Models\TaskStatus;
 use App\Models\User;
+use App\Models\Venue;
 use App\Models\VenueStyle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -101,5 +102,58 @@ class VenueAndStylesIntegrationTest extends TestCase
         $venue = $user->venues()->latest()->firstOrFail();
         $this->assertSame(['PA', 'Luz', 'Monitor'], $venue->equipment_tags);
         $this->assertSame('Sala 2', $venue->address_complement);
+    }
+
+    public function test_venue_styles_settings_page_loads_with_pivot_based_counts(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $style = VenueStyle::create([
+            'user_id' => null,
+            'name' => 'Acústico',
+            'color' => '#00aa00',
+            'domain' => VenueStyle::DOMAIN_VENUES,
+        ]);
+
+        $venue = Venue::create([
+            'user_id' => $user->id,
+            'name' => 'Casa Teste',
+            'status' => 'undefined',
+        ]);
+
+        $venue->styles()->sync([$style->id]);
+
+        $this->actingAs($user)
+            ->get(route('settings.pages.styles', ['tab' => 'venues']))
+            ->assertOk();
+    }
+
+    public function test_user_cannot_delete_venue_style_with_linked_venues(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $style = VenueStyle::create([
+            'user_id' => $user->id,
+            'name' => 'Vintage',
+            'color' => '#aa00aa',
+            'domain' => VenueStyle::DOMAIN_VENUES,
+        ]);
+
+        $venue = Venue::create([
+            'user_id' => $user->id,
+            'name' => 'Arena Teste',
+            'status' => 'undefined',
+        ]);
+
+        $venue->styles()->sync([$style->id]);
+
+        $this->actingAs($user)
+            ->delete(route('settings.venue-styles.destroy', $style))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('venue_styles', ['id' => $style->id]);
     }
 }

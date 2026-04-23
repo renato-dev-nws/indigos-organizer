@@ -14,10 +14,10 @@ class InitialSettingsSeeder extends Seeder
             SystemModuleSettingsSeeder::class,
         ]);
 
-        // User-scoped settings are only seeded when at least one user exists.
+        /* // User-scoped settings are only seeded when at least one user exists.
         if (! User::query()->exists()) {
             return;
-        }
+        } */
 
         $this->call([
             IdeaTypeSeeder::class,

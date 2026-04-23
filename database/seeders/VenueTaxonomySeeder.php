@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\VenueCategory;
 use App\Models\VenueStyle;
 use App\Models\VenueType;
@@ -12,8 +11,6 @@ class VenueTaxonomySeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
-
         $types = [
             ['name' => 'Casa de show', 'color' => '#ef4444', 'icon' => 'mdi:storefront-outline'],
             ['name' => 'Bar', 'color' => '#f59e0b', 'icon' => 'mdi:glass-cocktail'],
@@ -22,7 +19,7 @@ class VenueTaxonomySeeder extends Seeder
 
         foreach ($types as $item) {
             VenueType::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => null, 'name' => $item['name']],
                 ['color' => $item['color'], 'icon' => $item['icon']],
             );
         }
@@ -35,7 +32,7 @@ class VenueTaxonomySeeder extends Seeder
 
         foreach ($categories as $item) {
             VenueCategory::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => null, 'name' => $item['name']],
                 ['color' => $item['color'], 'icon' => $item['icon']],
             );
         }
@@ -48,7 +45,7 @@ class VenueTaxonomySeeder extends Seeder
 
         foreach ($venueStyles as $item) {
             VenueStyle::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name'], 'domain' => $item['domain']],
+                ['user_id' => null, 'name' => $item['name'], 'domain' => $item['domain']],
                 ['color' => $item['color'], 'icon' => $item['icon']],
             );
         }
@@ -61,7 +58,7 @@ class VenueTaxonomySeeder extends Seeder
 
         foreach ($contentStyles as $item) {
             VenueStyle::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name'], 'domain' => $item['domain']],
+                ['user_id' => null, 'name' => $item['name'], 'domain' => $item['domain']],
                 ['color' => $item['color'], 'icon' => $item['icon']],
             );
         }

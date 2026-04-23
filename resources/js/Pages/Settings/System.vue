@@ -526,7 +526,7 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Sistema" subtitle="Personalize a identidade visual da aplicação." />
+        <BoPageHeader title="Configurações do Sistema" icon="mdi:settings-outline" subtitle="Personalize a identidade visual da aplicação." />
 
         <Card>
             <template #title>Cores dos módulos</template>

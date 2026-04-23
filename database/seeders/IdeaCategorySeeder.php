@@ -3,15 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\IdeaCategory;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class IdeaCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'joao@band.com')->first() ?? User::firstOrFail();
-
         $data = [
             ['name' => 'Divulgação', 'icon' => 'mdi:bullhorn-variant-outline'],
             ['name' => 'Marketing', 'icon' => 'mdi:chart-line'],
@@ -23,7 +20,7 @@ class IdeaCategorySeeder extends Seeder
 
         foreach ($data as $item) {
             IdeaCategory::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => null, 'name' => $item['name']],
                 ['icon' => $item['icon']],
             );
         }

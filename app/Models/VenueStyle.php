@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class VenueStyle extends Model
 {
@@ -27,9 +26,9 @@ class VenueStyle extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function venues(): HasMany
+    public function venues(): BelongsToMany
     {
-        return $this->hasMany(Venue::class);
+        return $this->belongsToMany(Venue::class, 'venue_venue_style');
     }
 
     public function ideas(): BelongsToMany

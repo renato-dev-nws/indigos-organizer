@@ -3,15 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\ContentCategory;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class ContentCategorySeeder extends Seeder
 {
     public function run(): void
     {
-        $user = User::where('email', 'demo@band.com')->firstOrFail();
-
         $data = [
             ['name' => 'Humor', 'color' => '#f59e0b'],
             ['name' => 'Divulgacao de Show', 'color' => '#6366f1'],
@@ -22,7 +19,7 @@ class ContentCategorySeeder extends Seeder
 
         foreach ($data as $item) {
             ContentCategory::updateOrCreate(
-                ['user_id' => $user->id, 'name' => $item['name']],
+                ['user_id' => null, 'name' => $item['name']],
                 ['color' => $item['color']]
             );
         }

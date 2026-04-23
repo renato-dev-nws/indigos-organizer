@@ -39,7 +39,7 @@ const menuItems = computed(() => [
     { label: 'Informações Úteis', icon: 'ph:info-bold', href: route('shared-infos.index') },
     {
         label: 'Configurações',
-        icon: 'ph:gear-six-bold',
+        icon: 'mdi:settings-outline',
         items: [
             { label: 'Tipos', icon: 'ph:tag-bold', href: route('settings.pages.types') },
             { label: 'Categorias', icon: 'ph:bookmark-bold', href: route('settings.pages.categories') },
