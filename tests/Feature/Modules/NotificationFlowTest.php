@@ -291,6 +291,7 @@ class NotificationFlowTest extends TestCase
     public function test_user_can_remove_single_notification(): void
     {
         $owner = User::factory()->createOne();
+        /** @var User&Authenticatable $assignee */
         $assignee = User::factory()->createOne();
 
         $status = TaskStatus::create([

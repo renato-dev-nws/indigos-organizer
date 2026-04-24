@@ -2,7 +2,7 @@
 # Licensed under Polyform Noncommercial License 1.0.0
 # Uso comercial e servicos de instalacao pagos sao proibidos.
 
-FROM php:8.3-cli
+FROM scratch
 
 WORKDIR /app
 

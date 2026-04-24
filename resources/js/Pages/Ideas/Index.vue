@@ -271,8 +271,8 @@ const ideaCategoriesForDisplay = (idea) => {
                         <Column header="Status">
                             <template #body="{ data }"><BoStatusTag :value="data.status" /></template>
                         </Column>
-                        <Column header="Atualizado em">
-                            <template #body="{ data }"><BoDateText :value="data.updated_at" mode="datetime" /></template>
+                        <Column header="Autor">
+                            <template #body="{ data }">{{ data.user?.name || '-' }}</template>
                         </Column>
                         <Column header="Ações" class="bo-action-col w-24">
                             <template #body="{ data }">
@@ -326,8 +326,8 @@ const ideaCategoriesForDisplay = (idea) => {
                         </div>
 
                         <div>
-                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Atualizado em</p>
-                            <p class="text-xs text-slate-600 dark:text-slate-300"><BoDateText :value="idea.updated_at" mode="datetime" /></p>
+                            <p class="text-[11px] uppercase tracking-wide text-slate-500">Autor</p>
+                            <p class="text-xs text-slate-600 dark:text-slate-300">{{ idea.user?.name || '-' }}</p>
                         </div>
                     </div>
 

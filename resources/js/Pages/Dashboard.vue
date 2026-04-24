@@ -479,11 +479,11 @@ const goWeeklyProgramToIndicator = (index) => {
 <template>
     <div class="space-y-4 md:space-y-6">
         <div class="hidden md:block">
-            <BoPageHeader title="Dashboard" subtitle="Resumo de como está sua oranização" icon="ph:squares-four-bold" />
+            <BoPageHeader title="Dashboard" :subtitle="`Olá, ${page.props.auth?.user?.name || ''}! Veja o resumo de como está sua oranização`" icon="ph:squares-four-bold" />
         </div>
 
         <div class="block md:hidden">
-            <BoPageHeader :title="`Olá, ${page.props.auth?.user?.name || ''}!`" subtitle="Organize sua arte aqui" icon="ph:sparkle-bold" />
+            <BoPageHeader title="Dashboard" :subtitle="`Olá, ${page.props.auth?.user?.name || ''}!\n\nVeja o resumo da oranização`" icon="ph:squares-four-bold" />
         </div>
 
         <div class="hidden gap-3 md:grid md:grid-cols-3">
@@ -543,6 +543,7 @@ const goWeeklyProgramToIndicator = (index) => {
                 <p class="text-[11px] font-medium leading-tight">{{ shortcut.title }}</p>
             </Link>
         </div>
+        <hr class="md:hidden" />
 
         <Card>
             <template #title>
@@ -682,6 +683,8 @@ const goWeeklyProgramToIndicator = (index) => {
             </template>
         </Card>
 
+        <hr />
+
         <div class="hidden grid-cols-1 gap-4 md:grid lg:grid-cols-2">
             <Card>
                 <template #title>
@@ -795,7 +798,7 @@ const goWeeklyProgramToIndicator = (index) => {
             </Carousel>
         </div>
 
-        <hr class="md:hidden" />
+        <hr  />
 
         <div class="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Link v-for="card in generalCards" :key="card.title" :href="card.href">
@@ -808,6 +811,7 @@ const goWeeklyProgramToIndicator = (index) => {
             </Link>
         </div>
 
+        <hr class="md:hidden" />
 
         <div class="hidden gap-4 xl:grid xl:grid-cols-2">
             <Card>
@@ -941,25 +945,28 @@ const goWeeklyProgramToIndicator = (index) => {
             </Card>
         </div>
 
-        <Card class="md:hidden">
-            <template #title>Votação</template>
-            <template #content>
-                <div v-if="boardIdeas.length" class="space-y-3">
-                    <div v-for="idea in boardIdeas" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="mb-2 flex items-start justify-between gap-2">
-                            <Link :href="route('ideas.show', idea.id)" class="font-semibold hover:underline">{{ idea.title }}</Link>
-                            <Tag value="No quadro" severity="warn" />
-                        </div>
-                        <p class="mb-3 text-sm text-slate-500">Criada por {{ idea.user?.name || '-' }}</p>
-                        <div class="flex flex-wrap gap-2">
-                            <Button size="small" label="Na mesa" @click="vote(idea.id, 'on_table')" />
-                            <Button size="small" label="Na gaveta" severity="secondary" @click="vote(idea.id, 'in_drawer')" />
-                            <Button size="small" label="No lixo" severity="danger" @click="vote(idea.id, 'trash')" />
+        <div class="md:hidden">
+            <Card>
+                <template #title>Votação</template>
+                <template #content>
+                    <div v-if="boardIdeas.length" class="space-y-3">
+                        <div v-for="idea in boardIdeas" :key="idea.id" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                            <div class="mb-2 flex items-start justify-between gap-2">
+                                <Link :href="route('ideas.show', idea.id)" class="font-semibold hover:underline">{{ idea.title }}</Link>
+                                <Tag value="No quadro" severity="warn" />
+                            </div>
+                            <p class="mb-3 text-sm text-slate-500">Criada por {{ idea.user?.name || '-' }}</p>
+                            <div class="flex flex-wrap gap-2">
+                                <Button size="small" label="Na mesa" @click="vote(idea.id, 'on_table')" />
+                                <Button size="small" label="Na gaveta" severity="secondary" @click="vote(idea.id, 'in_drawer')" />
+                                <Button size="small" label="No lixo" severity="danger" @click="vote(idea.id, 'trash')" />
+                            </div>
                         </div>
                     </div>
-                </div>
-                <p v-else class="text-sm text-slate-500">Nenhuma ideia pendente de voto para você.</p>
-            </template>
-        </Card>
+                    <p v-else class="text-sm text-slate-500">Nenhuma ideia pendente de voto para você.</p>
+                </template>
+            </Card>
+        </div>
+        
     </div>
 </template>

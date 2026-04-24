@@ -34,16 +34,16 @@ const cycleTheme = () => {
         </button>
 
         <!-- Logo / App name -->
-        <div class="fixed inset-x-0 top-8 z-20 px-4">
-            <div class="flex w-full flex-col items-center gap-3">
-                <img src="/icons/io-icon-64x64.png" alt="Ícone Índigos Organizer" class="h-16 w-16 object-contain" />
+        <div class="mb-6 px-4">
+            <div class="flex w-full flex-col items-center gap-2">
+                <img src="/icons/io-icon-64x64.png" alt="Ícone Índigos Organizer" class="h-14 w-14 object-contain" />
                 <p class="text-center text-lg font-bold text-slate-800 dark:text-slate-100">Índigos Organizer</p>
             </div>
         </div>
 
         <!-- Card -->
         <div
-            class="mt-36 w-full max-w-sm overflow-hidden rounded-2xl bg-white px-6 py-6 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800"
+            class="w-full max-w-sm overflow-hidden rounded-2xl bg-white px-6 py-6 shadow-lg ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800"
         >
             <slot />
         </div>

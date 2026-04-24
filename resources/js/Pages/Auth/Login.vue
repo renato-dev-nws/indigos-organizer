@@ -58,7 +58,7 @@ const submit = () => form.post(route('login'), { onFinish: () => form.reset('pas
             </a>
 
             <p class="text-xs text-slate-500 dark:text-slate-400">
-                Google somente para usuarios Gmail ja cadastrados no sistema.
+                Somente para usuarios Gmail cadastrados no sistema.
             </p>
         </div>
     </GuestLayout>

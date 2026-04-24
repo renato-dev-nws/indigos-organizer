@@ -110,7 +110,25 @@ const canDeleteUser = (user) => {
         <Card>
             <template #content>
                 <DataTable :value="users.data" data-key="id" striped-rows :sort-mode="'single'" removable-sort>
-                    <Column field="name" header="Nome" sortable />
+                    <Column field="name" header="Nome" sortable>
+                        <template #body="{ data }">
+                            <div class="flex items-center gap-2">
+                                <img
+                                    v-if="data.avatar_url"
+                                    :src="data.avatar_url"
+                                    :alt="`Avatar de ${data.name}`"
+                                    class="h-7 w-7 rounded-full object-cover"
+                                />
+                                <span
+                                    v-else
+                                    class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-200"
+                                >
+                                    <iconify-icon icon="mdi:person" width="16" height="16" />
+                                </span>
+                                <span>{{ data.name }}</span>
+                            </div>
+                        </template>
+                    </Column>
                     <Column field="email" header="E-mail" sortable />
                     <Column header="Perfil" class="w-40">
                         <template #body="{ data }">

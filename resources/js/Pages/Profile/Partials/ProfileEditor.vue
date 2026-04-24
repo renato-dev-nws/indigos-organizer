@@ -209,7 +209,7 @@ const submitProfile = () => {
             return payload;
         })
         .post(resolveRoute(props.updateRouteName, props.updateRouteParams), {
-            forceFormData: true,
+            forceFormData: !!form.avatar,
             preserveScroll: true,
             onSuccess: (page) => {
                 const updatedUser = page?.props?.user ?? page?.props?.auth?.user ?? null;
@@ -336,9 +336,11 @@ const updatePassword = () => {
 
                             <div>
                                 <InputLabel value="Previa" class="text-slate-700 dark:text-slate-200" />
-                                <div class="mt-1 flex h-[120px] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-                                    <img v-if="avatarPreview" :src="avatarPreview" alt="Previa do avatar" class="h-full w-full object-cover" />
-                                    <Icon v-else icon="mdi:person" class="h-9 w-9 text-slate-400 dark:text-slate-500" />
+                                <div class="mt-1 flex w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800">
+                                    <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                                        <img v-if="avatarPreview" :src="avatarPreview" alt="Previa do avatar" class="h-full w-full object-cover" />
+                                        <Icon v-else icon="mdi:person" class="h-7 w-7 text-slate-400 dark:text-slate-500" />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -374,25 +376,31 @@ const updatePassword = () => {
                         <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Preferencias de notificacoes</h3>
 
                         <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
-                            <table class="w-full min-w-[560px] text-sm">
+                            <table class="w-full min-w-[320px] table-fixed text-sm sm:min-w-[520px]">
                                 <thead class="bg-slate-50 dark:bg-slate-800/70">
                                     <tr>
-                                        <th class="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Função</th>
-                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">Push</th>
-                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">E-mail</th>
-                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">WhatsApp</th>
+                                        <th class="w-1/2 px-2 py-2 text-left text-xs font-semibold text-slate-700 dark:text-slate-200 sm:px-3 sm:text-sm">Função</th>
+                                        <th class="w-1/6 px-2 py-2 text-center font-semibold text-slate-700 dark:text-slate-200 sm:px-3">
+                                            <Icon icon="mdi:message-fast" class="mx-auto h-4 w-4" aria-label="Notificações" v-tooltip.top="'Notificações'" />
+                                        </th>
+                                        <th class="w-1/6 px-2 py-2 text-center font-semibold text-slate-700 dark:text-slate-200 sm:px-3">
+                                            <Icon icon="mdi:email" class="mx-auto h-4 w-4" aria-label="E-mail" v-tooltip.top="'E-mail'" />
+                                        </th>
+                                        <th class="w-1/6 px-2 py-2 text-center font-semibold text-slate-700 dark:text-slate-200 sm:px-3">
+                                            <Icon icon="mdi:whatsapp" class="mx-auto h-4 w-4" aria-label="WhatsApp" v-tooltip.top="'WhatsApp'" />
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-for="item in notificationRows" :key="item.key" class="border-t border-slate-200 dark:border-slate-700">
-                                        <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ item.label }}</td>
-                                        <td class="px-3 py-2 text-center">
+                                        <td class="px-2 py-2 text-xs text-slate-700 dark:text-slate-200 sm:px-3 sm:text-sm">{{ item.label }}</td>
+                                        <td class="px-2 py-2 text-center sm:px-3">
                                             <Checkbox v-model="form.notification_preferences[item.key].push" :input-id="`np-${item.key}-push`" binary />
                                         </td>
-                                        <td class="px-3 py-2 text-center">
+                                        <td class="px-2 py-2 text-center sm:px-3">
                                             <Checkbox v-model="form.notification_preferences[item.key].email" :input-id="`np-${item.key}-email`" binary />
                                         </td>
-                                        <td class="px-3 py-2 text-center">
+                                        <td class="px-2 py-2 text-center sm:px-3">
                                             <Checkbox v-model="form.notification_preferences[item.key].whatsapp" :input-id="`np-${item.key}-whatsapp`" binary />
                                         </td>
                                     </tr>

@@ -37,6 +37,7 @@ const menuItems = computed(() => [
     { label: 'Locais', icon: 'mdi:map-marker-multiple-outline', href: route('venues.index') },
     { label: 'Contatos', icon: 'ph:address-book-bold', href: route('contacts.index') },
     { label: 'Informações Úteis', icon: 'ph:info-bold', href: route('shared-infos.index') },
+    { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
     {
         label: 'Configurações',
         icon: 'mdi:settings-outline',
@@ -49,7 +50,6 @@ const menuItems = computed(() => [
             { label: 'Sistema', icon: 'ph:sliders-bold', href: route('settings.pages.system') },
         ],
     },
-    { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
     { label: 'Tutorial', icon: 'mdi:help-rhombus-outline', href: route('docs.index') },
 ]);
 
