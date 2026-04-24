@@ -288,7 +288,7 @@ class TaskController extends Controller
         ]);
 
         $task->assignedUsers()->sync($request->input('assigned_user_ids', []));
-        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id);
+        DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, [], (string) Auth::id());
 
         $subtasks = collect($request->input('subtasks', []))
             ->filter(fn (array $subtask) => filled($subtask['title'] ?? null))
@@ -353,7 +353,7 @@ class TaskController extends Controller
 
         $newlyAssignedUserIds = array_values(array_diff($newAssignedUserIds, $previousAssignedUserIds));
         if ($newlyAssignedUserIds !== []) {
-            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, $newlyAssignedUserIds);
+            DispatchTaskAssignedNotificationsJob::dispatchSync($task->id, $newlyAssignedUserIds, (string) Auth::id());
         }
 
         $subtasks = collect($request->input('subtasks', []))

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Índigos - Artist Organizer'),
+    'name' => env('APP_NAME', 'Índigos Organizer'),
 
     /*
     |--------------------------------------------------------------------------

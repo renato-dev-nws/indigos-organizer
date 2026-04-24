@@ -16,6 +16,7 @@ class DispatchTaskAssignedNotificationsJob implements ShouldQueue
     public function __construct(
         private readonly string $taskId,
         private readonly array $targetUserIds = [],
+        private readonly ?string $actorUserId = null,
     )
     {
     }
@@ -45,6 +46,14 @@ class DispatchTaskAssignedNotificationsJob implements ShouldQueue
             $targets = User::query()
                 ->whereIn('id', $allowedTargetUserIds->all())
                 ->get();
+        }
+
+        if ($this->actorUserId !== null && $this->actorUserId !== '') {
+            $targets = $targets->filter(fn ($user) => (string) $user->id !== $this->actorUserId)->values();
+        }
+
+        if ($targets->isEmpty()) {
+            return;
         }
 
         foreach ($targets as $user) {

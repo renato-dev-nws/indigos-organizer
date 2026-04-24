@@ -13,6 +13,14 @@ class User extends Authenticatable
 {
     use HasFactory, HasUuids, HasPushSubscriptions, Notifiable;
 
+    public const NOTIFICATION_PREFERENCE_TYPES = [
+        'task_assigned' => 'Quando tarefa é atribuída',
+        'task_due_soon' => 'Quando tarefa está próxima do prazo',
+        'task_reminder' => 'Quando lembrete de tarefa dispara',
+        'idea_on_board' => 'Quando nova ideia vai para votação',
+        'idea_voted' => 'Quando minha ideia recebe voto',
+    ];
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -29,6 +37,7 @@ class User extends Authenticatable
         'email_enabled',
         'whatsapp_enabled',
         'whatsapp_phone',
+        'notification_preferences',
     ];
 
     protected $hidden = [
@@ -51,7 +60,73 @@ class User extends Authenticatable
             'push_enabled' => 'boolean',
             'email_enabled' => 'boolean',
             'whatsapp_enabled' => 'boolean',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    public static function notificationTypeOptions(): array
+    {
+        return collect(self::NOTIFICATION_PREFERENCE_TYPES)
+            ->map(fn (string $label, string $key) => [
+                'key' => $key,
+                'label' => $label,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public static function defaultNotificationPreferences(?self $user = null): array
+    {
+        $pushDefault = (bool) ($user?->push_enabled ?? true);
+        $emailDefault = (bool) ($user?->email_enabled ?? true);
+        $whatsAppDefault = (bool) ($user?->whatsapp_enabled ?? false);
+
+        $defaults = [];
+
+        foreach (array_keys(self::NOTIFICATION_PREFERENCE_TYPES) as $type) {
+            $defaults[$type] = [
+                'push' => $pushDefault,
+                'email' => $emailDefault,
+                'whatsapp' => $whatsAppDefault,
+            ];
+        }
+
+        return $defaults;
+    }
+
+    public function mergedNotificationPreferences(): array
+    {
+        $defaults = self::defaultNotificationPreferences($this);
+        $stored = is_array($this->notification_preferences) ? $this->notification_preferences : [];
+
+        foreach ($defaults as $type => $defaultChannels) {
+            $storedChannels = is_array($stored[$type] ?? null) ? $stored[$type] : [];
+
+            $defaults[$type] = [
+                'push' => (bool) ($storedChannels['push'] ?? $defaultChannels['push']),
+                'email' => (bool) ($storedChannels['email'] ?? $defaultChannels['email']),
+                'whatsapp' => (bool) ($storedChannels['whatsapp'] ?? $defaultChannels['whatsapp']),
+            ];
+        }
+
+        return $defaults;
+    }
+
+    public function notificationChannelEnabled(string $type, string $channel): bool
+    {
+        if (! in_array($channel, ['push', 'email', 'whatsapp'], true)) {
+            return false;
+        }
+
+        if (! array_key_exists($type, self::NOTIFICATION_PREFERENCE_TYPES)) {
+            return match ($channel) {
+                'push' => (bool) ($this->push_enabled ?? true),
+                'email' => (bool) ($this->email_enabled ?? true),
+                'whatsapp' => (bool) ($this->whatsapp_enabled ?? false),
+            };
+        }
+
+        return (bool) ($this->mergedNotificationPreferences()[$type][$channel] ?? false);
     }
 
     public function ideas(): HasMany

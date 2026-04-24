@@ -54,6 +54,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    notificationTypes: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const avatarInput = ref(null);
@@ -63,6 +67,38 @@ const showPasswordModal = ref(false);
 const { countryCode: initialWaCountryCode, localDigits: initialWaLocalDigits } = splitPhoneByCountryCode(props.user.whatsapp_phone || '');
 const whatsappPhoneCountryCode = ref(initialWaCountryCode || '55');
 
+const defaultNotificationPreferences = () => {
+    const defaults = {};
+
+    for (const item of props.notificationTypes) {
+        defaults[item.key] = {
+            push: props.user.push_enabled ?? true,
+            email: props.user.email_enabled ?? true,
+            whatsapp: props.user.whatsapp_enabled ?? false,
+        };
+    }
+
+    return defaults;
+};
+
+const normalizeNotificationPreferences = (input) => {
+    const defaults = defaultNotificationPreferences();
+    const raw = input && typeof input === 'object' ? input : {};
+
+    for (const item of props.notificationTypes) {
+        const key = item.key;
+        const value = raw[key] && typeof raw[key] === 'object' ? raw[key] : {};
+
+        defaults[key] = {
+            push: Boolean(value.push ?? defaults[key].push),
+            email: Boolean(value.email ?? defaults[key].email),
+            whatsapp: Boolean(value.whatsapp ?? defaults[key].whatsapp),
+        };
+    }
+
+    return defaults;
+};
+
 const form = useForm({
     name: props.user.name,
     email: props.user.email,
@@ -71,6 +107,7 @@ const form = useForm({
     push_enabled: props.user.push_enabled ?? true,
     email_enabled: props.user.email_enabled ?? true,
     whatsapp_enabled: props.user.whatsapp_enabled ?? false,
+    notification_preferences: normalizeNotificationPreferences(props.user.notification_preferences),
     whatsapp_phone: formatBrazilPhoneInput(initialWaLocalDigits) || '',
     is_admin: !!props.user.is_admin,
 });
@@ -85,6 +122,7 @@ const requiresEmailVerification = computed(() => {
 });
 
 const canToggleAdminRole = computed(() => props.canEditAdmin && !props.user.is_super_admin);
+const notificationRows = computed(() => props.notificationTypes || []);
 
 const resolveRoute = (name, params) => {
     if (params === null || typeof params === 'undefined') {
@@ -158,6 +196,7 @@ const submitProfile = () => {
                 push_enabled: data.push_enabled ? 1 : 0,
                 email_enabled: data.email_enabled ? 1 : 0,
                 whatsapp_enabled: data.whatsapp_enabled ? 1 : 0,
+                notification_preferences: normalizeNotificationPreferences(data.notification_preferences),
                 whatsapp_phone: composePhoneWithCountryCode(whatsappPhoneCountryCode.value, data.whatsapp_phone) || null,
             };
 
@@ -182,6 +221,7 @@ const submitProfile = () => {
                     form.push_enabled = updatedUser.push_enabled ?? form.push_enabled;
                     form.email_enabled = updatedUser.email_enabled ?? form.email_enabled;
                     form.whatsapp_enabled = updatedUser.whatsapp_enabled ?? form.whatsapp_enabled;
+                    form.notification_preferences = normalizeNotificationPreferences(updatedUser.notification_preferences);
                     form.is_admin = !!updatedUser.is_admin;
 
                     const { countryCode: newWaCountryCode, localDigits: newWaLocalDigits } = splitPhoneByCountryCode(updatedUser.whatsapp_phone || '');
@@ -333,20 +373,32 @@ const updatePassword = () => {
                     <div class="space-y-3">
                         <h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Preferencias de notificacoes</h3>
 
-                        <label class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-                            <span class="text-sm text-slate-700 dark:text-slate-200">Push Notifications</span>
-                            <Checkbox v-model="form.push_enabled" input-id="push_enabled" binary />
-                        </label>
-
-                        <label class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-                            <span class="text-sm text-slate-700 dark:text-slate-200">Notificacoes por e-mail</span>
-                            <Checkbox v-model="form.email_enabled" input-id="email_enabled" binary />
-                        </label>
-
-                        <label class="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-                            <span class="text-sm text-slate-700 dark:text-slate-200">Notificacoes por WhatsApp</span>
-                            <Checkbox v-model="form.whatsapp_enabled" input-id="whatsapp_enabled" binary />
-                        </label>
+                        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                            <table class="w-full min-w-[560px] text-sm">
+                                <thead class="bg-slate-50 dark:bg-slate-800/70">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-semibold text-slate-700 dark:text-slate-200">Função</th>
+                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">Push</th>
+                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">E-mail</th>
+                                        <th class="px-3 py-2 text-center font-semibold text-slate-700 dark:text-slate-200">WhatsApp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="item in notificationRows" :key="item.key" class="border-t border-slate-200 dark:border-slate-700">
+                                        <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ item.label }}</td>
+                                        <td class="px-3 py-2 text-center">
+                                            <Checkbox v-model="form.notification_preferences[item.key].push" :input-id="`np-${item.key}-push`" binary />
+                                        </td>
+                                        <td class="px-3 py-2 text-center">
+                                            <Checkbox v-model="form.notification_preferences[item.key].email" :input-id="`np-${item.key}-email`" binary />
+                                        </td>
+                                        <td class="px-3 py-2 text-center">
+                                            <Checkbox v-model="form.notification_preferences[item.key].whatsapp" :input-id="`np-${item.key}-whatsapp`" binary />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div class="space-y-2">
                             <InputLabel value="Número WhatsApp" class="text-slate-700 dark:text-slate-200" />
@@ -377,9 +429,7 @@ const updatePassword = () => {
                             <InputError class="mt-2" :message="form.errors.is_admin" />
                         </div>
 
-                        <InputError class="mt-1" :message="form.errors.push_enabled" />
-                        <InputError class="mt-1" :message="form.errors.email_enabled" />
-                        <InputError class="mt-1" :message="form.errors.whatsapp_enabled" />
+                        <InputError class="mt-1" :message="form.errors.notification_preferences" />
                     </div>
                 </div>
             </div>

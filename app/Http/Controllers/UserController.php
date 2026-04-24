@@ -84,6 +84,7 @@ class UserController extends Controller
 
         return Inertia::render('Users/Edit', [
             'user' => $user,
+            'notificationTypes' => User::notificationTypeOptions(),
         ]);
     }
 
@@ -120,6 +121,11 @@ class UserController extends Controller
             'push_enabled' => ['nullable', 'boolean'],
             'email_enabled' => ['nullable', 'boolean'],
             'whatsapp_enabled' => ['nullable', 'boolean'],
+            'notification_preferences' => ['nullable', 'array'],
+            'notification_preferences.*' => ['nullable', 'array'],
+            'notification_preferences.*.push' => ['nullable', 'boolean'],
+            'notification_preferences.*.email' => ['nullable', 'boolean'],
+            'notification_preferences.*.whatsapp' => ['nullable', 'boolean'],
             'whatsapp_phone' => ['nullable', 'string', 'max:30'],
             'theme' => ['sometimes', 'in:light,dark,system'],
         ]);

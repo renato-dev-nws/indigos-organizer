@@ -857,7 +857,7 @@ onUnmounted(() => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Locais" subtitle="Gestão de locais, contatos e geolocalização" icon="mdi:map-marker-multiple-outline">
+        <BoPageHeader title="Locais" subtitle="Gestão de locais, contatos e geolocalização" helper="locais" icon="mdi:map-marker-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

@@ -12,6 +12,10 @@ const props = defineProps({
     status: {
         type: String,
     },
+    notificationTypes: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const page = usePage();
@@ -29,5 +33,6 @@ const user = page.props.auth.user;
         password-route-name="profile.password.update"
         :show-email-verification="true"
         title="Perfil"
+        :notification-types="props.notificationTypes"
     />
 </template>

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('email_enabled')->default(true);
             $table->boolean('whatsapp_enabled')->default(false);
             $table->string('whatsapp_phone', 30)->nullable();
+            $table->jsonb('notification_preferences')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

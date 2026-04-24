@@ -35,6 +35,7 @@ class UserFactory extends Factory
             'push_enabled' => true,
             'email_enabled' => true,
             'whatsapp_enabled' => false,
+            'notification_preferences' => User::defaultNotificationPreferences(),
             'remember_token' => Str::random(10),
         ];
     }

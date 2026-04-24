@@ -147,7 +147,7 @@ const fullCalendarOptions = computed(() => ({
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Eventos" subtitle="Agenda da banda com locais, ingressos e participação" icon="ph:ticket-bold">
+        <BoPageHeader title="Eventos" subtitle="Agenda da banda com locais, ingressos e participação" helper="eventos" icon="ph:ticket-bold">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

@@ -16,10 +16,6 @@ class WhatsAppChannel
 
     public function send(object $notifiable, Notification $notification): void
     {
-        if (! ((bool) ($notifiable->whatsapp_enabled ?? false))) {
-            return;
-        }
-
         if (! $notification instanceof ShouldSendWhatsApp) {
             return;
         }

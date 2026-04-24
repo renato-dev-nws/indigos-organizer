@@ -48,6 +48,14 @@ class NotificationController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        $notification = $this->currentUser($request)->notifications()->findOrFail($id);
+        $notification->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
     private function currentUser(Request $request): User
     {
         /** @var User $user */

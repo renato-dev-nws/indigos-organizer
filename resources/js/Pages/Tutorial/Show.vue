@@ -24,6 +24,7 @@ const props = defineProps({
 <template>
     <div class="p-4 md:p-6 space-y-6">
         <BoPageHeader
+            supratitle="TUTORIAL"
             :title="module.label"
             :icon="module.icon"
             module-key="tutorial"

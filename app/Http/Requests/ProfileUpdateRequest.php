@@ -50,6 +50,11 @@ class ProfileUpdateRequest extends FormRequest
             'push_enabled' => ['nullable', 'boolean'],
             'email_enabled' => ['nullable', 'boolean'],
             'whatsapp_enabled' => ['nullable', 'boolean'],
+            'notification_preferences' => ['nullable', 'array'],
+            'notification_preferences.*' => ['nullable', 'array'],
+            'notification_preferences.*.push' => ['nullable', 'boolean'],
+            'notification_preferences.*.email' => ['nullable', 'boolean'],
+            'notification_preferences.*.whatsapp' => ['nullable', 'boolean'],
         ];
     }
 }

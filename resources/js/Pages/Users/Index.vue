@@ -88,7 +88,7 @@ const canDeleteUser = (user) => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Usuários" subtitle="Administração de acesso e autoria">
+        <BoPageHeader title="Usuários" helper="usuarios" subtitle="Administração de acesso e autoria">
             <template #actions>
                 <Link v-if="isAdmin" :href="route('users.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo usuário" />

@@ -11,6 +11,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    notificationTypes: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const page = usePage();
@@ -28,5 +32,6 @@ const canEditAdmin = computed(() => !!page.props.auth?.user?.is_super_admin);
         :password-route-params="props.user.id"
         title="Editar usuario"
         :can-edit-admin="canEditAdmin"
+        :notification-types="props.notificationTypes"
     />
 </template>

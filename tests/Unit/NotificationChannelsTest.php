@@ -10,6 +10,7 @@ use App\Notifications\IdeaVotedNotification;
 use App\Notifications\TaskAssignedNotification;
 use App\Notifications\TaskDueSoonNotification;
 use App\Notifications\TaskReminderNotification;
+use App\Notifications\Channels\WhatsAppChannel;
 use NotificationChannels\WebPush\WebPushChannel;
 use Tests\TestCase;
 
@@ -23,9 +24,9 @@ class NotificationChannelsTest extends TestCase
         $dueSoon = new TaskDueSoonNotification($task);
         $reminder = new TaskReminderNotification($task);
 
-        $this->assertSame(['database', WebPushChannel::class], $assigned->via(new User));
-        $this->assertSame(['database', WebPushChannel::class], $dueSoon->via(new User));
-        $this->assertSame(['database', WebPushChannel::class], $reminder->via(new User));
+        $this->assertSame(['database', WebPushChannel::class, 'mail'], $assigned->via(new User));
+        $this->assertSame(['database', WebPushChannel::class, 'mail'], $dueSoon->via(new User));
+        $this->assertSame(['database', WebPushChannel::class, 'mail'], $reminder->via(new User));
     }
 
     public function test_idea_notifications_use_database_and_webpush_channels(): void
@@ -36,7 +37,28 @@ class NotificationChannelsTest extends TestCase
         $onBoard = new IdeaOnBoardNotification($idea);
         $voted = new IdeaVotedNotification($idea, $voter);
 
-        $this->assertSame(['database', WebPushChannel::class], $onBoard->via(new User));
-        $this->assertSame(['database', WebPushChannel::class], $voted->via(new User));
+        $this->assertSame(['database', WebPushChannel::class, 'mail'], $onBoard->via(new User));
+        $this->assertSame(['database', WebPushChannel::class, 'mail'], $voted->via(new User));
+    }
+
+    public function test_notification_channels_respect_per_type_preferences(): void
+    {
+        $task = new Task(['title' => 'Task test']);
+        $notification = new TaskAssignedNotification($task);
+
+        $user = new User([
+            'push_enabled' => true,
+            'email_enabled' => true,
+            'whatsapp_enabled' => true,
+            'notification_preferences' => [
+                'task_assigned' => [
+                    'push' => false,
+                    'email' => true,
+                    'whatsapp' => true,
+                ],
+            ],
+        ]);
+
+        $this->assertSame(['database', 'mail', WhatsAppChannel::class], $notification->via($user));
     }
 }

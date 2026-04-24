@@ -3,10 +3,12 @@
 namespace App\Notifications;
 
 use App\Models\Idea;
+use App\Models\User;
 use App\Notifications\Channels\WhatsAppChannel;
 use App\Notifications\Contracts\ShouldSendWhatsApp;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
@@ -23,11 +25,15 @@ class IdeaOnBoardNotification extends Notification implements ShouldQueue, Shoul
     {
         $channels = ['database'];
 
-        if ((bool) ($notifiable->push_enabled ?? true)) {
+        if ($notifiable instanceof User && $notifiable->notificationChannelEnabled('idea_on_board', 'push')) {
             $channels[] = WebPushChannel::class;
         }
 
-        if ((bool) ($notifiable->whatsapp_enabled ?? false)) {
+        if ($notifiable instanceof User && $notifiable->notificationChannelEnabled('idea_on_board', 'email')) {
+            $channels[] = 'mail';
+        }
+
+        if ($notifiable instanceof User && $notifiable->notificationChannelEnabled('idea_on_board', 'whatsapp')) {
             $channels[] = WhatsAppChannel::class;
         }
 
@@ -51,6 +57,14 @@ class IdeaOnBoardNotification extends Notification implements ShouldQueue, Shoul
             ->body('"' . $this->idea->title . '" entrou no quadro de votação.')
             ->icon('/icons/icon-192x192.png')
             ->data(['url' => '/ideas']);
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject('Nova ideia no quadro')
+            ->line('"'.$this->idea->title.'" entrou no quadro de votação.')
+            ->action('Abrir ideias', url('/ideas'));
     }
 
     public function toWhatsApp(object $notifiable): array

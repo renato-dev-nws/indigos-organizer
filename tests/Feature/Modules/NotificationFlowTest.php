@@ -190,6 +190,39 @@ class NotificationFlowTest extends TestCase
         $this->assertDatabaseCount('notifications', 2);
     }
 
+    public function test_task_creation_does_not_notify_the_same_user_who_created_and_assigned_the_task(): void
+    {
+        /** @var Authenticatable $owner */
+        $owner = User::factory()->createOne();
+
+        $status = TaskStatus::create([
+            'user_id' => $owner->id,
+            'name' => 'Pendente',
+            'color' => '#94a3b8',
+            'order' => 1,
+        ]);
+
+        $this->actingAs($owner)->post(route('tasks.store'), [
+            'assigned_user_ids' => [$owner->id],
+            'related_type' => 'administrative',
+            'title' => 'Tarefa própria',
+            'description' => 'Descricao',
+            'task_status_id' => $status->id,
+            'priority' => 'medium',
+            'archived' => false,
+            'scheduled_for' => null,
+            'due_date' => null,
+            'reminder_at' => null,
+            'subtasks' => [],
+        ])->assertRedirect(route('tasks.index'));
+
+        $this->assertDatabaseMissing('notifications', [
+            'type' => TaskAssignedNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $owner->id,
+        ]);
+    }
+
     public function test_idea_on_board_notifies_only_eligible_voters(): void
     {
         $owner = User::factory()->createOne();
@@ -252,6 +285,41 @@ class NotificationFlowTest extends TestCase
             'type' => IdeaVotedNotification::class,
             'notifiable_type' => User::class,
             'notifiable_id' => $voter->id,
+        ]);
+    }
+
+    public function test_user_can_remove_single_notification(): void
+    {
+        $owner = User::factory()->createOne();
+        $assignee = User::factory()->createOne();
+
+        $status = TaskStatus::create([
+            'user_id' => $owner->id,
+            'name' => 'Pendente',
+            'color' => '#94a3b8',
+            'order' => 1,
+        ]);
+
+        Task::create([
+            'user_id' => $owner->id,
+            'assigned_user_id' => $assignee->id,
+            'related_type' => 'administrative',
+            'title' => 'Tarefa com notificação removível',
+            'task_status_id' => $status->id,
+            'priority' => 'medium',
+        ]);
+
+        $notificationId = $assignee->notifications()->latest()->value('id');
+        $this->assertNotNull($notificationId);
+
+        $this->actingAs($assignee)->delete(route('notifications.destroy', $notificationId))
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+
+        $this->assertDatabaseMissing('notifications', [
+            'id' => $notificationId,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $assignee->id,
         ]);
     }
 

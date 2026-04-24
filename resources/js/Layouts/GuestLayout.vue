@@ -37,7 +37,7 @@ const cycleTheme = () => {
         <div class="fixed inset-x-0 top-8 z-20 px-4">
             <div class="flex w-full flex-col items-center gap-3">
                 <img src="/icons/io-icon-64x64.png" alt="Ícone Índigos Organizer" class="h-16 w-16 object-contain" />
-                <p class="text-center text-lg font-bold text-slate-800 dark:text-slate-100">Índigos - Artist Organizer</p>
+                <p class="text-center text-lg font-bold text-slate-800 dark:text-slate-100">Índigos Organizer</p>
             </div>
         </div>
 

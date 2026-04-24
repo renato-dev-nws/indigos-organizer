@@ -19,14 +19,49 @@ class DemoDataSeeder extends Seeder
         $users = User::query()->orderBy('name')->get();
         $assignableUsers = $users->isNotEmpty() ? $users : collect([$user]);
 
-        $ideaTypes = IdeaType::where('user_id', $user->id)->get();
-        $ideaCategories = \App\Models\IdeaCategory::where('user_id', $user->id)->get();
-        $contentStyles = \App\Models\VenueStyle::where('user_id', $user->id)->where('domain', \App\Models\VenueStyle::DOMAIN_CONTENT)->get();
-        $venueStyles = \App\Models\VenueStyle::where('user_id', $user->id)->where('domain', \App\Models\VenueStyle::DOMAIN_VENUES)->get();
-        $venueTypes = \App\Models\VenueType::where('user_id', $user->id)->get();
-        $venueCategories = \App\Models\VenueCategory::where('user_id', $user->id)->get();
-        $platforms = \App\Models\ContentPlatform::where('user_id', $user->id)->get();
-        $taskStatuses = \App\Models\TaskStatus::where('user_id', $user->id)->orderBy('order')->get();
+        $ideaTypes = IdeaType::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->get();
+        $ideaCategories = \App\Models\IdeaCategory::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->get();
+        $contentStyles = \App\Models\VenueStyle::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->where('domain', \App\Models\VenueStyle::DOMAIN_CONTENT)
+            ->get();
+        $venueStyles = \App\Models\VenueStyle::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->where('domain', \App\Models\VenueStyle::DOMAIN_VENUES)
+            ->get();
+        $venueTypes = \App\Models\VenueType::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->get();
+        $venueCategories = \App\Models\VenueCategory::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->get();
+        $platforms = \App\Models\ContentPlatform::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->get();
+        $taskStatuses = \App\Models\TaskStatus::query()
+            ->where(function ($query) use ($user) {
+                $query->where('user_id', $user->id)->orWhereNull('user_id');
+            })
+            ->orderBy('order')
+            ->get();
 
         $ideas = collect([
             ['title' => 'Lancar single no inverno', 'status' => 'in_drawer'],
@@ -35,13 +70,13 @@ class DemoDataSeeder extends Seeder
             ['title' => 'Clipe acustico na rua', 'status' => 'executing'],
             ['title' => 'Campanha pre-save', 'status' => 'executed'],
         ])->map(function ($row, $index) use ($user, $ideaTypes, $ideaCategories) {
-            $categoryId = $ideaCategories[$index % $ideaCategories->count()]?->id;
+            $categoryId = $ideaCategories[$index % max($ideaCategories->count(), 1)]?->id;
 
             $idea = Idea::create([
                 'user_id' => $user->id,
                 'title' => $row['title'],
                 'description' => 'Descricao de exemplo da ideia '.$row['title'],
-                'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
+                'idea_type_id' => $ideaTypes[$index % max($ideaTypes->count(), 1)]?->id,
                 'idea_category_id' => $categoryId,
                 'status' => $row['status'],
                 'related_type' => 'none',
@@ -83,7 +118,7 @@ class DemoDataSeeder extends Seeder
                 'idea_id' => $ideas[$index % $ideas->count()]?->id,
                 'title' => $row['title'],
                 'script' => '<p>Roteiro inicial de exemplo.</p>',
-                'idea_type_id' => $ideaTypes[$index % $ideaTypes->count()]?->id,
+                'idea_type_id' => $ideaTypes[$index % max($ideaTypes->count(), 1)]?->id,
                 'status' => $row['status'],
                 'planned_publish_at' => $planned,
                 'published_at' => $publishedAt,
@@ -121,7 +156,7 @@ class DemoDataSeeder extends Seeder
                 'plan_phase_id' => null,
                 'title' => 'Tarefa '.$index,
                 'description' => 'Descricao da tarefa '.$index,
-                'task_status_id' => $taskStatuses[$index % $taskStatuses->count()]?->id,
+                'task_status_id' => $taskStatuses[$index % max($taskStatuses->count(), 1)]?->id,
                 'priority' => ['low', 'medium', 'high', 'urgent'][$index % 4],
                 'scheduled_for' => Carbon::now()->addDays($index)->setTime(10 + ($index % 6), 0),
                 'due_date' => Carbon::now()->addDays($index),

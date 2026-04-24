@@ -119,7 +119,7 @@ const phoneLabel = (value) => formatBrazilPhone(value) || '-';
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Contatos" subtitle="Base de contatos da banda e de locais" icon="ph:address-book-bold">
+        <BoPageHeader title="Contatos" subtitle="Base de contatos da banda e de locais" helper="contatos" icon="ph:address-book-bold">
             <template #actions>
                 <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo contato" @click="openCreateModal" />
                 <Button class="!inline-flex md:!hidden" icon="pi pi-plus" rounded aria-label="Novo contato" @click="openCreateModal" />

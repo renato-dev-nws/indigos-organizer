@@ -1,4 +1,4 @@
-// Índigos - Artist Organizer – custom service worker
+// Índigos Organizer – custom service worker
 // Uses Workbox for precaching + adds Web Push support
 
 import { precacheAndRoute } from 'workbox-precaching';
@@ -23,10 +23,10 @@ self.addEventListener('push', (event) => {
     try {
         payload = event.data.json();
     } catch {
-        payload = { title: 'Índigos - Artist Organizer', body: event.data.text() };
+        payload = { title: 'Índigos Organizer', body: event.data.text() };
     }
 
-    const title = payload.title ?? 'Índigos - Artist Organizer';
+    const title = payload.title ?? 'Índigos Organizer';
     const options = {
         body: payload.body ?? payload.message ?? '',
         icon: payload.icon ?? '/icons/io-icon-192x192.png',

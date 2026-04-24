@@ -622,7 +622,7 @@ const taskByUserChartData = computed(() => {
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda" icon="mdi:checkbox-multiple-outline">
+        <BoPageHeader title="Tarefas" subtitle="Operação de tarefas da banda" helper="tarefas" icon="mdi:checkbox-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

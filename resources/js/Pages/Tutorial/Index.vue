@@ -46,7 +46,7 @@ const props = defineProps({
                 </div>
                 <p
                     class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3"
-                    v-html="card.summary?.replace(/<br>/g, ' · ')"
+                    v-html="card.summary?.replace(/<br>/g, ' ').replaceAll('-', '•')"
                 />
                 <div class="mt-auto text-xs text-indigo-500 dark:text-indigo-400 group-hover:underline font-medium">
                     Ver tutorial →

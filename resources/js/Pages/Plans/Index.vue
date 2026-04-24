@@ -43,7 +43,7 @@ const relatedContentsCount = (plan) => Number(plan?.related_contents_count || 0)
 
 <template>
     <div class="space-y-6">
-        <BoPageHeader title="Planejamentos" subtitle="Gerencie os planos de ação da sua arte" icon="mdi:routes-clock">
+        <BoPageHeader title="Planejamentos" subtitle="Gerencie os planos de ação da sua arte" helper="planejamentos" icon="mdi:routes-clock">
             <template #actions>
                 <Link :href="route('plans.create')">
                     <Button class="!hidden md:!inline-flex" icon="pi pi-plus" label="Novo planejamento" />

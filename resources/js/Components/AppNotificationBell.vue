@@ -100,6 +100,19 @@ async function markAllRead() {
     });
 }
 
+async function removeNotification(notificationId) {
+    notifications.value = notifications.value.filter((item) => item.id !== notificationId);
+
+    await fetch(`/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': getCsrf(), Accept: 'application/json' },
+        credentials: 'same-origin',
+    });
+
+    const unreadItems = notifications.value.filter((item) => !item.read_at).length;
+    localUnread.value = unreadItems;
+}
+
 function getCsrf() {
     return document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 }
@@ -216,8 +229,19 @@ onUnmounted(() => {
                         </p>
                     </div>
 
-                    <!-- Unread dot -->
-                    <div v-if="!n.read_at" class="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                    <!-- Actions -->
+                    <div class="mt-0.5 flex items-start gap-1">
+                        <div v-if="!n.read_at" class="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                        <button
+                            type="button"
+                            class="rounded p-0.5 text-slate-300 transition-colors hover:bg-slate-200 hover:text-slate-500 dark:hover:bg-slate-700"
+                            aria-label="Remover notificação"
+                            title="Remover"
+                            @click.stop="removeNotification(n.id)"
+                        >
+                            <Icon icon="ph:x-bold" class="h-3 w-3" />
+                        </button>
+                    </div>
                 </li>
             </ul>
         </Popover>

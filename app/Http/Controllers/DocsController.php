@@ -12,7 +12,6 @@ class DocsController extends Controller
 {
     /** Map slug → module metadata (icon, label, markdown file) */
     private array $modules = [
-        'dashboard'          => ['label' => 'Dashboard',           'icon' => 'ph:squares-four-bold',            'slug' => 'dashboard'],
         'tarefas'            => ['label' => 'Tarefas',             'icon' => 'mdi:checkbox-multiple-outline',   'slug' => 'tarefas'],
         'calendario'         => ['label' => 'Calendário',          'icon' => 'mdi:calendar-month-outline',      'slug' => 'calendario'],
         'ideias'             => ['label' => 'Ideias',              'icon' => 'mdi:lightbulb-multiple-outline',  'slug' => 'ideias'],
