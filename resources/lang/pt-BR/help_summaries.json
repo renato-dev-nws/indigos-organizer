@@ -1,0 +1,67 @@
+{
+    "dashboard": {
+        "title": "Dashboard",
+        "summary": "Visão geral do sistema com programação da semana.<br>Mostra:<br>- Tarefas, conteúdos e eventos da semana<br>- Próximas tarefas com deadlines<br>- Próximos conteúdos planejados<br>- Próximos eventos",
+        "link": "/docs/dashboard"
+    },
+    "tarefas": {
+        "title": "Tarefas",
+        "summary": "Gerencie as tarefas do grupo com múltiplos responsáveis.<br>Modos de visualização:<br>- Lista com filtros<br>- Kanban por status<br>- Programação da semana<br>- Calendário completo<br>- Gráficos",
+        "link": "/docs/tarefas"
+    },
+    "calendario": {
+        "title": "Calendário Geral",
+        "summary": "Visão integrada de todos os itens agendados.<br>Exibe tarefas, conteúdos, eventos e deadlines em um único calendário mensal.",
+        "link": "/docs/calendario"
+    },
+    "ideias": {
+        "title": "Ideias",
+        "summary": "Registre e gerencie ideias criativas do grupo.<br>Funcionalidades:<br>- Fluxo de status (gaveta → executada)<br>- Votação por membros<br>- Colaboradores por ideia<br>- Kanban e filtros",
+        "link": "/docs/ideias"
+    },
+    "conteudos": {
+        "title": "Conteúdos",
+        "summary": "Planejamento e acompanhamento de conteúdos do grupo.<br>Funcionalidades:<br>- Múltiplas categorias, estilos e plataformas<br>- Programação semanal<br>- Calendário e gráficos<br>- Integração com Google Drive / Dropbox",
+        "link": "/docs/conteudos"
+    },
+    "planejamentos": {
+        "title": "Planejamentos",
+        "summary": "Organize projetos em fases e etapas.<br>Funcionalidades:<br>- Fases com previsão de início e fim<br>- Vinculação de tarefas e conteúdos<br>- Progresso e conclusão de fases",
+        "link": "/docs/planejamentos"
+    },
+    "notas-rapidas": {
+        "title": "Notas Rápidas",
+        "summary": "Bloco de notas compartilhado pelo grupo.<br>Crie listas rápidas, lembretes e anotações com título opcional e tipo de conteúdo.",
+        "link": "/docs/notas-rapidas"
+    },
+    "eventos": {
+        "title": "Eventos",
+        "summary": "Registre shows, festivais e apresentações.<br>Funcionalidades:<br>- Participante ou audiência<br>- Eventos online<br>- Datas de início e fim<br>- Filtros rápidos de presença<br>- Calendário de eventos",
+        "link": "/docs/eventos"
+    },
+    "locais": {
+        "title": "Locais",
+        "summary": "Catálogo de locais para apresentações.<br>Funcionalidades:<br>- Endereço com mapa integrado (Google Maps)<br>- Avaliação em estrelas<br>- Histórico de apresentações<br>- Mapa interativo com todos os locais",
+        "link": "/docs/locais"
+    },
+    "contatos": {
+        "title": "Contatos",
+        "summary": "Lista de contatos importantes do grupo.<br>Acesse rapidamente telefone, WhatsApp e e-mail de produtores, técnicos e parceiros.<br>Busca rápida em todos os campos.",
+        "link": "/docs/contatos"
+    },
+    "informacoes-uteis": {
+        "title": "Informações Úteis",
+        "summary": "Biblioteca de conhecimento compartilhado.<br>Registre dicas, contratos e tutoriais com links e documentos anexos.<br>Busca em todos os campos de texto.",
+        "link": "/docs/informacoes-uteis"
+    },
+    "configuracoes": {
+        "title": "Configurações",
+        "summary": "Personalize tipos, categorias, estilos, status e plataformas do sistema.<br>Apenas administradores podem criar, editar e excluir configurações.",
+        "link": "/docs/configuracoes"
+    },
+    "usuarios": {
+        "title": "Usuários",
+        "summary": "Gerencie os membros com acesso ao sistema.<br>Defina perfis, avatares e preferências de notificação para cada usuário.",
+        "link": "/docs/usuarios"
+    }
+}

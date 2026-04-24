@@ -163,7 +163,7 @@ const ideaCategoriesForDisplay = (idea) => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Ideias" subtitle="Painel de descoberta e priorização da banda" icon="mdi:lightbulb-multiple-outline">
+        <BoPageHeader title="Ideias" helper="ideias" icon="mdi:lightbulb-multiple-outline">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

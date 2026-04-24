@@ -373,7 +373,7 @@ const applyContentChartPeriod = () => {
 
 <template>
     <div class="space-y-4">
-        <BoPageHeader title="Conteúdos" subtitle="Planejamento e produção editorial" icon="mdi:film-reel">
+        <BoPageHeader title="Conteúdos" helper="conteudos" icon="mdi:film-reel">
             <template #actions>
                 <div class="hidden md:block">
                     <SelectButton

@@ -14,6 +14,7 @@ import ToastService from 'primevue/toastservice';
 import StyleClass from 'primevue/styleclass';
 import Ripple from 'primevue/ripple';
 import Tooltip from 'primevue/tooltip';
+import HelpTrigger from '@/Components/HelpTrigger.vue';
 
 const BoPreset = definePreset(Aura, {
     semantic: {
@@ -78,6 +79,7 @@ createInertiaApp({
             .directive('styleclass', StyleClass)
             .directive('ripple', Ripple)
             .directive('tooltip', Tooltip)
+            .component('HelpTrigger', HelpTrigger)
             .mount(el);
     },
     progress: {

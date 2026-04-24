@@ -3,6 +3,7 @@
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContentFileController;
 use App\Http\Controllers\CloudConnectionController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -117,6 +118,11 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Docs / Tutorial
+    Route::get('/docs', [DocsController::class, 'index'])->name('docs.index');
+    Route::get('/docs/{slug}', [DocsController::class, 'show'])->name('docs.show');
+    Route::get('/api/help-summary/{slug}', [DocsController::class, 'summary'])->name('docs.summary');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

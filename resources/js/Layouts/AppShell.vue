@@ -50,6 +50,7 @@ const menuItems = computed(() => [
         ],
     },
     { label: 'Usuários', icon: 'ph:users-three-bold', href: route('users.index') },
+    { label: 'Tutorial', icon: 'mdi:help-rhombus-outline', href: route('docs.index') },
 ]);
 
 watch(

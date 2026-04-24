@@ -24,6 +24,10 @@ const props = defineProps({
         type: String,
         default: null,
     },
+    helper: {
+        type: String,
+        default: null,
+    },
 });
 
 const page = usePage();
@@ -43,6 +47,7 @@ const headerBorderColor = computed(() => getModuleColorHex(resolvedModuleKey.val
             <h1 class="flex items-center gap-2 text-2xl font-bold my-1 py-0">
                 <span v-if="icon" class="shrink-0 -mb-[0.5rem]"><iconify-icon :icon="icon" width="28" height="28" /></span>
                 {{ title }}
+                <HelpTrigger v-if="helper" :module="helper" class="-mt-5" />
             </h1>
             <p v-if="shouldShowSubtitle" class="text-sm text-slate-500 dark:text-slate-400">{{ subtitle }}</p>
         </div>
