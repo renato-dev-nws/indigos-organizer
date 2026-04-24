@@ -11,10 +11,10 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $members = [
-            ['name' => 'João Silva', 'email' => 'joao@band.com'],
-            ['name' => 'Maria Souza', 'email' => 'maria@band.com'],
-            ['name' => 'Carlos Lima', 'email' => 'carlos@band.com'],
-            ['name' => 'Ana Oliveira', 'email' => 'ana@band.com'],
+            ['name' => 'João Leno',       'email' => 'joao@demo.com',  'is_admin' => true],
+            ['name' => 'Paulo Macarti',   'email' => 'paulo@demo.com', 'is_admin' => true],
+            ['name' => 'Jorge Cleberson', 'email' => 'jorge@demo.com', 'is_admin' => false],
+            ['name' => 'Bingo Estrella',  'email' => 'bingo@demo.com', 'is_admin' => false],
         ];
 
         foreach ($members as $member) {
@@ -23,13 +23,11 @@ class UserSeeder extends Seeder
                 [
                     'name' => $member['name'],
                     'password' => Hash::make('password'),
-                    'is_admin' => $member['email'] === 'joao@band.com',
+                    'is_admin' => $member['is_admin'],
                     'avatar_url' => null,
                     'theme' => 'system',
                 ]
             );
         }
-
-        User::where('email', 'demo@band.com')->delete();
     }
 }

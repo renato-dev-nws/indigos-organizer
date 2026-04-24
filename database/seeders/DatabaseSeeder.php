@@ -18,9 +18,11 @@ class DatabaseSeeder extends Seeder
             'Database\\Seeders\\UserSeeder',
             'Database\\Seeders\\InitialSettingsSeeder',
             'Database\\Seeders\\DemoDataSeeder',
+            'Database\\Seeders\\VenueSeeder',
             'Database\\Seeders\\PlanSeeder',
             'Database\\Seeders\\EventSeeder',
             'Database\\Seeders\\SharedInfoSeeder',
+            'Database\\Seeders\\ContactSeeder',
         ]);
     }
 }
