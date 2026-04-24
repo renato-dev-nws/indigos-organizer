@@ -1,8 +1,20 @@
+<p align="center"><img src="public/icons/io-icon-128x128.png" alt="Indigos Organizer" width="128"></p>
+
 # Indigos Organizer
 
 Indigos Organizer e um sistema web para organizacao operacional e criativa de artistas e bandas.
 O projeto cobre o ciclo completo de trabalho: ideias, planejamento, producao de conteudos,
 tarefas, eventos, contatos, locais, informacoes uteis e configuracoes do ecossistema.
+
+---
+
+> *"Este sistema foi desenvolvido para resolver um problema REAL de organizacao da minha propria banda [Era Indigos](https://indigos.com.br). Cansado de perder tempo cacando documentos e midia perdidos em grupos de WhatsApp, da ineficiencia do Sheets e aplicativos de organizacao que nao se enquadravam no que a banda necessitava de forma eficiente, tomei a decisao de criar este aplicativo mais sob medida.*
+>
+> *Entendendo que pode ajudar muitas bandas e outros artistas, deixo o codigo aberto para uso nao comercial. Claro que e necessario servidor e conhecimentos tecnicos para colocar o sistema no ar. Se nao tiver um programador que possa realizar a instalacao, pode entrar em contato comigo ;)"*
+>
+> — **Renato Barba**, autor
+
+---
 
 ## Visao Geral do Produto
 
@@ -152,12 +164,6 @@ O sistema foi desenhado para centralizar o dia a dia de equipes criativas com fo
 ```bash
 ./vendor/bin/sail npm run build
 ```
-
-## Ambiente Demo
-
-Quando `APP_ENV=demo`, o sistema pode operar em modo demonstracao com regras especificas
-(sem alteracoes permanentes e data controlada via Carbon::setTestNow), conforme documentacao interna
-em `.copilot-docs/finalizacao.md`.
 
 ## ⚖️ Licenca e Termos de Uso
 
