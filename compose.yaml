@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Indigos Organizer Contributors
+# Licensed under Polyform Noncommercial License 1.0.0
+# Uso comercial e servicos de instalacao pagos sao proibidos.
 services:
     laravel.test:
         build:
@@ -78,13 +81,13 @@ services:
             AUTHENTICATION_API_KEY: '${EVOLUTION_API_MASTER_KEY:-change_me}'
             DATABASE_PROVIDER: postgresql
             DATABASE_CONNECTION_URI: 'postgresql://${DB_USERNAME}:${DB_PASSWORD}@pgsql:5432/${DB_DATABASE}?schema=evolution_api'
-            DATABASE_CONNECTION_CLIENT_NAME: 'band_organizer_evolution'
+            DATABASE_CONNECTION_CLIENT_NAME: 'indigos_organizer_evolution'
             STORE_MESSAGES: false
             CLEAN_TICKET_INTERVAL: 1
             TELEMETRY_ENABLED: false
             CACHE_REDIS_ENABLED: true
             CACHE_REDIS_URI: 'redis://redis:6379/6'
-            CACHE_REDIS_PREFIX_KEY: 'band_organizer_evolution'
+            CACHE_REDIS_PREFIX_KEY: 'indigos_organizer_evolution'
             CACHE_LOCAL_ENABLED: false
         volumes:
             - 'sail-evolution:/evolution/instances'

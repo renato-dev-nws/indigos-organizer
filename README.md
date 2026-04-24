@@ -1,49 +1,132 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Indigos Organizer
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Indigos Organizer e um sistema web para organizacao operacional e criativa de artistas e bandas.
+O projeto cobre o ciclo completo de trabalho: ideias, planejamento, producao de conteudos,
+tarefas, eventos, contatos, locais, informacoes uteis e configuracoes do ecossistema.
 
-## About Laravel
+## Visao Geral do Produto
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+O sistema foi desenhado para centralizar o dia a dia de equipes criativas com foco em:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Organizacao por modulos especializados e integrados.
+- Fluxos visuais (lista, kanban, calendario, programacao semanal e graficos).
+- Colaboracao entre usuarios com controle de permissoes.
+- Notificacoes multicanal e personalizaveis.
+- Operacao local e em servidor (Sail/Docker + PostgreSQL).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Modulos e Funcionalidades
 
-## Learning Laravel
+### Dashboard
+- Visao consolidada da semana (tarefas, conteudos e eventos).
+- Tabelas de proximos itens operacionais.
+- Indicadores para priorizacao rapida.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Tarefas
+- Cadastro com multiplos responsaveis.
+- Lista, kanban, calendario completo e programacao semanal.
+- Subtarefas e relacionamentos com conteudos, eventos e planejamentos.
+- Status dinamicos e graficos de acompanhamento.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Calendario Geral
+- Agenda unificada de tarefas, conteudos e eventos.
+- Visualizacao mensal com cores por modulo/status.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### Ideias
+- Pipeline de ideias por status.
+- Votacao e fluxo para levar ideia ao quadro.
+- Colaboradores por ideia e regras de privacidade.
 
-## Agentic Development
+### Conteudos
+- Pipeline de conteudo (fila, producao, publicado etc.).
+- Categorias/estilos/plataformas com suporte multiplo.
+- Programacao semanal e calendario completo.
+- Graficos por tipo, categoria, estilo, status e plataforma.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Planejamentos
+- Planos com fases, previsoes e progresso.
+- Relacionamento com tarefas e conteudos.
+- Confirmacoes para conclusao de fases com pendencias.
 
-```bash
-composer require laravel/boost --dev
+### Notas Rapidas
+- Blocos compartilhados com itens de checklist.
+- Cards com resumo, prioridade e arquivamento.
 
-php artisan boost:install
-```
+### Eventos
+- Agenda de eventos com presenca (participante/audiencia).
+- Filtros rapidos e avancados.
+- Modo lista e calendario.
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Locais
+- Cadastro completo de venues com estilos multiplos.
+- Geolocalizacao e mapa.
+- Integracao com Google Maps para autocomplete/endereco.
+- Avaliacao, historico de apresentacoes e contatos.
 
-## Mailpit (teste de e-mails local)
+### Contatos
+- Base de contatos relacionada a locais.
+- Busca rapida e filtros dedicados.
+- Link direto para WhatsApp.
 
-O projeto esta configurado para usar Mailpit no ambiente local com Laravel Sail.
+### Informacoes Uteis
+- Repositorio interno de conhecimento.
+- Itens com arquivos, links e categorias.
+
+### Usuarios e Perfil
+- Gestao de usuarios, papeis admin/super-admin.
+- Perfil com avatar (URL/upload), senha em modal e preferencias.
+- Preferencias de notificacao por tipo e canal.
+
+### Configuracoes
+- Tipos, categorias, estilos, plataformas e status.
+- Configuracoes de sistema e integracoes.
+- Ajustes visuais e taxonomias globais.
+
+### Tutorial
+- Modulo de ajuda com documentacao por modulo em Markdown.
+- Modal rapido por pagina via HelpTrigger.
+
+## Decisoes de Arquitetura e Engenharia
+
+- Backend em Laravel 13 com Inertia para aplicacao SPA server-driven.
+- Frontend em Vue 3 com PrimeVue e Tailwind CSS.
+- Modelagem orientada a dominios (controllers, requests, policies, observers, jobs e notifications).
+- PostgreSQL como banco principal, com migracoes e seeders para ambiente local/demo.
+- Fila e notificacoes para eventos assincronos (tarefas e ideias).
+- Integracoes externas encapsuladas em servicos dedicados.
+- Uso de componentes reutilizaveis para padrao visual e consistencia de UX.
+
+## Stack Tecnica
+
+### Backend
+- PHP 8.3
+- Laravel 13
+- Inertia Laravel
+- Eloquent ORM
+- Policies, Observers, Jobs, Notifications
+
+### Frontend
+- Vue 3
+- PrimeVue
+- Tailwind CSS
+- Vite
+- FullCalendar
+- Iconify
+
+### Infra e Dados
+- Docker / Laravel Sail
+- PostgreSQL
+- Redis
+- Mailpit
+
+### Integracoes e Recursos
+- Google Maps API (autocomplete/geocodificacao/mapa)
+- Login Social (Laravel Socialite)
+- Web Push Notifications
+- WhatsApp via Evolution API
+- Dropbox e Google Drive (armazenamento em nuvem)
+- Assistencia de voz/transcricao no frontend (componentes de apoio de speech-to-text)
+
+## Execucao Local (Sail)
 
 1. Suba os containers:
 
@@ -51,36 +134,48 @@ O projeto esta configurado para usar Mailpit no ambiente local com Laravel Sail.
 ./vendor/bin/sail up -d
 ```
 
-2. Acesse a caixa de entrada do Mailpit:
+2. Rode migracoes e seed:
 
-```text
-http://localhost:8025
+```bash
+./vendor/bin/sail artisan migrate:fresh --seed
 ```
 
-3. Configuracao SMTP local (ja definida no `.env.example`):
+3. Rode frontend em desenvolvimento:
 
-```env
-MAIL_MAILER=smtp
-MAIL_HOST=mailpit
-MAIL_PORT=1025
-MAIL_USERNAME=null
-MAIL_PASSWORD=null
+```bash
+./vendor/bin/sail npm install
+./vendor/bin/sail npm run dev
 ```
 
-Se o seu `.env` ja existia antes dessa configuracao, atualize os campos `MAIL_*` e reinicie os containers com Sail.
+4. Build de producao:
 
-## Contributing
+```bash
+./vendor/bin/sail npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Ambiente Demo
 
-## Code of Conduct
+Quando `APP_ENV=demo`, o sistema pode operar em modo demonstracao com regras especificas
+(sem alteracoes permanentes e data controlada via Carbon::setTestNow), conforme documentacao interna
+em `.copilot-docs/finalizacao.md`.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## ⚖️ Licenca e Termos de Uso
 
-## Security Vulnerabilities
+Este projeto e distribuido sob a licenca **Polyform Noncommercial 1.0.0**.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### ✅ O que e permitido:
+- Uso pessoal e domestico.
+- Rodar o sistema em sua propria infraestrutura (Local ou VPS) para uso proprio.
+- Modificar o codigo para melhorias pessoais.
 
-## License
+### ❌ O que e estritamente PROIBIDO:
+- **Comercializacao:** Voce nao pode vender este software ou versoes derivadas.
+- **Servicos Pagos:** E proibido cobrar de terceiros para instalar, configurar ou dar manutencao neste sistema.
+- **Hospedagem Comercial (SaaS):** Voce nao pode oferecer este sistema como um servico pago para outros usuarios.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+*Para qualquer uso que gere lucro ou compensacao financeira, entre em contato com o autor para obter uma licenca comercial.*
+
+### Texto oficial da licenca
+
+- URL oficial: https://polyformproject.org/licenses/noncommercial/1.0.0
+- Arquivo local: `LICENSE`

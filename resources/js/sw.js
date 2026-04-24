@@ -32,7 +32,7 @@ self.addEventListener('push', (event) => {
         icon: payload.icon ?? '/icons/io-icon-192x192.png',
         badge: '/icons/io-icon-192x192.png',
         data: payload.data ?? {},
-        tag: payload.tag ?? 'band-organizer',
+        tag: payload.tag ?? 'indigos-organizer',
         renotify: true,
     };
 

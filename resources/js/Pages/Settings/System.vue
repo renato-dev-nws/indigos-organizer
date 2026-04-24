@@ -471,7 +471,7 @@ const requestReconnectConfirmation = () => {
 const showSendTestModal = ref(false);
 const sendTestCountryCode = ref('55');
 const sendTestPhone = ref('');
-const sendTestMessage = ref('Mensagem de teste do Band Organizer.');
+const sendTestMessage = ref('Mensagem de teste de Índigos Organizer.');
 const sendTestLoading = ref(false);
 const sendTestError = ref('');
 const sendTestSuccess = ref('');
