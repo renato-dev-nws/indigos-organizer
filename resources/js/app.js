@@ -62,6 +62,11 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
+        const ziggyConfig = {
+            ...props.initialPage.props.ziggy,
+            location: new URL(window.location.href),
+        };
+
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(PrimeVue, {
@@ -75,7 +80,7 @@ createInertiaApp({
             })
             .use(ToastService)
             .use(ConfirmationService)
-            .use(ZiggyVue)
+            .use(ZiggyVue, ziggyConfig)
             .directive('styleclass', StyleClass)
             .directive('ripple', Ripple)
             .directive('tooltip', Tooltip)

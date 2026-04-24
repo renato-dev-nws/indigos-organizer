@@ -14,6 +14,7 @@ use Google\Client as GoogleClient;
 use Google\Service\Drive as GoogleDriveService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
@@ -36,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->environment('production')) {
+            URL::forceRootUrl(config('app.url'));
+            URL::forceScheme('https');
+        }
+
         Storage::extend('google', function ($app, $config) {
             $client = new GoogleClient();
             $client->setClientId($config['clientId'] ?? null);

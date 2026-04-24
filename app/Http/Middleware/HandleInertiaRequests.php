@@ -48,7 +48,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
+                'location' => app()->isProduction()
+                    ? preg_replace('/^http:\/\//i', 'https://', (string) $request->fullUrl())
+                    : $request->fullUrl(),
             ],
             'systemSettings' => fn () => [
                 'logo_url' => ($logoPath = SystemSetting::get('logo_path'))
